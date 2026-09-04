@@ -19,9 +19,28 @@ const {
   urlConexionMeta, verificarState, canjearCode,
   registrarCanalesMeta, registrarWhatsApp,
 } = require('./conexiones');
+const { procesarFuente } = require('./ingesta');
+const { dispararEvento } = require('./notificaciones');
+const { recalcularScore } = require('./scoring');
+const { crearSuscripcion, procesarWebhookMP, puedeVincular } = require('./suscripciones');
+const { iniciarAntu } = require('./antu');
+const { comprarCurso, procesarPagoCurso, corregirTest, marcarVideoVisto, chequearCompletado } = require('./academia');
+const { certificadoHTML } = require('./certificado');
+const {
+  urlConexionGoogle, canjearCodeGoogle, crearEvento, detectarCita,
+} = require('./calendar');
+const multer = require('multer');
+const subir = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
 
 const app = express();
 app.use(express.json());
+
+// Servir el widget embebible y archivos estáticos de /web
+const path = require('path');
+app.get('/widget.js', (req, res) => {
+  res.type('application/javascript');
+  res.sendFile(path.join(__dirname, '..', 'web', 'widget.js'));
+});
 
 // ------------------------------------------------------------
 // 1. Verificación del webhook (Meta)
@@ -82,17 +101,47 @@ async function procesarWhatsApp({ phoneNumberId, telefono, texto, wamid, nombreP
   await enviarTexto(canal, telefono, respuesta);
   await guardarMensaje({ conversacion, autor: 'bot', contenido: respuesta });
 
-  // g) Kanban + alerta interna Tier A (cadencia 36 s ± 3 s)
-  const estadoAnterior = lead.estado;
+  // g) Actualizar datos, recalcular puntaje/tier y disparar eventos
   lead = await actualizarLead(lead, datos);
-  if (estadoAnterior !== 'filtrado_tier_a' && lead.estado === 'filtrado_tier_a') {
-    const destinos = canal.metadatos?.telefonos_alerta || [];
-    notificarEnCadencia(destinos, (destino) =>
-      enviarTexto(canal, destino,
-        `🔔 Lead Tier A calificado\nNombre: ${lead.nombre || 'sin dato'}\n` +
-        `Tel: ${lead.telefono}\nConvenio: ${lead.convenio || '-'}\nInterés: ${lead.interes || '-'}`)
-    ).catch((e) => console.error('Error en alertas:', e));
+  const score = await recalcularScore(supabase, lead);
+  lead.tier = score.tier; lead.puntaje = score.puntaje;
+
+  if (historial.length === 0) {
+    dispararEvento(supabase, { evento: 'lead_nuevo', lead, canal });
   }
+  if (score.subioAtierA) {
+    dispararEvento(supabase, { evento: 'tier_a', lead, canal });
+  }
+
+  // h) ¿El mensaje propone una cita concreta? Agendarla en Google Calendar
+  try {
+    const cita = await detectarCita(texto, lead.nombre);
+    if (cita) {
+      // Validar horario comercial (salvo negocio online)
+      const { data: enHorario } = await supabase.rpc('dentro_horario_atencion', {
+        org: canal.organizacion_id, momento: cita.inicio_iso,
+      });
+      const { data: calCanal } = await supabase.from('canales').select('*')
+        .eq('organizacion_id', canal.organizacion_id)
+        .eq('tipo', 'google_calendar').eq('activo', true).maybeSingle();
+      if (!enHorario) {
+        console.log('Cita fuera de horario comercial, no se agenda:', cita.inicio_iso);
+      } else if (calCanal) {
+        const ev = await crearEvento(calCanal, {
+          titulo: cita.titulo,
+          descripcion: `Lead ${lead.registro_interno || ''} · ${lead.telefono}\nInterés: ${lead.interes || '-'}`,
+          inicio: cita.inicio_iso, fin: cita.fin_iso,
+        });
+        await supabase.from('citas').insert({
+          organizacion_id: canal.organizacion_id, lead_id: lead.id,
+          agente_id: canal.agente_id, titulo: cita.titulo,
+          inicio: cita.inicio_iso, fin: cita.fin_iso, gcal_event_id: ev.id,
+        });
+        await supabase.from('leads').update({ estado: 'cita_agendada' }).eq('id', lead.id);
+        dispararEvento(supabase, { evento: 'cita_agendada', lead, canal });
+      }
+    }
+  } catch (e) { console.error('Error agendando cita:', e.message); }
 }
 
 // ------------------------------------------------------------
@@ -155,9 +204,12 @@ app.patch('/api/leads/:id', async (req, res) => {
 // 5. Conexión de redes por el propio cliente (OAuth de Meta)
 // ------------------------------------------------------------
 // El panel abre esta URL en un popup: login oficial de Meta.
-app.get('/conectar/meta', (req, res) => {
+app.get('/conectar/meta', async (req, res) => {
   const { organizacion_id } = req.query;
   if (!organizacion_id) return res.status(400).send('Falta organizacion_id');
+  if (!(await puedeVincular(supabase, organizacion_id))) {
+    return res.status(402).send('Suscripción requerida para conectar canales.');
+  }
   res.redirect(urlConexionMeta(organizacion_id));
 });
 
@@ -182,6 +234,37 @@ app.get('/conectar/meta/callback', async (req, res) => {
   }
 });
 
+// Google Calendar: conectar la agenda del negocio.
+app.get('/conectar/google', (req, res) => {
+  const { organizacion_id } = req.query;
+  if (!organizacion_id) return res.status(400).send('Falta organizacion_id');
+  const crypto = require('crypto');
+  const payload = `${organizacion_id}.${Date.now()}`;
+  const firma = crypto.createHmac('sha256', process.env.OAUTH_STATE_SECRET).update(payload).digest('hex');
+  const state = Buffer.from(`${payload}.${firma}`).toString('base64url');
+  res.redirect(urlConexionGoogle(state));
+});
+
+app.get('/conectar/google/callback', async (req, res) => {
+  try {
+    const organizacionId = verificarState(req.query.state);
+    if (!organizacionId || !req.query.code) return res.status(400).send('Solicitud inválida o vencida');
+    const tokens = await canjearCodeGoogle(req.query.code);
+    if (!tokens.refresh_token) return res.status(400).send('Google no devolvió refresh_token. Revocá el acceso y volvé a conectar.');
+    await supabase.from('canales').upsert({
+      organizacion_id: organizacionId, tipo: 'google_calendar',
+      identificador: `gcal-${organizacionId}`, token_acceso: tokens.refresh_token,
+      metadatos: { calendar_id: 'primary' }, activo: true,
+    }, { onConflict: 'tipo,identificador' });
+    res.send(`<html><body style="font-family:sans-serif;text-align:center;padding:40px">
+      <h2>✅ Google Calendar conectado</h2><p>Las citas que detecte el bot se van a agendar en tu calendario.</p>
+      <script>setTimeout(()=>window.close(),3500)</script></body></html>`);
+  } catch (e) {
+    console.error('Error OAuth Google:', e);
+    res.status(500).send('Error al conectar Google.');
+  }
+});
+
 // WhatsApp Embedded Signup: el popup JS del panel envía el code acá.
 app.post('/conectar/whatsapp', async (req, res) => {
   try {
@@ -192,6 +275,130 @@ app.post('/conectar/whatsapp', async (req, res) => {
   } catch (e) {
     console.error('Error Embedded Signup:', e);
     res.status(500).json({ error: 'No se pudo conectar WhatsApp' });
+  }
+});
+
+// ------------------------------------------------------------
+// 5-pre. Suscripciones (muro de pago con Mercado Pago)
+// ------------------------------------------------------------
+app.post('/api/suscripcion', async (req, res) => {
+  try {
+    const { organizacion_id, plan_id, email } = req.body;
+    if (!organizacion_id || !plan_id || !email) {
+      return res.status(400).json({ error: 'Faltan organizacion_id, plan_id o email' });
+    }
+    const checkout = await crearSuscripcion(supabase, {
+      organizacionId: organizacion_id, planId: plan_id, emailPagador: email,
+    });
+    res.json({ checkout_url: checkout });
+  } catch (e) {
+    console.error('Error creando suscripción:', e);
+    res.status(500).json({ error: 'No se pudo iniciar la suscripción' });
+  }
+});
+
+// Mercado Pago notifica los pagos acá (configurar esta URL en MP)
+app.post('/webhook/mercadopago', async (req, res) => {
+  res.sendStatus(200);
+  (async () => {
+    try {
+      if (req.body.type === 'payment') {
+        const pago = await (await fetch(`https://api.mercadopago.com/v1/payments/${req.body.data.id}`,
+          { headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` } })).json();
+        // ¿es pago de curso o de suscripción?
+        const esCurso = await procesarPagoCurso(supabase, pago);
+        if (!esCurso) await procesarWebhookMP(supabase, req.body);
+      } else {
+        await procesarWebhookMP(supabase, req.body);
+      }
+    } catch (e) { console.error('Error webhook MP:', e); }
+  })();
+});
+
+// ------------------------------------------------------------
+// Academia: comprar curso, tests, progreso, certificado
+// ------------------------------------------------------------
+app.post('/api/academia/comprar', async (req, res) => {
+  try {
+    const { user_id, organizacion_id, curso_id, email } = req.body;
+    if (!user_id || !curso_id || !email) return res.status(400).json({ error: 'Faltan datos' });
+    const url = await comprarCurso(supabase, { userId: user_id, orgId: organizacion_id, cursoId: curso_id, email });
+    res.json({ checkout_url: url });
+  } catch (e) { res.status(500).json({ error: 'No se pudo iniciar la compra' }); }
+});
+
+app.post('/api/academia/video-visto', async (req, res) => {
+  try {
+    const { user_id, leccion_id, curso_id } = req.body;
+    await marcarVideoVisto(supabase, { userId: user_id, leccionId: leccion_id });
+    const r = await chequearCompletado(supabase, { userId: user_id, cursoId: curso_id });
+    res.json(r || {});
+  } catch (e) { res.status(500).json({ error: 'Error' }); }
+});
+
+app.post('/api/academia/test', async (req, res) => {
+  try {
+    const { user_id, leccion_id, curso_id, respuestas } = req.body;
+    const r = await corregirTest(supabase, { userId: user_id, leccionId: leccion_id, respuestas });
+    let cert = null;
+    if (r.aprobado) cert = await chequearCompletado(supabase, { userId: user_id, cursoId: curso_id });
+    res.json({ ...r, ...(cert || {}) });
+  } catch (e) { res.status(500).json({ error: 'Error corrigiendo el test' }); }
+});
+
+app.get('/api/academia/certificado/:inscripcion', async (req, res) => {
+  try {
+    const { data: insc } = await supabase.from('inscripciones')
+      .select('*, curso:cursos(titulo)').eq('id', req.params.inscripcion).maybeSingle();
+    if (!insc || !insc.completado) return res.status(404).send('Certificado no disponible');
+    const { data: perfil } = await supabase.from('perfiles').select('nombre').eq('user_id', insc.user_id).maybeSingle();
+    res.send(certificadoHTML({
+      nombreAlumno: perfil?.nombre || 'Alumno',
+      tituloCurso: insc.curso?.titulo || 'Curso',
+      fecha: new Date(insc.completado_en).toLocaleDateString('es-AR'),
+      codigo: insc.certificado_id,
+    }));
+  } catch (e) { res.status(500).send('Error'); }
+});
+
+// ------------------------------------------------------------
+// 5-bis. Nutrir el conocimiento del bot (RAG): subir archivo o URL
+// ------------------------------------------------------------
+app.post('/api/conocimiento/archivo', subir.single('archivo'), async (req, res) => {
+  try {
+    const { organizacion_id, agente_id, tipo } = req.body;
+    if (!organizacion_id || !tipo || !req.file) {
+      return res.status(400).json({ error: 'Faltan organizacion_id, tipo o archivo' });
+    }
+    const { data: fuente, error } = await supabase.from('fuentes_conocimiento').insert({
+      organizacion_id, agente_id: agente_id || null, tipo,
+      nombre: req.file.originalname,
+    }).select().single();
+    if (error) throw error;
+
+    // Procesar en segundo plano (responder ya)
+    res.json({ fuente_id: fuente.id, estado: 'procesando' });
+    procesarFuente(supabase, fuente, req.file.buffer)
+      .catch((e) => console.error('Error procesando fuente:', e.message));
+  } catch (e) {
+    console.error('Error ingesta archivo:', e);
+    res.status(500).json({ error: 'No se pudo procesar el archivo' });
+  }
+});
+
+app.post('/api/conocimiento/url', async (req, res) => {
+  try {
+    const { organizacion_id, agente_id, url } = req.body;
+    if (!organizacion_id || !url) return res.status(400).json({ error: 'Faltan organizacion_id o url' });
+    const { data: fuente, error } = await supabase.from('fuentes_conocimiento').insert({
+      organizacion_id, agente_id: agente_id || null, tipo: 'url',
+      nombre: url, origen_url: url,
+    }).select().single();
+    if (error) throw error;
+    res.json({ fuente_id: fuente.id, estado: 'procesando' });
+    procesarFuente(supabase, fuente).catch((e) => console.error('Error procesando URL:', e.message));
+  } catch (e) {
+    res.status(500).json({ error: 'No se pudo procesar la URL' });
   }
 });
 
@@ -218,6 +425,7 @@ app.post('/api/publicaciones', async (req, res) => {
 });
 
 iniciarPublicador(supabase);
+iniciarAntu(supabase);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`AntüHene AI Studio escuchando en puerto ${PORT}`));

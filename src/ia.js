@@ -7,6 +7,7 @@
 // ============================================================
 
 const OPENAI_URL = 'https://api.openai.com/v1';
+const { ALMA_ANTUHENE } = require('./alma');
 
 async function openai(ruta, body) {
   const res = await fetch(`${OPENAI_URL}/${ruta}`, {
@@ -35,36 +36,40 @@ consultivo, enfocado en inversión, servicios y financiación.`,
 };
 
 function construirPromptSistema(agente, rubro, contexto) {
-  return `Sos "${agente?.nombre || 'el asistente'}", asistente virtual del negocio.
-Hablás en voseo argentino natural, con calidez y sin sonar robótico.
-${BASE_RUBRO[rubro] || BASE_RUBRO.general}
-OBJETIVO DE ESTA CONVERSACIÓN: ${agente?.objetivo || 'atender y calificar consultas.'}
-${agente?.personalidad ? `PERSONALIDAD Y VOZ: ${agente.personalidad}` : ''}
-REGLA ABSOLUTA ANTI-ALUCINACIÓN: solo podés afirmar datos que figuren en el
-CONTEXTO de abajo. Si algo no figura, decí con naturalidad que lo vas a
-verificar con el equipo y que se lo confirmás en breve. Nunca inventes precios,
-medidas, plazos, normas ni disponibilidad.
+  // El "alma" (voz + neuroventas + FOMO/CTA + anti-invención) es ÚNICA
+  // para todos los bots. Lo único que varía es el CONTENIDO: el objetivo
+  // puntual del bot, el rubro y la documentación real del negocio.
+  return `${ALMA_ANTUHENE}
 
-CONTEXTO (documentación real del negocio):
+# CONTEXTO DE ESTE NEGOCIO
+${BASE_RUBRO[rubro] || BASE_RUBRO.general}
+${agente?.objetivo ? 'OBJETIVO DE ESTA CONVERSACIÓN: ' + agente.objetivo : 'OBJETIVO: atender, orientar y calificar consultas.'}
+
+# CONOCIMIENTO DISPONIBLE (lo único con lo que podés afirmar cosas)
 ${contexto}`;
 }
 
 /** Respuesta del bot con RAG multi-tenant + memoria de conversación. */
 async function responder(supabase, { canal, historial, mensaje }) {
   const embedding = await generarEmbedding(mensaje);
-  const { data: docs } = await supabase.rpc('buscar_documentos', {
-    query_embedding: embedding,
-    filtro_org: canal.organizacion_id,
-    filtro_agente: canal.agente_id,
-    cantidad: 4,
-  });
+  const [{ data: docs }, { data: perfil }] = await Promise.all([
+    supabase.rpc('buscar_documentos', {
+      query_embedding: embedding,
+      filtro_org: canal.organizacion_id,
+      filtro_agente: canal.agente_id,
+      cantidad: 4,
+    }),
+    supabase.from('perfil_negocio').select('*').eq('organizacion_id', canal.organizacion_id).maybeSingle(),
+  ]);
   const contexto = (docs || [])
     .map((d) => `[${d.titulo}]\n${d.contenido}`)
     .join('\n---\n') || '(sin documentos relevantes cargados)';
 
+  const fichaNegocio = perfil ? construirFichaNegocio(perfil) : '';
+
   const rubro = canal.agente?.rubro || 'general';
   const mensajes = [
-    { role: 'system', content: construirPromptSistema(canal.agente, rubro, contexto) },
+    { role: 'system', content: construirPromptSistema(canal.agente, rubro, contexto) + fichaNegocio },
     ...historial.map((m) => ({
       role: m.autor === 'cliente' ? 'user' : 'assistant',
       content: m.contenido,
@@ -79,6 +84,30 @@ async function responder(supabase, { canal, historial, mensaje }) {
     temperature: 0.7,
   });
   return r.choices[0].message.content.trim();
+}
+
+/** Arma el bloque de conocimiento base a partir de la ficha del negocio. */
+function construirFichaNegocio(p) {
+  const servicios = (p.servicios || [])
+    .map((s) => `- ${s.nombre}${s.descripcion ? ': ' + s.descripcion : ''}${s.precio ? ' (' + s.precio + ')' : ''}`)
+    .join('\n');
+  const faq = (p.faq || [])
+    .map((f) => `P: ${f.pregunta}\nR: ${f.respuesta}`)
+    .join('\n');
+  const horario = p.es_online
+    ? 'Atención online, sin horario fijo.'
+    : 'Consultá los horarios de atención cargados antes de ofrecer turnos.';
+
+  return `\n\nFICHA DEL NEGOCIO (usá esto para responder al prospecto; son datos reales del comercio):
+${p.tipo_negocio ? 'Tipo de negocio: ' + p.tipo_negocio : ''}
+${p.descripcion ? 'A qué se dedica: ' + p.descripcion : ''}
+${p.direccion ? 'Dirección: ' + p.direccion : ''}
+${p.telefono ? 'Teléfono: ' + p.telefono : ''}${p.whatsapp ? ' · WhatsApp: ' + p.whatsapp : ''}
+${p.canales_atencion ? 'Canales de atención: ' + p.canales_atencion : ''}
+${p.sitio_web ? 'Sitio web: ' + p.sitio_web : ''}
+${servicios ? 'Servicios / productos:\n' + servicios : ''}
+${faq ? 'Preguntas frecuentes:\n' + faq : ''}
+${horario}`;
 }
 
 /** Extracción conversacional pasiva (segundo plano). */
