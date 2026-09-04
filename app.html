@@ -1,0 +1,1953 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AntüHene AI Studio · Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://player.vimeo.com/api/player.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+:root{
+  --bg:#0E1016; --panel:#161922; --panel2:#1D212D; --line:#2A2F3C;
+  --ink:#EDEFF4; --muted:#8B92A6; --violet:#8B5CF6; --cyan:#22D3EE;
+  --coral:#FB7185; --amber:#FBBF24; --emerald:#34D399;
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);
+  -webkit-font-smoothing:antialiased;line-height:1.5}
+h1,h2,h3,.serif{font-family:'Fraunces',serif}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit}
+::selection{background:var(--violet);color:#fff}
+
+/* ---------- Login ---------- */
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.login-card{width:100%;max-width:400px;background:var(--panel);border:1px solid var(--line);
+  border-radius:20px;padding:40px 32px}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.brand-mark{width:42px;height:42px;border-radius:12px;
+  background:linear-gradient(135deg,var(--violet),var(--cyan));
+  display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;
+  font-weight:700;font-size:22px;color:#fff}
+.brand-name{font-family:'Fraunces',serif;font-size:19px}
+.brand-name span{color:var(--violet)}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:6px;font-weight:500}
+.field input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+  padding:12px 14px;color:var(--ink);font-size:14.5px;transition:border-color .15s}
+.field input:focus{outline:none;border-color:var(--violet)}
+.btn-primary{width:100%;background:linear-gradient(135deg,var(--violet),var(--cyan));
+  color:#fff;font-weight:600;font-size:14.5px;padding:12px;border-radius:10px;transition:opacity .15s}
+.btn-primary:hover{opacity:.92}
+.btn-primary:disabled{opacity:.5;cursor:default}
+.login-alt{text-align:center;margin-top:18px;font-size:13px;color:var(--muted)}
+.login-alt button{color:var(--violet);font-weight:600}
+.login-msg{font-size:13px;margin-top:14px;padding:10px 12px;border-radius:8px;display:none}
+.login-msg.err{display:block;background:rgba(251,113,133,.12);color:var(--coral)}
+.login-msg.ok{display:block;background:rgba(52,211,153,.12);color:var(--emerald)}
+
+/* ---------- App shell ---------- */
+#app{display:none;min-height:100vh}
+.shell{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+.sidebar{background:var(--panel);border-right:1px solid var(--line);padding:20px 14px;
+  display:flex;flex-direction:column;gap:4px}
+.sidebar .brand{padding:0 8px 20px}
+.nav-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;
+  color:var(--muted);font-size:14px;font-weight:500;width:100%;text-align:left;transition:all .15s}
+.nav-item:hover{background:var(--panel2);color:var(--ink)}
+.nav-item.active{background:var(--panel2);color:var(--ink)}
+.nav-item.active .ic{color:var(--violet)}
+.ic{width:18px;height:18px;flex-shrink:0}
+.sidebar-foot{margin-top:auto;padding-top:16px;border-top:1px solid var(--line)}
+.user-chip{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;font-size:13px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--panel2);
+  display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;
+  color:var(--violet);flex-shrink:0;border:1px solid var(--line)}
+.user-chip .meta{overflow:hidden}
+.user-chip .name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-chip .role{color:var(--muted);font-size:11px;text-transform:capitalize}
+.logout{color:var(--muted);font-size:12.5px;margin-top:8px;padding:6px 8px}
+.logout:hover{color:var(--coral)}
+
+.main{overflow-y:auto;max-height:100vh}
+.topbar{position:sticky;top:0;background:rgba(14,16,22,.85);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);padding:18px 28px;z-index:5}
+.topbar h1{font-size:22px;font-weight:600}
+.topbar p{color:var(--muted);font-size:13px;margin-top:2px}
+.view{padding:24px 28px}
+.view{display:none}
+.view.active{display:block}
+
+/* ---------- Kanban ---------- */
+.kanban{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px}
+.col{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  min-width:240px;width:240px;flex-shrink:0;display:flex;flex-direction:column;max-height:calc(100vh - 150px)}
+.col-head{padding:13px 14px;border-bottom:1px solid var(--line);display:flex;
+  align-items:center;justify-content:space-between}
+.col-head .t{font-size:13px;font-weight:600}
+.col-head .n{font-size:11px;color:var(--muted);background:var(--panel2);
+  padding:2px 8px;border-radius:20px}
+.col-body{padding:10px;display:flex;flex-direction:column;gap:9px;overflow-y:auto}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;
+  cursor:grab;transition:border-color .15s}
+.card:hover{border-color:var(--violet)}
+.card.drag{opacity:.4}
+.card .cn{font-weight:600;font-size:13.5px;margin-bottom:3px}
+.card .cd{font-size:12px;color:var(--muted)}
+.card .tags{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.tag{font-size:10.5px;padding:2px 7px;border-radius:20px;font-weight:600}
+.tag.a{background:rgba(52,211,153,.14);color:var(--emerald)}
+.tag.z{background:rgba(139,92,246,.14);color:var(--violet)}
+
+/* ---------- Inbox ---------- */
+.inbox{display:grid;grid-template-columns:290px 1fr;gap:0;background:var(--panel);
+  border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;height:calc(100vh - 150px)}
+.conv-list{border-right:1px solid var(--line);overflow-y:auto}
+.conv{padding:14px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s}
+.conv:hover{background:var(--panel2)}
+.conv.active{background:var(--panel2)}
+.conv .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.conv .who{font-weight:600;font-size:13.5px}
+.conv .ch{font-size:10px;color:var(--muted)}
+.conv .prev{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat{display:flex;flex-direction:column}
+.chat-head{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;
+  justify-content:space-between;align-items:center}
+.chat-head .who{font-weight:600}
+.chat-head .mode{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;
+  background:rgba(139,92,246,.14);color:var(--violet)}
+.chat-body{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:72%;padding:10px 13px;border-radius:12px;font-size:13.5px;line-height:1.45}
+.msg.in{background:var(--panel2);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:3px}
+.msg.out{background:linear-gradient(135deg,var(--violet),var(--cyan));color:#fff;
+  align-self:flex-end;border-bottom-right-radius:3px}
+.msg .by{font-size:10px;opacity:.7;margin-top:4px}
+.chat-input{padding:14px 18px;border-top:1px solid var(--line);display:flex;gap:10px}
+.chat-input input{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+  padding:11px 14px;color:var(--ink);font-size:14px}
+.chat-input input:focus{outline:none;border-color:var(--violet)}
+.chat-input button{background:linear-gradient(135deg,var(--violet),var(--cyan));color:#fff;
+  padding:0 18px;border-radius:10px;font-weight:600}
+
+/* ---------- Cards genéricas / grids ---------- */
+.grid{display:grid;gap:16px}
+.g3{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.tile h3{font-size:15px;margin-bottom:4px}
+.tile p{font-size:13px;color:var(--muted)}
+.tile .big{font-family:'Fraunces',serif;font-size:30px;font-weight:600;margin:6px 0}
+.channel-row{display:flex;align-items:center;justify-content:space-between;
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.channel-row .l{display:flex;align-items:center;gap:12px}
+.channel-row .dot{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center}
+.btn-ghost{border:1px solid var(--line);border-radius:9px;padding:8px 14px;font-size:13px;
+  font-weight:600;color:var(--ink);transition:border-color .15s}
+.btn-ghost:hover{border-color:var(--violet)}
+.btn-sm{background:linear-gradient(135deg,var(--violet),var(--cyan));color:#fff;
+  border-radius:9px;padding:8px 14px;font-size:13px;font-weight:600}
+.pub-item{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+  margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.pub-item .when{font-size:12px;color:var(--muted)}
+.pill{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;background:var(--panel2)}
+.empty{text-align:center;color:var(--muted);padding:50px 20px;font-size:13.5px}
+.demo-banner{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);
+  color:var(--amber);font-size:12.5px;padding:9px 14px;border-radius:9px;margin-bottom:18px}
+.ic[data-lucide]{width:18px;height:18px}
+#menu-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:60}
+@media(max-width:900px){
+  .shell{grid-template-columns:1fr}
+  /* Sidebar: panel lateral que se abre con la hamburguesa, con TODAS las secciones */
+  .sidebar{position:fixed;top:0;left:0;bottom:0;width:250px;z-index:70;
+    transform:translateX(-100%);transition:transform .28s ease;
+    border-right:1px solid var(--line);overflow-y:auto}
+  .sidebar.open{transform:translateX(0)}
+  #menu-overlay.open{display:block}
+  .nav-item{font-size:15px;padding:13px 14px}   /* más grandes, fáciles de tocar */
+  .nav-item .ic{width:20px;height:20px}
+  #menu-toggle{display:flex !important}
+  .main{max-height:none}
+  .topbar{padding:14px 16px}
+  .topbar h1{font-size:18px}
+  .view{padding:16px}
+
+  /* Grids y columnas a una sola en celular */
+  .grid.g3{grid-template-columns:1fr 1fr}
+  .inbox{grid-template-columns:1fr;height:auto}
+  .conv-list{max-height:220px;border-right:none;border-bottom:1px solid var(--line)}
+  .chat{min-height:360px}
+  [style*="grid-template-columns:1fr 300px"],
+  [style*="grid-template-columns:1fr 280px"],
+  [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr !important}
+  .col{min-width:210px;width:210px}
+
+  #ficha-modal > div, #paywall > div{max-width:100% !important;border-radius:14px}
+  #antu-panel{right:12px !important;width:calc(100vw - 24px) !important;max-width:340px}
+}
+@media(max-width:520px){
+  .grid.g3{grid-template-columns:1fr}
+  .topbar h1{font-size:16px}
+  .col{min-width:190px;width:190px}
+  .login-card{padding:28px 20px}
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="login">
+  <div class="login-card">
+    <div class="brand">
+      <div class="brand-mark">A</div>
+      <div class="brand-name">AntüHene <span>AI Studio</span></div>
+    </div>
+    <div class="field">
+      <label for="email">Correo</label>
+      <input id="email" type="email" placeholder="vos@tunegocio.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label for="pass">Contraseña</label>
+      <input id="pass" type="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button id="btn-login" class="btn-primary">Entrar</button>
+    <div id="login-msg" class="login-msg"></div>
+    <div class="login-alt">
+      <span id="alt-text">¿No tenés cuenta?</span>
+      <button id="btn-toggle">Crear una</button>
+    </div>
+    <div class="login-alt" style="margin-top:8px">
+      <button id="btn-demo" style="color:var(--muted)">Ver demo sin cuenta →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="menu-overlay"></div>
+<div id="app">
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">A</div>
+        <div class="brand-name" style="font-size:16px">AntüHene</div>
+      </div>
+      <button class="nav-item active" data-view="resumen"><i data-lucide="layout-dashboard" class="ic"></i>Resumen</button>
+      <button class="nav-item" data-view="inbox"><i data-lucide="message-circle" class="ic"></i>Conversaciones</button>
+      <button class="nav-item" data-view="leads"><i data-lucide="users" class="ic"></i>Clientes</button>
+      <button class="nav-item" data-view="metricas"><i data-lucide="trending-up" class="ic"></i>Decisiones</button>
+      <button class="nav-item" data-view="agenda"><i data-lucide="calendar-days" class="ic"></i>Agenda</button>
+      <button class="nav-item" data-view="publicaciones"><i data-lucide="calendar" class="ic"></i>Publicaciones</button>
+      <button class="nav-item" data-view="bots"><i data-lucide="bot" class="ic"></i>Mis bots</button>
+      <button class="nav-item" data-view="canales"><i data-lucide="share-2" class="ic"></i>Conectar redes</button>
+      <button class="nav-item" data-view="negocio"><i data-lucide="store" class="ic"></i>Mi negocio</button>
+      <button class="nav-item" data-view="academia"><i data-lucide="graduation-cap" class="ic"></i>Academia</button>
+      <button class="nav-item" data-view="config"><i data-lucide="settings" class="ic"></i>Configurar bot</button>
+      <div class="sidebar-foot">
+        <div class="user-chip">
+          <div class="avatar" id="u-avatar">A</div>
+          <div class="meta">
+            <div class="name" id="u-name">Cargando…</div>
+            <div class="role" id="u-role">—</div>
+          </div>
+        </div>
+        <button class="logout" id="btn-logout">Cerrar sesión</button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar" style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;align-items:center;gap:12px">
+          <button id="menu-toggle" style="display:none;width:40px;height:40px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);align-items:center;justify-content:center">
+            <i data-lucide="menu" style="width:20px;height:20px"></i>
+          </button>
+          <div>
+            <h1 id="view-title">Resumen</h1>
+            <p id="view-sub">Un vistazo a tu negocio hoy</p>
+          </div>
+        </div>
+        <div style="position:relative">
+          <button id="bell" style="position:relative;width:42px;height:42px;border-radius:12px;background:var(--panel);border:1px solid var(--line);display:flex;align-items:center;justify-content:center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span id="bell-count" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--coral);color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px"></span>
+          </button>
+          <div id="bell-panel" style="display:none;position:absolute;right:0;top:52px;width:320px;background:var(--panel);border:1px solid var(--line);border-radius:14px;z-index:20;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.5)">
+            <div style="padding:14px 16px;border-bottom:1px solid var(--line);font-weight:600;font-size:14px">Leads calificados sin contactar</div>
+            <div id="bell-list" style="max-height:340px;overflow-y:auto"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="demo-banner" class="view-banner" style="display:none;padding:24px 28px 0">
+        <div class="demo-banner">Estás viendo datos de ejemplo. Cuando conectes tus redes y entren consultas reales, aparecen acá.</div>
+      </div>
+
+      <!-- RESUMEN -->
+      <section class="view active" data-view="resumen">
+        <div class="grid g3">
+          <div class="tile"><p>Conversaciones hoy</p><div class="big" id="m-conv">—</div><p>El bot respondió al instante</p></div>
+          <div class="tile"><p>Leads nuevos</p><div class="big" id="m-leads">—</div><p>Capturados esta semana</p></div>
+          <div class="tile"><p>Tier A calificados</p><div class="big" id="m-tier">—</div><p>Listos para contactar</p></div>
+          <div class="tile"><p>Publicaciones programadas</p><div class="big" id="m-pub">—</div><p>En cola para salir</p></div>
+        </div>
+      </section>
+
+      <!-- INBOX -->
+      <section class="view" data-view="inbox">
+        <div class="inbox">
+          <div class="conv-list" id="conv-list"></div>
+          <div class="chat">
+            <div class="chat-head">
+              <div class="who" id="chat-who">Elegí una conversación</div>
+              <div class="mode" id="chat-mode" style="display:none">IA activa</div>
+            </div>
+            <div class="chat-body" id="chat-body">
+              <div class="empty">Elegí una conversación de la lista para verla.</div>
+            </div>
+            <div class="chat-input" id="chat-input" style="display:none">
+              <input id="chat-text" placeholder="Escribí una respuesta… (queda registrada con tu nombre)">
+              <button id="chat-send">Enviar</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LEADS / KANBAN -->
+      <section class="view" data-view="leads">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <p style="color:var(--muted);font-size:13.5px">Cada cliente lleva su número de registro interno y su responsable asignado.</p>
+          <div style="display:flex;gap:8px">
+            <button class="btn-ghost" id="btn-export">Descargar base (CSV)</button>
+            <button class="btn-ghost" id="btn-import" data-owner>Importar base (CSV)</button>
+            <input type="file" id="file-import" accept=".csv" style="display:none">
+          </div>
+        </div>
+        <div class="kanban" id="kanban"></div>
+      </section>
+
+      <!-- MÉTRICAS / DECISIONES -->
+      <section class="view" data-view="metricas">
+        <div id="metricas-aviso"></div>
+        <div class="grid g3" style="margin-bottom:18px">
+          <div class="tile"><p>Inversión en publicidad</p><div class="big" id="k-inv">—</div><p id="k-inv-sub">Total cargado</p></div>
+          <div class="tile"><p>Costo por cliente (CAC)</p><div class="big" id="k-cac">—</div><p>Cuánto cuesta ganar un cliente</p></div>
+          <div class="tile"><p>Retorno (ROI)</p><div class="big" id="k-roi">—</div><p>Ganancia por peso invertido</p></div>
+          <div class="tile"><p>Tasa de conversión</p><div class="big" id="k-conv">—</div><p>De lead a cliente ganado</p></div>
+          <div class="tile"><p>Ingresos de ganados</p><div class="big" id="k-ing">—</div><p>Suma del valor de casos ganados</p></div>
+          <div class="tile"><p>Clientes ganados</p><div class="big" id="k-gan">—</div><p>En total</p></div>
+        </div>
+        <div class="tile" style="margin-bottom:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h3 style="font-size:15px">Registrar gasto de publicidad</h3>
+            <span style="font-size:12px;color:var(--muted)">Hasta conectar las APIs de Ads, se carga a mano</span>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+            <div class="field" style="margin:0"><label>Plataforma</label>
+              <select id="g-plat" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)">
+                <option value="meta">Meta (IG/FB)</option><option value="google">Google</option>
+                <option value="tiktok">TikTok</option><option value="otro">Otro</option>
+              </select></div>
+            <div class="field" style="margin:0"><label>Monto (ARS)</label>
+              <input id="g-monto" type="number" placeholder="50000" style="width:130px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)"></div>
+            <div class="field" style="margin:0"><label>Desde</label>
+              <input id="g-desde" type="date" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--ink)"></div>
+            <div class="field" style="margin:0"><label>Hasta</label>
+              <input id="g-hasta" type="date" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--ink)"></div>
+            <button class="btn-sm" id="btn-gasto" style="height:42px">Registrar</button>
+          </div>
+        </div>
+        <div class="demo-banner" style="color:var(--muted);background:var(--panel);border-color:var(--line)">
+          El CAC y el ROI se calculan solo con números reales: el gasto que cargás acá y el <strong>valor de caso</strong> que asignás a cada cliente ganado en su ficha. Si falta alguno, la métrica queda en “—” en vez de mostrar un número inventado.
+        </div>
+      </section>
+
+      <!-- AGENDA -->
+      <section class="view" data-view="agenda">
+        <div id="agenda-sin-conectar" class="tile" style="text-align:center;padding:40px">
+          <h3 style="font-size:16px;margin-bottom:8px">Conectá tu Google Calendar</h3>
+          <p style="font-size:13.5px;color:var(--muted);margin-bottom:18px;max-width:440px;margin-left:auto;margin-right:auto">Cuando un cliente confirma día y horario con el bot, la cita se agenda sola acá. Se abre el ingreso oficial de Google; no guardamos tu contraseña.</p>
+          <button class="btn-sm" id="btn-conectar-google">Conectar Google Calendar</button>
+        </div>
+        <div id="agenda-conectada" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 300px;gap:16px">
+            <div class="tile" style="padding:0;overflow:hidden">
+              <iframe id="cal-frame" style="width:100%;height:560px;border:0" title="Calendario"></iframe>
+            </div>
+            <div class="tile">
+              <h3 style="font-size:15px;margin-bottom:12px">Próximas citas</h3>
+              <div id="citas-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PUBLICACIONES -->
+      <section class="view" data-view="publicaciones">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <p style="color:var(--muted);font-size:13.5px">Contenido programado para tus redes</p>
+          <button class="btn-sm" id="btn-nueva-pub">Programar publicación</button>
+        </div>
+        <div id="pub-list"></div>
+      </section>
+
+      <!-- BOTS -->
+      <section class="view" data-view="bots">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <p style="color:var(--muted);font-size:13.5px">Creá los bots que necesites y enlazá cada uno a un canal (ej: “Bot Jubilaciones” → WhatsApp Jubilaciones).</p>
+          <button class="btn-sm" id="btn-nuevo-bot">Crear bot</button>
+        </div>
+        <div id="bots-list" class="grid g3"></div>
+      </section>
+
+      <!-- CANALES -->
+      <section class="view" data-view="canales">
+        <p style="color:var(--muted);font-size:13.5px;margin-bottom:16px">Conectá las cuentas de tu negocio. Se abre el ingreso oficial de cada red; nunca te pedimos tu contraseña.</p>
+        <div id="channel-list"></div>
+
+        <!-- Widget para sitio web -->
+        <div class="tile" style="margin-top:22px">
+          <h3 style="font-size:15px;margin-bottom:4px">💬 Bot para tu sitio web</h3>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Pegá este código en tu página web (antes de <code style="background:var(--panel2);padding:1px 5px;border-radius:4px">&lt;/body&gt;</code>) y tu bot va a responder, asesorar y captar contactos también desde ahí, con la misma voz y conocimiento.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+            <div class="field" style="margin:0"><label>Título del chat</label>
+              <input id="w-titulo" value="Asistente" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--ink)"></div>
+            <div class="field" style="margin:0"><label>Color</label>
+              <input id="w-color" type="color" value="#8B5CF6" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:6px;color:var(--ink);height:42px;width:60px"></div>
+          </div>
+          <div style="position:relative">
+            <pre id="w-code" style="background:#0B0D12;border:1px solid var(--line);border-radius:10px;padding:16px;font-size:12px;color:#B7C0D8;overflow-x:auto;white-space:pre-wrap;word-break:break-all"></pre>
+            <button class="btn-sm" id="w-copiar" style="position:absolute;top:10px;right:10px;font-size:12px;padding:6px 12px">Copiar</button>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin-top:8px">El bot en la web usa tu misma configuración (alma, conocimiento, ficha del negocio) y guarda los contactos que capta en tu CRM.</p>
+        </div>
+      </section>
+
+      <!-- MI NEGOCIO -->
+      <section class="view" data-view="negocio">
+        <p style="color:var(--muted);font-size:13.5px;margin-bottom:16px">Estos datos alimentan a tu bot: cuando un prospecto pregunta dirección, servicios, horarios o precios, responde con esta información.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="tile">
+            <h3 style="font-size:15px;margin-bottom:14px">Datos del negocio</h3>
+            <div class="field"><label>Tipo de negocio</label><input id="n-tipo" placeholder="Estudio jurídico" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)"></div>
+            <div class="field"><label>A qué se dedica</label><textarea id="n-desc" rows="2" placeholder="Asesoramiento previsional y sucesiones" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink);resize:vertical"></textarea></div>
+            <div class="field"><label>Dirección</label><input id="n-dir" placeholder="Av. Argentina 123, Neuquén" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)"><button class="btn-ghost" id="btn-buscar-dir" style="margin-top:8px;font-size:12px">Ubicar en el mapa</button></div>
+            <div style="display:flex;gap:10px">
+              <div class="field" style="flex:1"><label>Teléfono</label><input id="n-tel" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)"></div>
+              <div class="field" style="flex:1"><label>WhatsApp</label><input id="n-wa" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)"></div>
+            </div>
+            <div class="field"><label>Canales de atención</label><input id="n-canales" placeholder="WhatsApp, presencial, teléfono" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)"></div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);margin-top:6px">
+              <input type="checkbox" id="n-online"> Es un negocio online (atiende sin horario fijo)
+            </label>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="tile" style="padding:0;overflow:hidden">
+              <iframe id="map-frame" style="width:100%;height:230px;border:0" title="Mapa del negocio"></iframe>
+            </div>
+            <div class="tile">
+              <h3 style="font-size:15px;margin-bottom:12px">Horarios de atención</h3>
+              <p style="font-size:12px;color:var(--muted);margin-bottom:12px">El bot solo ofrece turnos dentro de estas franjas.</p>
+              <div id="horarios-list"></div>
+              <div style="display:flex;gap:6px;align-items:flex-end;margin-top:12px;flex-wrap:wrap">
+                <select id="h-dia" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px;color:var(--ink);font-size:12.5px">
+                  <option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option>
+                  <option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option><option value="0">Domingo</option>
+                </select>
+                <input id="h-desde" type="time" value="09:00" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px;color:var(--ink)">
+                <input id="h-hasta" type="time" value="18:00" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px;color:var(--ink)">
+                <button class="btn-sm" id="btn-add-horario" style="font-size:12.5px">Agregar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tile" style="margin-top:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h3 style="font-size:15px">Servicios / productos</h3>
+            <button class="btn-ghost" id="btn-add-servicio" style="font-size:12.5px">+ Agregar</button>
+          </div>
+          <div id="servicios-list"></div>
+        </div>
+
+        <div class="tile" style="margin-top:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h3 style="font-size:15px">Preguntas frecuentes</h3>
+            <button class="btn-ghost" id="btn-add-faq" style="font-size:12.5px">+ Agregar</button>
+          </div>
+          <div id="faq-list"></div>
+        </div>
+
+        <div style="margin-top:18px;text-align:right">
+          <button class="btn-sm" id="btn-guardar-negocio" style="padding:12px 28px">Guardar ficha del negocio</button>
+        </div>
+      </section>
+
+      <!-- ACADEMIA -->
+      <section class="view" data-view="academia">
+        <div class="demo-banner" style="color:var(--muted);background:var(--panel);border-color:var(--line);margin-bottom:18px">
+          Capacitaciones de marketing, ventas y negocios. Se compran aparte (no vienen en tu plan). Al terminar, recibís un certificado firmado que podés compartir en LinkedIn.
+        </div>
+        <div id="cursos-list" class="grid g3"></div>
+        <!-- Reproductor de curso (oculto hasta abrir uno) -->
+        <div id="curso-player" style="display:none">
+          <button class="btn-ghost" id="volver-cursos" style="font-size:12.5px;margin-bottom:14px">← Volver a los cursos</button>
+          <div style="display:grid;grid-template-columns:1fr 280px;gap:16px">
+            <div class="tile" style="padding:0;overflow:hidden">
+              <div style="aspect-ratio:16/9;background:#000;position:relative">
+                <div id="vimeo-player" style="width:100%;height:100%"></div>
+                <!-- Capa que bloquea el menú contextual sobre el video -->
+                <div id="video-guard" style="position:absolute;inset:0;z-index:2;pointer-events:none"></div>
+              </div>
+              <!-- Controles propios: play, velocidad. SIN barra de adelanto. -->
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel2)">
+                <button id="vp-play" class="btn-ghost" style="font-size:13px;padding:6px 14px">▶ Play</button>
+                <div id="vp-progress" style="flex:1;height:5px;background:var(--line);border-radius:3px;overflow:hidden">
+                  <div id="vp-bar" style="height:100%;width:0;background:linear-gradient(90deg,var(--violet),var(--cyan))"></div>
+                </div>
+                <span id="vp-time" style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums">0:00</span>
+                <select id="vp-speed" style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:5px 8px;color:var(--ink);font-size:12px">
+                  <option value="1">1x</option><option value="1.25">1.25x</option>
+                  <option value="1.5">1.5x</option><option value="2">2x</option>
+                </select>
+              </div>
+              <div style="padding:18px">
+                <h3 id="leccion-titulo" style="font-size:16px;margin-bottom:12px"></h3>
+                <div id="test-box"></div>
+              </div>
+            </div>
+            <div class="tile">
+              <h3 style="font-size:14px;margin-bottom:12px" id="curso-titulo-side"></h3>
+              <div id="lecciones-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONFIGURAR BOT -->
+      <section class="view" data-view="config">
+        <!-- Plantillas modelo -->
+        <div class="tile" style="margin-bottom:18px">
+          <h3 style="font-size:15px;margin-bottom:4px">Plantillas para completar</h3>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Descargá el modelo, completalo con tus datos y volvé a subirlo. Traen un ejemplo adentro para que veas cómo llenarlos.</p>
+          <div class="grid g3" id="plantillas-list">
+            <div class="tile" style="background:var(--panel2)">
+              <div style="font-size:22px;margin-bottom:8px">📄</div>
+              <h3 style="font-size:14px">Ficha del negocio</h3>
+              <p style="font-size:12px;color:var(--muted);margin:4px 0 12px">Datos, contacto, horarios y qué ofrecés (Word)</p>
+              <a class="btn-ghost" style="font-size:12.5px;display:inline-block" href="plantillas/1-Ficha-del-negocio.docx" download>Descargar</a>
+            </div>
+            <div class="tile" style="background:var(--panel2)">
+              <div style="font-size:22px;margin-bottom:8px">❓</div>
+              <h3 style="font-size:14px">Preguntas frecuentes</h3>
+              <p style="font-size:12px;color:var(--muted);margin:4px 0 12px">Las consultas típicas y sus respuestas (Word)</p>
+              <a class="btn-ghost" style="font-size:12.5px;display:inline-block" href="plantillas/2-Preguntas-frecuentes.docx" download>Descargar</a>
+            </div>
+            <div class="tile" style="background:var(--panel2)">
+              <div style="font-size:22px;margin-bottom:8px">📋</div>
+              <h3 style="font-size:14px">Catálogo de servicios</h3>
+              <p style="font-size:12px;color:var(--muted);margin:4px 0 12px">Tus servicios/productos y precios (Excel)</p>
+              <a class="btn-ghost" style="font-size:12.5px;display:inline-block" href="plantillas/3-Catalogo-de-servicios.xlsx" download>Descargar</a>
+            </div>
+            <div class="tile" style="background:var(--panel2)">
+              <div style="font-size:22px;margin-bottom:8px">👥</div>
+              <h3 style="font-size:14px">Base de clientes</h3>
+              <p style="font-size:12px;color:var(--muted);margin:4px 0 12px">Tu cartera actual para migrar (Excel)</p>
+              <a class="btn-ghost" style="font-size:12.5px;display:inline-block" href="plantillas/4-Base-de-clientes.xlsx" download>Descargar</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Conocimiento del bot -->
+        <div class="tile" style="margin-bottom:18px">
+          <h3 style="font-size:15px;margin-bottom:4px">Memoria del bot (conocimiento)</h3>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Subí PDF, Word, Excel o una URL. El bot aprende de estos documentos y responde solo con esta información: nunca inventa datos.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+            <button class="btn-sm" id="btn-subir-doc">Subir archivo</button>
+            <input type="file" id="file-doc" accept=".pdf,.doc,.docx,.xls,.xlsx" style="display:none">
+            <button class="btn-ghost" id="btn-agregar-url">Agregar una URL</button>
+          </div>
+          <div id="fuentes-list"></div>
+        </div>
+
+        <!-- Campos personalizados de la ficha -->
+        <div class="tile" style="margin-bottom:18px">
+          <h3 style="font-size:15px;margin-bottom:4px">Campos propios de tu ficha de cliente</h3>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Agregá los datos que tu negocio necesita seguir (ej: N° de expediente, m² buscados). Solo los ves vos.</p>
+          <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px">
+            <div class="field" style="margin:0"><label>Nombre del campo</label>
+              <input id="cp-etiqueta" placeholder="N° de expediente" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)"></div>
+            <div class="field" style="margin:0"><label>Tipo</label>
+              <select id="cp-tipo" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)">
+                <option value="texto">Texto</option><option value="numero">Número</option>
+                <option value="fecha">Fecha</option><option value="booleano">Sí/No</option>
+              </select></div>
+            <button class="btn-sm" id="btn-add-campo" style="height:42px">Agregar campo</button>
+          </div>
+          <div id="campos-list"></div>
+        </div>
+
+        <!-- Reglas de notificación -->
+        <div class="tile">
+          <h3 style="font-size:15px;margin-bottom:4px">Avisos automáticos por WhatsApp</h3>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Elegí a quién avisar cuando pasa algo en tu negocio. Los avisos respetan horarios y tiempos humanos para cuidar el número.</p>
+          <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px">
+            <div class="field" style="margin:0"><label>Cuando…</label>
+              <select id="rn-evento" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)">
+                <option value="lead_nuevo">Entra un lead nuevo</option>
+                <option value="tier_a">Se califica un Tier A</option>
+                <option value="cita_agendada">Se agenda una cita</option>
+                <option value="ganado">Se gana un cliente</option>
+              </select></div>
+            <div class="field" style="margin:0"><label>Avisar a (teléfono)</label>
+              <input id="rn-contacto" placeholder="549299..." style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)"></div>
+            <button class="btn-sm" id="btn-add-regla" style="height:42px">Crear aviso</button>
+          </div>
+          <div id="reglas-list"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- FICHA DEL CLIENTE (popup grande con legajo) -->
+<div id="ficha-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:95;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:20px;max-width:820px;width:100%;max-height:90vh;overflow-y:auto">
+    <div style="padding:22px 26px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;background:var(--panel);z-index:2">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <h2 id="f-nombre" style="font-size:22px">—</h2>
+          <span id="f-registro" style="font-size:12px;color:var(--muted);font-family:'Fraunces',serif"></span>
+        </div>
+        <div id="f-tags" style="display:flex;gap:6px;margin-top:6px"></div>
+      </div>
+      <button id="ficha-close" style="color:var(--muted);font-size:20px">✕</button>
+    </div>
+
+    <div style="padding:24px 26px;display:grid;grid-template-columns:1fr 1fr;gap:14px 24px">
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">DNI</div><div id="f-dni" style="font-size:14px">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">Teléfono</div><div id="f-tel" style="font-size:14px">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">Email</div><div id="f-email" style="font-size:14px">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">Zona</div><div id="f-zona" style="font-size:14px">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">Responsable</div><div id="f-secretario" style="font-size:14px">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">Ingreso</div><div id="f-ingreso" style="font-size:14px">—</div></div>
+    </div>
+
+    <!-- Historial de gestiones -->
+    <div style="padding:0 26px 26px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 14px">
+        <h3 style="font-size:15px">Historial de gestiones</h3>
+        <button class="btn-sm" id="f-add-gestion" style="font-size:12.5px">+ Nueva gestión</button>
+      </div>
+      <div id="f-gestiones" style="position:relative;padding-left:20px;border-left:2px solid var(--line)"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ANTÜ: burbuja flotante de la IA analista -->
+<div id="antu-bubble" style="display:none;position:fixed;bottom:24px;right:24px;z-index:90;cursor:pointer">
+  <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--cyan));display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(139,92,246,.4);position:relative">
+    <span style="font-family:'Fraunces',serif;font-weight:700;font-size:24px;color:#fff">A</span>
+    <span id="antu-badge" style="display:none;position:absolute;top:-2px;right:-2px;background:var(--coral);color:#fff;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg)">0</span>
+  </div>
+</div>
+
+<!-- ANTÜ: panel de insights -->
+<div id="antu-panel" style="display:none;position:fixed;bottom:92px;right:24px;width:340px;max-height:70vh;background:var(--panel);border:1px solid var(--line);border-radius:18px;z-index:91;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5)">
+  <div style="padding:16px 18px;background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(34,211,238,.08));border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px">
+    <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--cyan));display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:700;font-size:19px;color:#fff">A</div>
+    <div>
+      <div style="font-weight:600;font-size:14px">Antü</div>
+      <div style="font-size:11px;color:var(--muted)">La IA que cuida tu negocio</div>
+    </div>
+    <button id="antu-close" style="margin-left:auto;color:var(--muted);font-size:18px">✕</button>
+  </div>
+  <div id="antu-list" style="overflow-y:auto;max-height:calc(70vh - 70px)"></div>
+</div>
+
+<!-- MURO DE PAGO -->
+<div id="paywall" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:20px;max-width:760px;width:100%;padding:32px;max-height:90vh;overflow-y:auto">
+    <h2 style="font-size:22px;margin-bottom:6px">Activá tu cuenta para vincular canales</h2>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:24px">Podés recorrer todo el panel, pero para conectar tus redes y activar tus bots necesitás una suscripción. Se debita automáticamente cada mes y la cancelás cuando quieras.</p>
+    <div class="grid g3" id="planes-list"></div>
+    <button id="paywall-close" style="margin-top:20px;color:var(--muted);font-size:13px">Seguir explorando el panel</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURACIÓN — reemplazá con los datos de tu proyecto Supabase
+   (Settings → API en tu panel de Supabase). La clave anon es
+   pública y segura de exponer: el aislamiento lo garantiza RLS.
+   ============================================================ */
+const SUPABASE_URL = 'https://TU-PROYECTO.supabase.co';
+const SUPABASE_ANON_KEY = 'TU-CLAVE-ANON';
+const BACKEND_URL = 'https://TU-BACKEND.railway.app'; // para conectar redes
+
+let sb = null;
+let demoMode = false;
+try {
+  if (!SUPABASE_URL.includes('TU-PROYECTO')) {
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch(e){ console.warn('Supabase no configurado, solo demo'); }
+
+/* ---------- Datos de ejemplo (demo / estado vacío) ---------- */
+const DEMO = {
+  perfil: { nombre:'María', rol:'dueno' },
+  suscripcion: 'trial',   // 'inactiva' | 'trial' | 'activa'
+  insights:[
+    {tipo:'alerta', zona:'leads', prioridad:3, titulo:'Tenés 3 leads calificados sin contactar',
+     mensaje:'Soy Antü. Vi que hay 3 leads Tier A esperando. Son los más propensos a convertir: contactalos hoy mientras el interés está caliente.', accion_texto:'Ver leads', accion_zona:'leads'},
+    {tipo:'felicitacion', zona:'resumen', prioridad:2, titulo:'¡Gran semana! 2 clientes ganados',
+     mensaje:'Cerraste 2 clientes esta semana, ¡vas muy bien! Si querés sostener la racha, revisá que no queden leads Tier A sin seguimiento.'},
+    {tipo:'sugerencia', zona:'publicaciones', prioridad:1, titulo:'Poco contenido programado',
+     mensaje:'Te sugiero programar 2 o 3 posts esta semana para mantener tu negocio presente en las redes.', accion_texto:'Programar contenido', accion_zona:'publicaciones'},
+  ],
+  cursos:[
+    {id:'c1', titulo:'Marketing digital para emprendedores', categoria:'marketing', precio_ars:25000, nivel:'inicial',
+     descripcion:'Aprendé a atraer clientes con redes, contenido y publicidad, desde cero.',
+     lecciones:[
+       {titulo:'Fundamentos del marketing digital', vimeo:'76979871', test:[
+         {pregunta:'¿Cuál es el primer paso de una estrategia digital?', opciones:['Comprar publicidad','Definir tu público objetivo','Abrir todas las redes'], correcta:1}]},
+       {titulo:'Cómo crear contenido que vende', vimeo:'76979871', test:[
+         {pregunta:'Un buen contenido comercial debe...', opciones:['Hablar solo de vos','Resolver un problema del cliente','Ser lo más largo posible'], correcta:1}]},
+     ]},
+    {id:'c2', titulo:'Neuroventas: vender con la mente del cliente', categoria:'ventas', precio_ars:30000, nivel:'intermedio',
+     descripcion:'Técnicas de persuasión basadas en cómo decide el cerebro humano.',
+     lecciones:[
+       {titulo:'Cómo decide el cerebro', vimeo:'76979871', test:[
+         {pregunta:'La mayoría de las decisiones de compra son...', opciones:['100% racionales','Fuertemente emocionales','Siempre por precio'], correcta:1}]},
+     ]},
+    {id:'c3', titulo:'Gestión de un negocio rentable', categoria:'negocios', precio_ars:28000, nivel:'inicial',
+     descripcion:'Números claros, costos, precios y decisiones para que tu negocio gane más.',
+     lecciones:[
+       {titulo:'Entender tus números', vimeo:'76979871', test:[
+         {pregunta:'El precio de venta nunca debería ser menor que...', opciones:['El de la competencia','Tu costo total','El del año pasado'], correcta:1}]},
+     ]},
+  ],
+  resumen: { conv:12, leads:8, tier:3, pub:5 },
+  bots:[
+    {nombre:'Bot Jubilaciones', objetivo:'Calificar y agendar revisión sin cargo', rubro:'juridico', canal:'WhatsApp Jubilaciones'},
+    {nombre:'Bot Sucesiones', objetivo:'Derivar a la Dra. Godoy', rubro:'juridico', canal:'Instagram'},
+    {nombre:'Bot ART', objetivo:'Consulta inicial de accidentes laborales', rubro:'juridico', canal:null},
+  ],
+  planes:[
+    {id:'emprendedor', nombre:'Emprendedor', precio_ars:35000, max_bots:1, max_canales:1, descripcion:'Para el que arranca'},
+    {id:'profesional', nombre:'Profesional', precio_ars:70000, max_bots:3, max_canales:5, descripcion:'Para equipos'},
+    {id:'negocio', nombre:'Negocio', precio_ars:120000, max_bots:10, max_canales:20, descripcion:'Alto volumen'},
+  ],
+  leads:[
+    {id:'l1', registro_interno:'AH-2026-0001', nombre:'Carlos Ruiz', dni:'27.345.678', telefono:'5492991112233', email:'carlos@mail.com', interes:'Jubilación petrolera', zona:'Neuquén', estado:'filtrado_tier_a', tier:'A', convenio:'petroleros', secretario:'Laura', fecha_ingreso:'2026-08-12', birth_date:'1975-03-14',
+     gestiones:[
+       {fecha:'2024-05-10', motivo:'Accidente laboral', descripcion:'Reclamo ART por accidente en yacimiento. Cerrado con acuerdo.', estado:'cerrada', responsable:'Diego'},
+       {fecha:'2026-08-12', motivo:'Jubilación', descripcion:'Consulta por jubilación anticipada régimen petrolero.', estado:'en_proceso', responsable:'Laura'},
+     ]},
+    {id:'l2', registro_interno:'AH-2026-0002', nombre:'Ana López', dni:'30.111.222', telefono:'5492994445566', interes:'Sucesión', zona:'Cipolletti', estado:'nuevo_lead', secretario:'Laura', fecha_ingreso:'2026-08-28',
+     gestiones:[{fecha:'2026-08-28', motivo:'Sucesión', descripcion:'Sucesión del padre. Reúne documentación.', estado:'abierta', responsable:'Laura'}]},
+    {id:'l3', registro_interno:'AH-2026-0003', nombre:'Jorge Díaz', dni:'25.987.654', interes:'ART', zona:'Añelo', estado:'cita_agendada', convenio:'camioneros', secretario:'Diego', fecha_ingreso:'2026-08-20', gestiones:[]},
+    {id:'l4', registro_interno:'AH-2026-0004', nombre:'Lucía Sosa', dni:'32.444.555', interes:'Jubilación docente', zona:'Neuquén', estado:'en_tramite', secretario:'Diego', fecha_ingreso:'2026-07-30', valor_caso:180000, gestiones:[]},
+    {id:'l5', registro_interno:'AH-2026-0005', nombre:'Pedro Gómez', dni:'28.777.888', interes:'Consulta general', zona:'Plottier', estado:'nuevo_lead', secretario:'Laura', fecha_ingreso:'2026-09-01', gestiones:[]},
+    {id:'l6', registro_interno:'AH-2026-0006', nombre:'Sofía Vera', dni:'29.333.444', interes:'Sucesión', zona:'Neuquén', estado:'ganado', secretario:'Diego', fecha_ingreso:'2026-06-15', valor_caso:250000, gestiones:[]},
+    {id:'l7', registro_interno:'AH-2026-0007', nombre:'Raúl Ibáñez', dni:'24.222.111', interes:'Jubilación', zona:'Neuquén', estado:'ganado', secretario:'Laura', fecha_ingreso:'2026-06-02', valor_caso:200000, convenio:'petroleros', gestiones:[]},
+  ],
+  metricas:{ inversion_ads:120000, ingresos:450000, ganados:2, cac:60000, roi:2.75, tasa_conversion:28.6 },
+  convs:[
+    {who:'Carlos Ruiz', ch:'whatsapp', prev:'Perfecto, ¿el jueves a las 10 te queda bien?', modo:'bot',
+     msgs:[{d:'in',t:'Hola, quería consultar por mi jubilación, soy petrolero'},
+           {d:'out',t:'¡Hola Carlos! Con gusto te ayudo. ¿Me contás cuántos años de aportes tenés aproximadamente?',by:'IA'},
+           {d:'in',t:'Unos 28 años'},
+           {d:'out',t:'Buenísimo. Con ese régimen y esos aportes conviene revisar tu historia laboral sin cargo. ¿El jueves a las 10 te queda bien?',by:'IA'}]},
+    {who:'Ana López', ch:'instagram', prev:'Gracias, quedo atenta', modo:'humano',
+     msgs:[{d:'in',t:'Hola, vi que hacen sucesiones'},
+           {d:'out',t:'Hola Ana, así es. ¿Es una sucesión de un familiar directo?',by:'IA'},
+           {d:'in',t:'Sí, de mi papá'},
+           {d:'out',t:'Te va a atender la Dra. Godoy. Le paso tu contacto y te escribe hoy.',by:'María'}]},
+    {who:'Jorge Díaz', ch:'whatsapp', prev:'Listo, ahí agendo', modo:'bot',
+     msgs:[{d:'in',t:'Necesito asesoramiento por un tema de ART'},
+           {d:'out',t:'Hola Jorge, te ayudo con eso. ¿El accidente fue laboral y estás en relación de dependencia?',by:'IA'}]},
+  ],
+  pubs:[
+    {texto:'Horarios de atención de esta semana', formato:'story', canal:'instagram', when:'Lun 09:00', rec:'semanal'},
+    {texto:'3 señales de que te conviene revisar tu jubilación', formato:'feed', canal:'instagram', when:'Mié 18:00'},
+    {texto:'Testimonio de cliente – sucesión resuelta', formato:'reel', canal:'facebook', when:'Vie 12:00'},
+    {texto:'Tip legal del viernes', formato:'feed', canal:'facebook', when:'Vie 19:00'},
+    {texto:'Recordatorio: consulta inicial sin cargo', formato:'story', canal:'instagram', when:'Sáb 10:00'},
+  ],
+  canales:[
+    {tipo:'whatsapp', nombre:'+54 299 673-2977', activo:true},
+    {tipo:'instagram', nombre:'@portanko.abogados', activo:true},
+    {tipo:'facebook', nombre:'Portanko Abogados', activo:false},
+  ],
+  fuentes:[
+    {nombre:'Requisitos jubilación petrolera.pdf', tipo:'pdf', estado:'listo', fragmentos:14},
+    {nombre:'Aranceles y honorarios 2026.xlsx', tipo:'excel', estado:'listo', fragmentos:6},
+    {nombre:'https://portanko.com/preguntas-frecuentes', tipo:'url', estado:'procesando', fragmentos:0},
+  ],
+  campos:[
+    {etiqueta:'N° de expediente', tipo:'texto'},
+    {etiqueta:'Juzgado interviniente', tipo:'texto'},
+    {etiqueta:'Años de aportes', tipo:'numero'},
+  ],
+  reglas:[
+    {evento:'tier_a', contactos:['549299xxxxxxx'], texto:'Nuevo Tier A: {nombre} ({registro_interno})'},
+    {evento:'ganado', contactos:['549299yyyyyyy'], texto:'¡Cliente ganado! {nombre}'},
+  ],
+  calendarConectado:true,
+  calendarId:'es.ar#holiday@group.v.calendar.google.com',
+  citas:[
+    {titulo:'Revisión historia laboral – Carlos Ruiz', cuando:'Jue 11 · 10:00'},
+    {titulo:'Consulta sucesión – Ana López', cuando:'Vie 12 · 16:30'},
+    {titulo:'Primera reunión – Jorge Díaz', cuando:'Lun 15 · 09:00'},
+  ],
+  negocio:{
+    tipo_negocio:'Estudio jurídico previsional', descripcion:'Asesoramiento en jubilaciones, sucesiones y ART',
+    direccion:'Av. Argentina 123, Neuquén Capital', telefono:'0299 123-4567', whatsapp:'549299xxxxxxx',
+    canales_atencion:'WhatsApp, presencial, teléfono', es_online:false, lat:-38.9516, lng:-68.0591,
+    servicios:[{nombre:'Jubilación ordinaria',descripcion:'Gestión completa del trámite'},
+      {nombre:'Sucesiones',descripcion:'Declaratoria de herederos'},
+      {nombre:'ART',descripcion:'Reclamos por accidentes laborales'}],
+    faq:[{pregunta:'¿La primera consulta tiene costo?',respuesta:'No, la primera revisión es sin cargo.'},
+      {pregunta:'¿Atienden de forma online?',respuesta:'Sí, coordinamos videollamada si preferís.'}],
+  },
+  horarios:[
+    {dia:1,desde:'09:00',hasta:'13:00'},{dia:1,desde:'16:00',hasta:'20:00'},
+    {dia:2,desde:'09:00',hasta:'13:00'},{dia:3,desde:'09:00',hasta:'13:00'},
+    {dia:4,desde:'09:00',hasta:'13:00'},{dia:5,desde:'09:00',hasta:'13:00'},
+  ],
+};
+
+const COLUMNS = [
+  {k:'nuevo_lead', t:'Nuevo'},
+  {k:'filtrado_tier_a', t:'Tier A'},
+  {k:'historia_laboral_recibida', t:'Doc. recibida'},
+  {k:'cita_agendada', t:'Cita agendada'},
+  {k:'en_tramite', t:'En trámite'},
+  {k:'ganado', t:'Ganado'},
+  {k:'perdido', t:'Perdido'},
+];
+const CH_STYLE = {
+  whatsapp:{c:'#25D366', bg:'rgba(37,211,102,.15)', l:'WA'},
+  instagram:{c:'#E4405F', bg:'rgba(228,64,95,.15)', l:'IG'},
+  facebook:{c:'#1877F2', bg:'rgba(24,119,242,.15)', l:'FB'},
+  web:{c:'#8B5CF6', bg:'rgba(139,92,246,.15)', l:'Web'},
+};
+
+/* ---------- Login ---------- */
+const $ = (id) => document.getElementById(id);
+function renderIconos(){ try { lucide.createIcons(); } catch(e){} }
+renderIconos();
+let signupMode = false;
+
+$('btn-toggle').onclick = () => {
+  signupMode = !signupMode;
+  $('btn-login').textContent = signupMode ? 'Crear cuenta' : 'Entrar';
+  $('alt-text').textContent = signupMode ? '¿Ya tenés cuenta?' : '¿No tenés cuenta?';
+  $('btn-toggle').textContent = signupMode ? 'Entrar' : 'Crear una';
+};
+
+function showLoginMsg(txt, ok){
+  const m = $('login-msg');
+  m.textContent = txt;
+  m.className = 'login-msg ' + (ok ? 'ok' : 'err');
+}
+
+$('btn-login').onclick = async () => {
+  const email = $('email').value.trim();
+  const pass = $('pass').value;
+  if(!email || !pass){ showLoginMsg('Completá correo y contraseña.'); return; }
+  if(!sb){ showLoginMsg('Falta configurar Supabase. Podés ver la demo abajo.'); return; }
+
+  $('btn-login').disabled = true;
+  try {
+    if(signupMode){
+      const { error } = await sb.auth.signUp({ email, password: pass });
+      if(error) throw error;
+      showLoginMsg('Cuenta creada. Revisá tu correo para confirmar y luego entrá.', true);
+    } else {
+      const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if(error) throw error;
+      await entrar();
+    }
+  } catch(e){
+    showLoginMsg(e.message || 'No se pudo iniciar sesión.');
+  } finally {
+    $('btn-login').disabled = false;
+  }
+};
+
+$('btn-demo').onclick = () => { demoMode = true; entrar(); };
+$('btn-logout').onclick = async () => {
+  if(sb && !demoMode) await sb.auth.signOut();
+  location.reload();
+};
+
+/* ---------- Entrar a la app ---------- */
+async function entrar(){
+  $('login').style.display = 'none';
+  $('app').style.display = 'block';
+
+  let perfil = DEMO.perfil;
+  if(sb && !demoMode){
+    const { data:{ user } } = await sb.auth.getUser();
+    const { data } = await sb.from('perfiles').select('nombre, rol').eq('user_id', user.id).maybeSingle();
+    if(data) perfil = data;
+    else perfil = { nombre: user.email.split('@')[0], rol:'dueno' };
+  }
+  $('u-name').textContent = perfil.nombre || 'Usuario';
+  $('u-role').textContent = perfil.rol || 'miembro';
+  $('u-avatar').textContent = (perfil.nombre || 'U')[0].toUpperCase();
+
+  const usaDemo = demoMode || !sb;
+  $('demo-banner').style.display = usaDemo ? 'block' : 'none';
+
+  cargarResumen(usaDemo);
+  cargarMetricas(usaDemo);
+  cargarKanban(usaDemo);
+  cargarInbox(usaDemo);
+  cargarPublicaciones(usaDemo);
+  cargarCanales(usaDemo);
+  cargarConfig(usaDemo);
+  cargarCampanita(usaDemo);
+  cargarAgenda(usaDemo);
+  cargarNegocio(usaDemo);
+  cargarBots(usaDemo);
+  cargarAntu(usaDemo);
+  cargarAcademia(usaDemo);
+  generarCodigoWidget();
+  renderIconos();
+
+  // Estado de suscripción: controla el acceso a las vinculaciones
+  let estadoSusc = DEMO.suscripcion;
+  if(!usaDemo && sb){
+    try { const { data:{ user } } = await sb.auth.getUser();
+      const { data } = await sb.from('perfiles').select('organizacion_id').eq('user_id',user.id).maybeSingle();
+      const { data:org } = await sb.from('organizaciones').select('estado_suscripcion').eq('id',data.organizacion_id).maybeSingle();
+      estadoSusc = org?.estado_suscripcion || 'inactiva';
+    } catch(e){ console.warn(e); }
+  }
+  suscripcionActiva = ['activa','trial'].includes(estadoSusc);
+
+  // Restringir acciones según rol (los miembros no borran)
+  if(perfil.rol === 'miembro'){
+    document.querySelectorAll('[data-owner]').forEach(el => el.style.display='none');
+  }
+}
+
+/* ---------- Navegación ---------- */
+const TITLES = {
+  resumen:['Resumen','Un vistazo a tu negocio hoy'],
+  inbox:['Conversaciones','Todos tus canales en una bandeja'],
+  leads:['Clientes','Seguí cada lead por su etapa'],
+  metricas:['Decisiones','Números reales para decidir dónde invertir'],
+  agenda:['Agenda','Las citas que agenda el bot, en tu calendario'],
+  negocio:['Mi negocio','Los datos con los que el bot responde a tus prospectos'],
+  bots:['Mis bots','Creá bots y enlazalos a tus canales'],
+  academia:['Academia','Capacitate y obtené tu certificado'],
+  publicaciones:['Publicaciones','Contenido programado para tus redes'],
+  canales:['Conectar redes','Vinculá las cuentas de tu negocio'],
+  config:['Configurar bot','Memoria, campos propios y avisos automáticos'],
+};
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.onclick = () => {
+    const v = btn.dataset.view;
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b===btn));
+    document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.dataset.view===v));
+    $('view-title').textContent = TITLES[v][0];
+    $('view-sub').textContent = TITLES[v][1];
+    cerrarMenu();   // en móvil, cerrar el panel tras elegir
+  };
+});
+
+/* ---------- Menú móvil (hamburguesa) ---------- */
+function abrirMenu(){ document.querySelector('.sidebar').classList.add('open'); $('menu-overlay').classList.add('open'); }
+function cerrarMenu(){ document.querySelector('.sidebar').classList.remove('open'); $('menu-overlay').classList.remove('open'); }
+$('menu-toggle').onclick = abrirMenu;
+$('menu-overlay').onclick = cerrarMenu;
+
+/* ---------- Resumen ---------- */
+async function cargarResumen(demo){
+  let m = DEMO.resumen;
+  if(!demo && sb){
+    try {
+      const org = await miOrg();
+      const desde = new Date(Date.now()-7*864e5).toISOString();
+      const [{count:leads}, {count:tier}, {count:pub}] = await Promise.all([
+        sb.from('leads').select('*',{count:'exact',head:true}).gte('created_at',desde),
+        sb.from('leads').select('*',{count:'exact',head:true}).eq('tier','A'),
+        sb.from('publicaciones').select('*',{count:'exact',head:true}).eq('estado','programada'),
+      ]);
+      m = { conv:'—', leads:leads||0, tier:tier||0, pub:pub||0 };
+    } catch(e){ console.warn(e); }
+  }
+  $('m-conv').textContent = m.conv;
+  $('m-leads').textContent = m.leads;
+  $('m-tier').textContent = m.tier;
+  $('m-pub').textContent = m.pub;
+}
+
+async function miOrg(){
+  const { data:{ user } } = await sb.auth.getUser();
+  const { data } = await sb.from('perfiles').select('organizacion_id').eq('user_id',user.id).maybeSingle();
+  return data?.organizacion_id;
+}
+
+/* ---------- Kanban ---------- */
+async function cargarKanban(demo){
+  let leads = DEMO.leads;
+  if(!demo && sb){
+    try { const { data } = await sb.from('leads').select('*').order('updated_at',{ascending:false});
+      leads = data || []; } catch(e){ console.warn(e); }
+  }
+  const k = $('kanban'); k.innerHTML='';
+  COLUMNS.forEach(col => {
+    const items = leads.filter(l => l.estado === col.k);
+    const el = document.createElement('div');
+    el.className='col';
+    el.innerHTML = `<div class="col-head"><span class="t">${col.t}</span><span class="n">${items.length}</span></div>
+      <div class="col-body" data-col="${col.k}"></div>`;
+    const body = el.querySelector('.col-body');
+    items.forEach(l => body.appendChild(cardEl(l)));
+    k.appendChild(el);
+  });
+  habilitarDragDrop(demo);
+}
+function cardEl(l){
+  const el = document.createElement('div');
+  el.className='card'; el.draggable=true; el.dataset.id=l.id||'';
+  const sec = l.secretario || (l.secretario_id ? '' : '');
+  el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:baseline">
+      <div class="cn">${l.nombre||'Sin nombre'}</div>
+      ${l.registro_interno?`<span style="font-size:10px;color:var(--muted);font-family:'Fraunces',serif">${l.registro_interno}</span>`:''}
+    </div>
+    <div class="cd">${l.interes||'—'}</div>
+    <div class="tags">${l.tier==='A'?'<span class="tag a">Tier A</span>':''}
+    ${l.zona?`<span class="tag z">${l.zona}</span>`:''}
+    ${sec?`<span class="tag" style="background:var(--panel);color:var(--muted)">👤 ${sec}</span>`:''}</div>`;
+  el.querySelector('button')?.addEventListener('click', e=>e.stopPropagation());
+  el.addEventListener('click', ()=> abrirFicha(l));
+  return el;
+}
+function habilitarDragDrop(demo){
+  let dragged=null;
+  document.querySelectorAll('.card').forEach(c => {
+    c.addEventListener('dragstart',()=>{dragged=c;c.classList.add('drag')});
+    c.addEventListener('dragend',()=>{c.classList.remove('drag')});
+  });
+  document.querySelectorAll('.col-body').forEach(b => {
+    b.addEventListener('dragover',e=>e.preventDefault());
+    b.addEventListener('drop',async e=>{
+      e.preventDefault();
+      if(!dragged) return;
+      b.appendChild(dragged);
+      const nuevoEstado = b.dataset.col;
+      const id = dragged.dataset.id;
+      if(!demo && sb && id){
+        try { await sb.from('leads').update({estado:nuevoEstado}).eq('id',id); }
+        catch(err){ console.warn(err); }
+      }
+    });
+  });
+}
+
+/* ---------- Inbox ---------- */
+let convActiva = null;
+async function cargarInbox(demo){
+  let convs = DEMO.convs;
+  // (En producción se leería de `conversaciones` con su último mensaje.)
+  const list = $('conv-list'); list.innerHTML='';
+  convs.forEach((c,i) => {
+    const el = document.createElement('div');
+    el.className='conv'; el.dataset.i=i;
+    const st = CH_STYLE[c.ch]||CH_STYLE.web;
+    el.innerHTML = `<div class="top"><span class="who">${c.who}</span><span class="ch" style="color:${st.c}">${st.l}</span></div>
+      <div class="prev">${c.prev}</div>`;
+    el.onclick = () => abrirConv(convs, i);
+    list.appendChild(el);
+  });
+}
+function abrirConv(convs, i){
+  convActiva = i;
+  document.querySelectorAll('.conv').forEach(c=>c.classList.toggle('active', +c.dataset.i===i));
+  const c = convs[i];
+  $('chat-who').textContent = c.who;
+  const modeEl = $('chat-mode');
+  modeEl.style.display='inline-block';
+  modeEl.textContent = c.modo==='bot' ? 'IA activa' : 'Atención humana';
+  const body = $('chat-body'); body.innerHTML='';
+  c.msgs.forEach(m => {
+    const el=document.createElement('div');
+    el.className='msg '+(m.d==='in'?'in':'out');
+    el.innerHTML = m.t + (m.by?`<div class="by">${m.by}</div>`:'');
+    body.appendChild(el);
+  });
+  body.scrollTop = body.scrollHeight;
+  $('chat-input').style.display='flex';
+}
+$('chat-send').onclick = () => {
+  const inp = $('chat-text'); const t = inp.value.trim();
+  if(!t || convActiva===null) return;
+  const body = $('chat-body');
+  const el=document.createElement('div');
+  el.className='msg out';
+  el.innerHTML = t + `<div class="by">${$('u-name').textContent}</div>`;
+  body.appendChild(el); body.scrollTop=body.scrollHeight;
+  inp.value='';
+  // En producción: POST al backend, que envía por el canal y firma el mensaje con tu sesión.
+};
+$('chat-text')?.addEventListener('keydown',e=>{ if(e.key==='Enter') $('chat-send').click(); });
+
+/* ---------- Publicaciones ---------- */
+async function cargarPublicaciones(demo){
+  let pubs = DEMO.pubs;
+  if(!demo && sb){
+    try { const { data } = await sb.from('publicaciones').select('*, canal:canales(tipo)')
+      .order('programada_para'); 
+      pubs = (data||[]).map(p=>({texto:p.texto, formato:p.formato, canal:p.canal?.tipo,
+        when:new Date(p.programada_para).toLocaleString('es-AR',{weekday:'short',hour:'2-digit',minute:'2-digit'}),
+        rec:p.recurrencia})); } catch(e){ console.warn(e); }
+  }
+  const list = $('pub-list'); list.innerHTML='';
+  if(!pubs.length){ list.innerHTML='<div class="empty">Todavía no programaste ninguna publicación. Tocá “Programar publicación” para empezar.</div>'; return; }
+  pubs.forEach(p => {
+    const st = CH_STYLE[p.canal]||CH_STYLE.web;
+    const el=document.createElement('div'); el.className='pub-item';
+    el.innerHTML = `<div>
+        <div style="font-weight:600;font-size:14px;margin-bottom:4px">${p.texto}</div>
+        <div class="when">${p.when}${p.rec?' · se repite '+p.rec:''}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="pill" style="color:${st.c}">${st.l}</span>
+        <span class="pill">${p.formato}</span>
+      </div>`;
+    list.appendChild(el);
+  });
+}
+$('btn-nueva-pub').onclick = () => alert('El formulario para programar contenido se conecta acá (subir imagen/video, elegir canal, formato, fecha y repetición).');
+
+/* ---------- Métricas / Decisiones ---------- */
+const fmtARS = (n) => n==null ? '—' : '$' + Number(n).toLocaleString('es-AR');
+async function cargarMetricas(demo){
+  let m = DEMO.metricas;
+  if(!demo && sb){
+    try {
+      const org = await miOrg();
+      const { data } = await sb.from('metricas_negocio').select('*').eq('organizacion_id',org).maybeSingle();
+      if(data) m = data;
+    } catch(e){ console.warn(e); }
+  }
+  $('k-inv').textContent = fmtARS(m.inversion_ads);
+  $('k-cac').textContent = m.cac!=null ? fmtARS(m.cac) : '—';
+  $('k-roi').textContent = m.roi!=null ? (m.roi>=0?'+':'')+Number(m.roi).toFixed(2)+'x' : '—';
+  $('k-conv').textContent = m.tasa_conversion!=null ? m.tasa_conversion+'%' : '—';
+  $('k-ing').textContent = fmtARS(m.ingresos);
+  $('k-gan').textContent = m.ganados ?? '—';
+
+  const aviso = $('metricas-aviso');
+  if(m.cac==null || m.roi==null){
+    aviso.innerHTML = '<div class="demo-banner">Para ver CAC y ROI necesitás cargar el gasto de publicidad (abajo) y el valor de caso de tus clientes ganados (en su ficha). Mientras falten, esas métricas quedan en “—”.</div>';
+  } else aviso.innerHTML='';
+}
+$('btn-gasto').onclick = async () => {
+  const monto = parseFloat($('g-monto').value);
+  const desde = $('g-desde').value, hasta = $('g-hasta').value;
+  if(!monto || !desde || !hasta){ alert('Completá monto, desde y hasta.'); return; }
+  if(demoMode || !sb){ alert('En la demo no se guardan datos. Con tu cuenta, esto registra el gasto y recalcula CAC y ROI.'); return; }
+  try {
+    const org = await miOrg();
+    await sb.from('gastos_publicidad').insert({
+      organizacion_id:org, plataforma:$('g-plat').value, monto, desde, hasta
+    });
+    $('g-monto').value=''; cargarMetricas(false);
+  } catch(e){ alert('No se pudo registrar: '+e.message); }
+};
+
+/* ---------- Exportar / Importar base (CSV) ---------- */
+const CAMPOS_CSV = ['registro_interno','nombre','apellido','dni','email','telefono',
+  'domicilio','interes','zona','convenio','secretario','fecha_ingreso','birth_date',
+  'valor_caso','estado','tier'];
+
+function aCSV(rows){
+  const esc = (v) => {
+    v = (v==null?'':String(v));
+    return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+  };
+  const head = CAMPOS_CSV.join(',');
+  const body = rows.map(r => CAMPOS_CSV.map(c => esc(r[c])).join(',')).join('\n');
+  return head+'\n'+body;
+}
+$('btn-export').onclick = async () => {
+  let rows = DEMO.leads;
+  if(!demoMode && sb){
+    try { const { data } = await sb.from('leads').select('*'); rows = data||[]; }
+    catch(e){ console.warn(e); }
+  }
+  const blob = new Blob([aCSV(rows)], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'clientes-antuhene-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+};
+$('btn-import').onclick = () => $('file-import').click();
+$('file-import').onchange = (e) => {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const filas = parseCSV(reader.result);
+    if(demoMode || !sb){ alert(`Se leyeron ${filas.length} registros. Con tu cuenta, se importan a tu base (y cada uno recibe su número de registro interno).`); return; }
+    try {
+      const org = await miOrg();
+      const conOrg = filas.map(f => ({...f, organizacion_id:org}));
+      const { error } = await sb.from('leads').insert(conOrg);
+      if(error) throw error;
+      alert(`Importados ${filas.length} clientes.`); cargarKanban(false);
+    } catch(err){ alert('Error al importar: '+err.message); }
+  };
+  reader.readAsText(file);
+};
+function parseCSV(texto){
+  const lineas = texto.split(/\r?\n/).filter(l => l.trim());
+  if(!lineas.length) return [];
+  const cols = lineas[0].split(',').map(c => c.trim());
+  return lineas.slice(1).map(l => {
+    const vals = l.match(/("([^"]|"")*"|[^,]*)(,|$)/g).map(v =>
+      v.replace(/,$/,'').replace(/^"|"$/g,'').replace(/""/g,'"').trim());
+    const obj = {};
+    cols.forEach((c,i) => { if(vals[i]!=null && vals[i]!=='') obj[c] = vals[i]; });
+    return obj;
+  });
+}
+
+/* ---------- Canales ---------- */
+async function cargarCanales(demo){
+  let canales = DEMO.canales;
+  if(!demo && sb){
+    try { const { data } = await sb.from('canales').select('tipo, identificador, metadatos, activo');
+      canales = (data||[]).map(c=>({tipo:c.tipo, nombre:c.metadatos?.numero||c.metadatos?.username||c.metadatos?.nombre||c.identificador, activo:c.activo})); }
+    catch(e){ console.warn(e); }
+  }
+  const list = $('channel-list'); list.innerHTML='';
+  const disponibles = ['whatsapp','instagram','facebook'];
+  disponibles.forEach(tipo => {
+    const st = CH_STYLE[tipo];
+    const conectado = canales.find(c => c.tipo===tipo);
+    const el = document.createElement('div'); el.className='channel-row';
+    const nombreRed = {whatsapp:'WhatsApp', instagram:'Instagram', facebook:'Facebook'}[tipo];
+    el.innerHTML = `<div class="l">
+        <div class="dot" style="background:${st.bg};color:${st.c};font-weight:700;font-size:13px">${st.l}</div>
+        <div>
+          <div style="font-weight:600;font-size:14px">${nombreRed}</div>
+          <div style="font-size:12.5px;color:var(--muted)">${conectado?conectado.nombre:'Sin conectar'}</div>
+        </div>
+      </div>
+      ${conectado
+        ? `<span class="pill" style="color:var(--emerald)">Conectado</span>`
+        : `<button class="btn-sm" onclick="conectar('${tipo}')">Conectar</button>`}`;
+    list.appendChild(el);
+  });
+}
+async function conectar(tipo){
+  if(!suscripcionActiva){ mostrarPaywall(); return; }
+  if(demoMode || !sb){ alert('En la demo no se conectan redes reales. Con tu cuenta, este botón abre el ingreso oficial de '+tipo+'.'); return; }
+  const org = await miOrg();
+  if(tipo==='whatsapp'){
+    alert('WhatsApp se conecta con el asistente de Meta (Embedded Signup). Se integra con tu backend.');
+  } else {
+    window.open(`${BACKEND_URL}/conectar/meta?organizacion_id=${org}`, 'conectar', 'width=600,height=700');
+  }
+}
+
+/* ---------- Configurar bot: conocimiento, campos, reglas ---------- */
+const EVENTO_LABEL = {lead_nuevo:'Entra un lead nuevo', tier_a:'Se califica un Tier A',
+  cita_agendada:'Se agenda una cita', ganado:'Se gana un cliente'};
+const EST_FUENTE = {listo:['Listo','var(--emerald)'], procesando:['Procesando…','var(--amber)'],
+  pendiente:['En cola','var(--muted)'], error:['Error','var(--coral)']};
+
+async function cargarConfig(demo){
+  // Fuentes de conocimiento
+  let fuentes = DEMO.fuentes;
+  if(!demo && sb){ try { const {data}=await sb.from('fuentes_conocimiento')
+    .select('nombre,tipo,estado,fragmentos').order('created_at',{ascending:false});
+    fuentes=data||[]; } catch(e){ console.warn(e); } }
+  const fl=$('fuentes-list'); fl.innerHTML = fuentes.length ? '' :
+    '<div class="empty">Todavía no cargaste conocimiento. Subí un PDF o agregá una URL para que el bot aprenda.</div>';
+  fuentes.forEach(f=>{
+    const [txt,col]=EST_FUENTE[f.estado]||EST_FUENTE.pendiente;
+    const el=document.createElement('div'); el.className='pub-item';
+    el.innerHTML=`<div><div style="font-weight:600;font-size:13.5px;margin-bottom:3px">${f.nombre}</div>
+      <div class="when">${f.tipo.toUpperCase()}${f.fragmentos?' · '+f.fragmentos+' fragmentos':''}</div></div>
+      <span class="pill" style="color:${col}">${txt}</span>`;
+    fl.appendChild(el);
+  });
+
+  // Campos personalizados
+  let campos = DEMO.campos;
+  if(!demo && sb){ try { const {data}=await sb.from('campos_personalizados')
+    .select('etiqueta,tipo').order('orden'); campos=data||[]; } catch(e){ console.warn(e); } }
+  const cl=$('campos-list'); cl.innerHTML = campos.length ? '' :
+    '<div class="empty">Sin campos propios todavía.</div>';
+  campos.forEach(c=>{
+    const el=document.createElement('div'); el.className='pub-item';
+    el.innerHTML=`<div style="font-weight:600;font-size:13.5px">${c.etiqueta}</div>
+      <span class="pill">${c.tipo}</span>`;
+    cl.appendChild(el);
+  });
+
+  // Reglas de notificación
+  let reglas = DEMO.reglas;
+  if(!demo && sb){ try { const {data}=await sb.from('reglas_notificacion')
+    .select('evento,contactos,plantilla'); reglas=(data||[]).map(r=>({...r,texto:r.plantilla})); }
+    catch(e){ console.warn(e); } }
+  const rl=$('reglas-list'); rl.innerHTML = reglas.length ? '' :
+    '<div class="empty">Sin avisos configurados.</div>';
+  reglas.forEach(r=>{
+    const el=document.createElement('div'); el.className='pub-item';
+    el.innerHTML=`<div><div style="font-weight:600;font-size:13.5px;margin-bottom:3px">${EVENTO_LABEL[r.evento]||r.evento}</div>
+      <div class="when">Avisa a ${(r.contactos||[]).length} contacto(s)</div></div>
+      <span class="pill" style="color:var(--emerald)">Activo</span>`;
+    rl.appendChild(el);
+  });
+}
+$('btn-subir-doc').onclick = ()=> $('file-doc').click();
+$('file-doc').onchange = (e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  if(demoMode||!sb){ alert(`Se subiría "${f.name}" y el bot lo procesaría (extrae texto y aprende). Con tu cuenta queda cargado en su memoria.`); return; }
+  alert('Subida real: se envía a /api/conocimiento/archivo en tu backend, que lo procesa.');
+};
+$('btn-agregar-url').onclick = ()=>{
+  const url = prompt('Pegá la URL que el bot debe leer:');
+  if(!url) return;
+  if(demoMode||!sb){ alert('Con tu cuenta, esta URL se procesa y su contenido nutre al bot.'); return; }
+};
+$('btn-add-campo').onclick = async ()=>{
+  const etiqueta=$('cp-etiqueta').value.trim(); if(!etiqueta) return;
+  if(demoMode||!sb){ alert('En la demo no se guarda. Con tu cuenta, este campo se agrega a tu ficha.'); return; }
+  try { const org=await miOrg();
+    await sb.from('campos_personalizados').insert({organizacion_id:org, etiqueta,
+      clave:etiqueta.toLowerCase().replace(/[^a-z0-9]+/g,'_'), tipo:$('cp-tipo').value});
+    $('cp-etiqueta').value=''; cargarConfig(false);
+  } catch(e){ alert('Error: '+e.message); }
+};
+$('btn-add-regla').onclick = async ()=>{
+  const contacto=$('rn-contacto').value.trim(); if(!contacto) return;
+  if(demoMode||!sb){ alert('En la demo no se guarda. Con tu cuenta, este aviso queda activo.'); return; }
+  try { const org=await miOrg();
+    await sb.from('reglas_notificacion').insert({organizacion_id:org,
+      evento:$('rn-evento').value, contactos:[contacto]});
+    $('rn-contacto').value=''; cargarConfig(false);
+  } catch(e){ alert('Error: '+e.message); }
+};
+
+/* ---------- Campanita: leads calificados sin contactar ---------- */
+async function cargarCampanita(demo){
+  let pendientes = DEMO.leads.filter(l => l.tier==='A' && ['nuevo_lead','filtrado_tier_a'].includes(l.estado));
+  if(!demo && sb){
+    try { const org = await miOrg();
+      const { data } = await sb.from('leads_pendientes').select('*').eq('organizacion_id',org);
+      pendientes = data || []; } catch(e){ console.warn(e); }
+  }
+  const count = pendientes.length;
+  const badge = $('bell-count');
+  if(count>0){ badge.style.display='flex'; badge.textContent = count>9?'9+':count; }
+  else badge.style.display='none';
+
+  const list = $('bell-list');
+  list.innerHTML = count ? '' : '<div class="empty" style="padding:30px">No hay leads calificados esperando. ¡Al día!</div>';
+  pendientes.forEach(l => {
+    const el = document.createElement('div');
+    el.style.cssText='padding:13px 16px;border-bottom:1px solid var(--line);cursor:pointer';
+    el.onmouseover=()=>el.style.background='var(--panel2)';
+    el.onmouseout=()=>el.style.background='';
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-weight:600;font-size:13.5px">${l.nombre||'Sin nombre'}</span>
+        <span class="tag a">Tier A${l.puntaje?' · '+l.puntaje:''}</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">${l.interes||'—'}${l.telefono?' · '+l.telefono:''}</div>`;
+    el.onclick=()=>{ document.querySelector('[data-view="leads"]').click(); $('bell-panel').style.display='none'; };
+    list.appendChild(el);
+  });
+}
+$('bell').onclick = (e) => {
+  e.stopPropagation();
+  const p = $('bell-panel');
+  p.style.display = p.style.display==='none' ? 'block' : 'none';
+};
+document.addEventListener('click', () => { $('bell-panel').style.display='none'; });
+$('bell-panel').addEventListener('click', e => e.stopPropagation());
+
+/* ---------- Agenda / Google Calendar ---------- */
+async function cargarAgenda(demo){
+  let conectado = DEMO.calendarConectado, calId = DEMO.calendarId, citas = DEMO.citas;
+  if(!demo && sb){
+    try { const org = await miOrg();
+      const { data:cal } = await sb.from('canales').select('metadatos')
+        .eq('organizacion_id',org).eq('tipo','google_calendar').eq('activo',true).maybeSingle();
+      conectado = !!cal;
+      calId = cal?.metadatos?.calendar_id || 'primary';
+      const { data:cts } = await sb.from('citas').select('titulo,inicio')
+        .eq('organizacion_id',org).gte('inicio',new Date().toISOString()).order('inicio').limit(10);
+      citas = (cts||[]).map(c=>({titulo:c.titulo,
+        cuando:new Date(c.inicio).toLocaleString('es-AR',{weekday:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}));
+    } catch(e){ console.warn(e); }
+  }
+  $('agenda-sin-conectar').style.display = conectado ? 'none' : 'block';
+  $('agenda-conectada').style.display = conectado ? 'block' : 'none';
+  if(conectado){
+    $('cal-frame').src = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(calId)}&ctz=America/Argentina/Buenos_Aires&mode=WEEK`;
+    const cl = $('citas-list');
+    cl.innerHTML = citas.length ? '' : '<div class="empty">Sin citas próximas.</div>';
+    citas.forEach(c=>{
+      const el=document.createElement('div');
+      el.style.cssText='padding:11px 0;border-bottom:1px solid var(--line)';
+      el.innerHTML=`<div style="font-weight:600;font-size:13px;margin-bottom:2px">${c.titulo}</div>
+        <div style="font-size:12px;color:var(--violet)">${c.cuando}</div>`;
+      cl.appendChild(el);
+    });
+  }
+}
+$('btn-conectar-google').onclick = async () => {
+  if(demoMode || !sb){ alert('Con tu cuenta, este botón abre el ingreso oficial de Google para conectar tu calendario.'); return; }
+  const org = await miOrg();
+  window.open(`${BACKEND_URL}/conectar/google?organizacion_id=${org}`, 'google', 'width=600,height=700');
+};
+
+/* ---------- Mi negocio: ficha comercial, mapa y horarios ---------- */
+const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+let servicios = [], faqs = [];
+
+function mapaURL(lat,lng){
+  if(lat==null||lng==null) return 'https://www.openstreetmap.org/export/embed.html?bbox=-68.1,-39.0,-68.0,-38.9&layer=mapnik';
+  const d=0.01;
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${lng-d},${lat-d},${lng+d},${lat+d}&layer=mapnik&marker=${lat},${lng}`;
+}
+
+async function cargarNegocio(demo){
+  let n = DEMO.negocio, horarios = DEMO.horarios;
+  if(!demo && sb){
+    try { const org = await miOrg();
+      const { data } = await sb.from('perfil_negocio').select('*').eq('organizacion_id',org).maybeSingle();
+      if(data) n = data;
+      const { data:h } = await sb.from('horarios_atencion').select('*').eq('organizacion_id',org).order('dia_semana');
+      horarios = (h||[]).map(x=>({dia:x.dia_semana,desde:x.hora_desde?.slice(0,5),hasta:x.hora_hasta?.slice(0,5)}));
+    } catch(e){ console.warn(e); }
+  }
+  $('n-tipo').value=n.tipo_negocio||''; $('n-desc').value=n.descripcion||'';
+  $('n-dir').value=n.direccion||''; $('n-tel').value=n.telefono||'';
+  $('n-wa').value=n.whatsapp||''; $('n-canales').value=n.canales_atencion||'';
+  $('n-online').checked=!!n.es_online;
+  $('map-frame').src = mapaURL(n.lat,n.lng);
+  servicios = n.servicios||[]; faqs = n.faq||[];
+  pintarServicios(); pintarFaq(); pintarHorarios(horarios);
+}
+function pintarHorarios(horarios){
+  const el=$('horarios-list'); el.innerHTML = horarios.length?'':'<div style="font-size:12.5px;color:var(--muted)">Sin horarios cargados.</div>';
+  horarios.forEach(h=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid var(--line)';
+    row.innerHTML=`<span>${DIAS[h.dia]}</span><span style="color:var(--muted)">${h.desde} – ${h.hasta}</span>`;
+    el.appendChild(row);
+  });
+}
+function pintarServicios(){
+  const el=$('servicios-list'); el.innerHTML = servicios.length?'':'<div style="font-size:12.5px;color:var(--muted)">Sin servicios cargados.</div>';
+  servicios.forEach((s,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)';
+    row.innerHTML=`<div><div style="font-weight:600;font-size:13.5px">${s.nombre}</div><div style="font-size:12px;color:var(--muted)">${s.descripcion||''}</div></div>
+      <button data-i="${i}" style="color:var(--coral);font-size:12px">Quitar</button>`;
+    row.querySelector('button').onclick=()=>{servicios.splice(i,1);pintarServicios();};
+    el.appendChild(row);
+  });
+}
+function pintarFaq(){
+  const el=$('faq-list'); el.innerHTML = faqs.length?'':'<div style="font-size:12.5px;color:var(--muted)">Sin preguntas cargadas.</div>';
+  faqs.forEach((f,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='padding:8px 0;border-bottom:1px solid var(--line)';
+    row.innerHTML=`<div style="font-weight:600;font-size:13px;margin-bottom:2px">${f.pregunta}</div>
+      <div style="font-size:12.5px;color:var(--muted)">${f.respuesta}</div>
+      <button data-i="${i}" style="color:var(--coral);font-size:11px;margin-top:4px">Quitar</button>`;
+    row.querySelector('button').onclick=()=>{faqs.splice(i,1);pintarFaq();};
+    el.appendChild(row);
+  });
+}
+$('btn-add-servicio').onclick=()=>{
+  const nombre=prompt('Nombre del servicio o producto:'); if(!nombre)return;
+  const descripcion=prompt('Descripción (opcional):')||'';
+  servicios.push({nombre,descripcion}); pintarServicios();
+};
+$('btn-add-faq').onclick=()=>{
+  const pregunta=prompt('Pregunta frecuente:'); if(!pregunta)return;
+  const respuesta=prompt('Respuesta:')||''; faqs.push({pregunta,respuesta}); pintarFaq();
+};
+$('btn-add-horario').onclick=async()=>{
+  const dia=+$('h-dia').value, desde=$('h-desde').value, hasta=$('h-hasta').value;
+  if(demoMode||!sb){ alert('En la demo no se guarda. Con tu cuenta, este horario queda activo para agendar.'); return; }
+  try { const org=await miOrg();
+    await sb.from('horarios_atencion').insert({organizacion_id:org,dia_semana:dia,hora_desde:desde,hora_hasta:hasta});
+    cargarNegocio(false);
+  } catch(e){ alert('Error: '+e.message); }
+};
+$('btn-buscar-dir').onclick=async()=>{
+  const dir=$('n-dir').value.trim(); if(!dir)return;
+  try {
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(dir)}`);
+    const d=await r.json();
+    if(d[0]){ $('map-frame').src=mapaURL(+d[0].lat,+d[0].lon); $('n-dir').dataset.lat=d[0].lat; $('n-dir').dataset.lng=d[0].lon; }
+    else alert('No se encontró esa dirección. Probá agregando la ciudad.');
+  } catch(e){ alert('No se pudo ubicar la dirección.'); }
+};
+$('btn-guardar-negocio').onclick=async()=>{
+  if(demoMode||!sb){ alert('En la demo no se guarda. Con tu cuenta, esta ficha queda disponible para tu bot.'); return; }
+  try {
+    const org=await miOrg();
+    await sb.from('perfil_negocio').upsert({
+      organizacion_id:org, tipo_negocio:$('n-tipo').value, descripcion:$('n-desc').value,
+      direccion:$('n-dir').value, telefono:$('n-tel').value, whatsapp:$('n-wa').value,
+      canales_atencion:$('n-canales').value, es_online:$('n-online').checked,
+      lat:$('n-dir').dataset.lat||null, lng:$('n-dir').dataset.lng||null,
+      servicios, faq:faqs, actualizado_en:new Date().toISOString(),
+    });
+    alert('Ficha guardada. Tu bot ya responde con esta información.');
+  } catch(e){ alert('Error al guardar: '+e.message); }
+};
+
+/* ---------- Mis bots ---------- */
+let suscripcionActiva = true;
+async function cargarBots(demo){
+  let bots = DEMO.bots, canales = DEMO.canales;
+  if(!demo && sb){
+    try {
+      const { data:ag } = await sb.from('agentes').select('*, canal:canales(metadatos,tipo)');
+      bots = (ag||[]).map(a=>({nombre:a.nombre,objetivo:a.objetivo,rubro:a.rubro,
+        canal:a.canal?.[0]?.metadatos?.numero||a.canal?.[0]?.tipo||null, id:a.id}));
+    } catch(e){ console.warn(e); }
+  }
+  const el=$('bots-list'); el.innerHTML='';
+  if(!bots.length){ el.innerHTML='<div class="empty">Todavía no creaste ningún bot. Tocá “Crear bot” para empezar.</div>'; return; }
+  bots.forEach(b=>{
+    const t=document.createElement('div'); t.className='tile';
+    t.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <h3 style="font-size:15px">${b.nombre}</h3>
+        <span class="pill" style="color:var(--violet)">${b.rubro||'general'}</span></div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">${b.objetivo||''}</p>
+      <div style="padding-top:12px;border-top:1px solid var(--line)">
+        ${b.canal
+          ? `<div style="font-size:12.5px;color:var(--emerald)">🔗 Enlazado a ${b.canal}</div>`
+          : `<button class="btn-ghost" style="font-size:12.5px" onclick="enlazarBot('${b.nombre}')">Enlazar a un canal</button>`}
+      </div>`;
+    el.appendChild(t);
+  });
+}
+$('btn-nuevo-bot').onclick = async () => {
+  const nombre = prompt('Nombre del bot (ej: Bot Jubilaciones):'); if(!nombre) return;
+  const objetivo = prompt('¿Cuál es su objetivo? (ej: calificar y agendar):')||'';
+  if(demoMode||!sb){ alert(`Se crearía "${nombre}". Con tu cuenta queda listo para enlazar a un canal.`); return; }
+  try { const org=await miOrg();
+    await sb.from('agentes').insert({organizacion_id:org,nombre,objetivo,rubro:'general'});
+    cargarBots(false);
+  } catch(e){ alert('Error: '+e.message); }
+};
+function enlazarBot(nombre){
+  if(!suscripcionActiva){ mostrarPaywall(); return; }
+  alert(`Acá elegís a qué canal enlazar "${nombre}" (ej: el WhatsApp llamado Jubilaciones).`);
+}
+
+/* ---------- Muro de pago ---------- */
+async function cargarPlanes(){
+  let planes = DEMO.planes;
+  if(sb && !demoMode){ try { const {data}=await sb.from('planes').select('*').eq('activo',true);
+    if(data?.length) planes=data; } catch(e){ console.warn(e); } }
+  const el=$('planes-list'); el.innerHTML='';
+  planes.forEach(p=>{
+    const precio = p.precio_ars>0 ? '$'+Number(p.precio_ars).toLocaleString('es-AR')+'/mes' : 'A definir';
+    const t=document.createElement('div'); t.className='tile'; t.style.textAlign='center';
+    t.innerHTML=`<h3 style="font-size:16px;margin-bottom:6px">${p.nombre}</h3>
+      <div class="big" style="font-size:26px">${precio}</div>
+      <p style="font-size:12.5px;color:var(--muted);margin:8px 0 16px">${p.max_bots} bot(s) · ${p.max_canales} canal(es)</p>
+      <button class="btn-sm" style="width:100%" onclick="suscribir('${p.id}')">Elegir ${p.nombre}</button>`;
+    el.appendChild(t);
+  });
+}
+function mostrarPaywall(){ cargarPlanes(); $('paywall').style.display='flex'; }
+$('paywall-close').onclick = ()=> $('paywall').style.display='none';
+async function suscribir(planId){
+  if(demoMode || !sb){ alert('En la demo no se cobra. Con tu cuenta, esto te lleva al checkout de Mercado Pago para el débito mensual.'); return; }
+  try {
+    const org = await miOrg();
+    const { data:{ user } } = await sb.auth.getUser();
+    const r = await fetch(`${BACKEND_URL}/api/suscripcion`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ organizacion_id:org, plan_id:planId, email:user.email })
+    });
+    const d = await r.json();
+    if(d.checkout_url) window.location.href = d.checkout_url;
+    else alert('No se pudo iniciar la suscripción.');
+  } catch(e){ alert('Error: '+e.message); }
+}
+
+/* ---------- Antü: la IA analista ---------- */
+let insights = [];
+const TIPO_ICONO = {alerta:'⚠️', felicitacion:'🎉', sugerencia:'💡', recomendacion:'✨'};
+
+async function cargarAntu(demo){
+  insights = DEMO.insights;
+  if(!demo && sb){
+    try { const org = await miOrg();
+      const { data } = await sb.from('insights_activos').select('*').eq('organizacion_id',org);
+      insights = data || [];
+    } catch(e){ console.warn(e); }
+  }
+  $('antu-bubble').style.display = 'block';
+  pintarAntu();
+  // A los pocos segundos, Antü saluda con lo más prioritario
+  setTimeout(saludoAntu, 4000);
+}
+function pintarAntu(){
+  const activos = insights.filter(i=>!i.descartado);
+  const badge = $('antu-badge');
+  const noVistos = activos.filter(i=>!i.visto).length;
+  if(noVistos>0){ badge.style.display='flex'; badge.textContent = noVistos>9?'9+':noVistos; }
+  else badge.style.display='none';
+
+  const list = $('antu-list');
+  list.innerHTML = activos.length ? '' :
+    '<div style="padding:30px 20px;text-align:center;color:var(--muted);font-size:13px">Todo en orden por ahora. Segui así 👌</div>';
+  activos.sort((a,b)=>b.prioridad-a.prioridad).forEach((ins,idx)=>{
+    const el=document.createElement('div');
+    el.style.cssText='padding:14px 16px;border-bottom:1px solid var(--line)';
+    el.innerHTML=`
+      <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px">
+        <span style="font-size:16px">${TIPO_ICONO[ins.tipo]||'💬'}</span>
+        <span style="font-weight:600;font-size:13.5px;line-height:1.3">${ins.titulo}</span>
+      </div>
+      <p style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">${ins.mensaje}</p>
+      <div style="display:flex;gap:8px">
+        ${ins.accion_texto?`<button class="btn-sm" style="font-size:12px;padding:6px 12px" data-zona="${ins.accion_zona}">${ins.accion_texto}</button>`:''}
+        <button style="font-size:12px;color:var(--muted)" data-descartar="${idx}">Descartar</button>
+      </div>`;
+    if(ins.accion_zona){
+      el.querySelector('[data-zona]').onclick=()=>{
+        document.querySelector(`[data-view="${ins.accion_zona}"]`)?.click();
+        $('antu-panel').style.display='none';
+      };
+    }
+    el.querySelector('[data-descartar]').onclick=async()=>{
+      ins.descartado=true;
+      if(!demoMode && sb && ins.id){ try{ await sb.from('insights').update({descartado:true}).eq('id',ins.id);}catch(e){} }
+      pintarAntu();
+    };
+    list.appendChild(el);
+  });
+}
+function saludoAntu(){
+  const prio = insights.filter(i=>!i.descartado && !i.visto).sort((a,b)=>b.prioridad-a.prioridad)[0];
+  if(prio && $('antu-panel').style.display==='none'){
+    // Abre el panel una vez para presentarse (no molesta si ya lo vio)
+    if(!sessionStorage.getItem('antu-saludo')){
+      $('antu-panel').style.display='block';
+      try{ sessionStorage.setItem('antu-saludo','1'); }catch(e){}
+    }
+  }
+}
+$('antu-bubble').onclick=()=>{
+  const p=$('antu-panel');
+  p.style.display = p.style.display==='none' ? 'block' : 'none';
+  if(p.style.display==='block'){
+    insights.forEach(i=>i.visto=true);
+    if(!demoMode && sb){ miOrg().then(org=>sb.from('insights').update({visto:true}).eq('organizacion_id',org).eq('visto',false)); }
+    pintarAntu();
+  }
+};
+$('antu-close').onclick=()=> $('antu-panel').style.display='none';
+
+/* ---------- Academia ---------- */
+let cursoActivo = null, leccionIdx = 0, progreso = {};
+async function cargarAcademia(demo){
+  let cursos = DEMO.cursos;
+  // (En producción se leen de la tabla `cursos` + `lecciones`.)
+  const el = $('cursos-list'); el.innerHTML='';
+  $('curso-player').style.display='none'; el.style.display='grid';
+  cursos.forEach(c=>{
+    const comprado = progreso[c.id]?.comprado;
+    const t=document.createElement('div'); t.className='tile';
+    t.innerHTML=`
+      <div style="height:90px;border-radius:10px;background:linear-gradient(135deg,var(--violet),var(--cyan));margin-bottom:12px;display:flex;align-items:center;justify-content:center;font-size:30px">🎓</div>
+      <span class="pill" style="color:var(--violet)">${c.categoria}</span>
+      <h3 style="font-size:15px;margin:8px 0 4px">${c.titulo}</h3>
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">${c.descripcion}</p>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--line)">
+        <span style="font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--violet)">$${c.precio_ars.toLocaleString('es-AR')}</span>
+        ${comprado
+          ? `<button class="btn-sm" style="font-size:12.5px" onclick="abrirCurso('${c.id}')">Continuar</button>`
+          : `<button class="btn-sm" style="font-size:12.5px" onclick="comprarCurso('${c.id}')">Comprar</button>`}
+      </div>`;
+    el.appendChild(t);
+  });
+}
+function comprarCurso(id){
+  if(demoMode || !sb){
+    // En demo, simular compra para poder recorrer el curso
+    progreso[id] = { comprado:true, lecciones:{} };
+    alert('En la demo simulamos la compra para que veas el curso. Con tu cuenta, esto abre el pago por Mercado Pago.');
+    cargarAcademia(true); return;
+  }
+  // Producción: POST /api/academia/comprar → checkout MP
+  alert('Redirige al checkout de Mercado Pago para comprar el curso.');
+}
+function abrirCurso(id){
+  cursoActivo = DEMO.cursos.find(c=>c.id===id);
+  if(!progreso[id]) progreso[id]={comprado:true,lecciones:{}};
+  leccionIdx = 0;
+  $('cursos-list').style.display='none';
+  $('curso-player').style.display='block';
+  $('curso-titulo-side').textContent = cursoActivo.titulo;
+  renderLeccion();
+}
+let vimeoPlayer = null, maxVisto = 0, duracionVideo = 0;
+function renderLeccion(){
+  const lec = cursoActivo.lecciones[leccionIdx];
+  $('leccion-titulo').textContent = lec.titulo;
+  cargarVideoProtegido(lec.vimeo);
+  // Lista de lecciones con estado
+  const ll = $('lecciones-list'); ll.innerHTML='';
+  cursoActivo.lecciones.forEach((l,i)=>{
+    const hecha = progreso[cursoActivo.id].lecciones[i]?.aprobado;
+    const row=document.createElement('button');
+    row.style.cssText=`display:block;width:100%;text-align:left;padding:10px;border-radius:8px;margin-bottom:6px;font-size:12.5px;background:${i===leccionIdx?'var(--panel2)':'transparent'};color:${i===leccionIdx?'var(--ink)':'var(--muted)'}`;
+    row.innerHTML=`${hecha?'✅':'▶️'} ${l.titulo}`;
+    row.onclick=()=>{ leccionIdx=i; renderLeccion(); };
+    ll.appendChild(row);
+  });
+  renderTest(lec);
+}
+
+function cargarVideoProtegido(vimeoId){
+  maxVisto = 0; duracionVideo = 0;
+  $('vp-bar').style.width='0'; $('vp-time').textContent='0:00';
+  $('vimeo-player').innerHTML='';
+  if(vimeoPlayer){ try{ vimeoPlayer.destroy(); }catch(e){} vimeoPlayer=null; }
+
+  // Player de Vimeo SIN controles nativos (sin barra de adelanto, sin menú)
+  vimeoPlayer = new Vimeo.Player('vimeo-player', {
+    id: vimeoId,
+    controls: false,      // ocultamos los controles nativos
+    title: false, byline: false, portrait: false,  // sin datos que revelen origen
+    dnt: true,
+    responsive: true,
+  });
+
+  vimeoPlayer.getDuration().then(d=>{ duracionVideo=d; }).catch(()=>{});
+
+  // Anti-adelanto: si el usuario logra saltar más allá de lo ya visto, lo devolvemos.
+  vimeoPlayer.on('timeupdate', (data)=>{
+    if(data.seconds > maxVisto + 1.5){
+      vimeoPlayer.setCurrentTime(maxVisto).catch(()=>{});
+    } else {
+      maxVisto = Math.max(maxVisto, data.seconds);
+    }
+    const pct = duracionVideo ? (data.seconds/duracionVideo)*100 : 0;
+    $('vp-bar').style.width = pct+'%';
+    $('vp-time').textContent = fmtTime(data.seconds);
+  });
+  // Al terminar, se habilita como "visto"
+  vimeoPlayer.on('ended', ()=>{ /* video completo */ });
+}
+function fmtTime(s){ const m=Math.floor(s/60), ss=Math.floor(s%60); return m+':'+String(ss).padStart(2,'0'); }
+
+$('vp-play').onclick=()=>{
+  if(!vimeoPlayer) return;
+  vimeoPlayer.getPaused().then(p=>{
+    if(p){ vimeoPlayer.play(); $('vp-play').textContent='⏸ Pausa'; }
+    else { vimeoPlayer.pause(); $('vp-play').textContent='▶ Play'; }
+  });
+};
+$('vp-speed').onchange=(e)=>{ if(vimeoPlayer) vimeoPlayer.setPlaybackRate(parseFloat(e.target.value)); };
+// Bloquear menú contextual (clic derecho) sobre el reproductor
+$('vimeo-player').addEventListener('contextmenu', e=>e.preventDefault());
+
+function renderTest(lec){
+  const tb = $('test-box'); tb.innerHTML='';
+  if(lec.test?.length){
+    tb.innerHTML='<p style="font-size:13px;font-weight:600;margin:6px 0 10px">📝 Test de la lección</p>';
+    lec.test.forEach((q)=>{
+      const box=document.createElement('div'); box.style.marginBottom='12px';
+      box.innerHTML=`<p style="font-size:13px;margin-bottom:6px">${q.pregunta}</p>`;
+      q.opciones.forEach((op,oi)=>{
+        const b=document.createElement('button');
+        b.style.cssText='display:block;width:100%;text-align:left;padding:8px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:5px;font-size:12.5px;color:var(--ink)';
+        b.textContent=op;
+        b.onclick=()=>{
+          const correcta = oi===q.correcta;
+          b.style.borderColor = correcta?'var(--emerald)':'var(--coral)';
+          b.style.color = correcta?'var(--emerald)':'var(--coral)';
+          if(correcta){
+            progreso[cursoActivo.id].lecciones[leccionIdx]={aprobado:true};
+            setTimeout(()=>{ verificarCertificado(); renderLeccion(); }, 700);
+          }
+        };
+        box.appendChild(b);
+      });
+      tb.appendChild(box);
+    });
+  } else {
+    progreso[cursoActivo.id].lecciones[leccionIdx]={aprobado:true};
+  }
+}
+function verificarCertificado(){
+  const todas = cursoActivo.lecciones.every((_,i)=>progreso[cursoActivo.id].lecciones[i]?.aprobado);
+  if(todas){
+    const cod = 'AH-CERT-'+cursoActivo.id.toUpperCase()+Date.now().toString().slice(-4);
+    setTimeout(()=>mostrarCertificado(cod), 400);
+  }
+}
+function mostrarCertificado(codigo){
+  const nombre = $('u-name').textContent;
+  const w = window.open('', 'cert', 'width=1150,height=820');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    @page{size:A4 landscape;margin:0}body{margin:0;font-family:Georgia,serif}
+    .cert{width:1123px;height:794px;background:#FCFBFA;border:18px solid #6D28D9;box-sizing:border-box;padding:50px 70px}
+    .inner{border:2px solid #8B5CF6;height:100%;padding:40px 50px;text-align:center;display:flex;flex-direction:column;box-sizing:border-box}
+    .brand{color:#6D28D9;font-size:20px;letter-spacing:2px;font-weight:bold}
+    .title{font-size:42px;color:#120E1F;margin:26px 0 6px}
+    .sub{font-size:16px;color:#645F73}
+    .name{font-size:34px;color:#6D28D9;border-bottom:2px solid #ddd;display:inline-block;padding:0 40px 8px;margin:16px 0 24px}
+    .curso{font-size:22px;font-style:italic;margin:8px 0 30px}
+    .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end}
+    .firma .linea{font-family:'Brush Script MT',cursive;font-size:28px;border-bottom:1px solid #333;padding-bottom:4px}
+    .firma .cargo{font-size:12px;color:#645F73;margin-top:6px}
+    .codigo{font-size:11px;color:#999;text-align:left}
+    .btns{position:fixed;top:10px;right:10px}.btns button{margin-left:6px;padding:8px 14px;cursor:pointer}
+    @media print{.btns{display:none}}
+  </style></head><body>
+  <div class="btns"><button onclick="window.print()">Descargar PDF</button></div>
+  <div class="cert"><div class="inner">
+    <div class="brand">ANTÜHENE AI STUDIO</div>
+    <div class="title">Certificado de Finalización</div>
+    <div class="sub">Se otorga el presente certificado a</div>
+    <div class="name">${nombre}</div>
+    <div class="sub">por haber completado satisfactoriamente el curso</div>
+    <div class="curso">"${cursoActivo.titulo}"</div>
+    <div class="foot">
+      <div class="codigo">Código: ${codigo}<br>Verificable en antuhene.com/verificar</div>
+      <div class="firma"><div class="linea">Pablo Ivañez López</div><div class="cargo">Fundador / CEO — AntüHene AI Studio</div></div>
+      <div class="codigo">Fecha:<br>${new Date().toLocaleDateString('es-AR')}</div>
+    </div>
+  </div></div></body></html>`);
+  w.document.close();
+}
+$('volver-cursos').onclick=()=>{ cargarAcademia(demoMode||!sb); };
+
+/* ---------- Ficha del cliente (popup con legajo) ---------- */
+let leadFicha = null;
+const EST_GESTION = {abierta:['Abierta','var(--amber)'], en_proceso:['En proceso','var(--cyan)'], cerrada:['Cerrada','var(--emerald)']};
+
+async function abrirFicha(lead){
+  leadFicha = lead;
+  $('f-nombre').textContent = lead.nombre || 'Sin nombre';
+  $('f-registro').textContent = lead.registro_interno || '';
+  $('f-dni').textContent = lead.dni || '—';
+  $('f-tel').textContent = lead.telefono || '—';
+  $('f-email').textContent = lead.email || '—';
+  $('f-zona').textContent = lead.zona || '—';
+  $('f-secretario').textContent = lead.secretario || '—';
+  $('f-ingreso').textContent = lead.fecha_ingreso || '—';
+  const tags = $('f-tags'); tags.innerHTML =
+    (lead.tier==='A'?'<span class="tag a">Tier A</span>':'') +
+    (lead.convenio?`<span class="tag z">${lead.convenio}</span>`:'') +
+    `<span class="pill">${lead.estado?.replace(/_/g,' ')||''}</span>`;
+
+  await pintarGestiones();
+  $('ficha-modal').style.display='flex';
+}
+async function pintarGestiones(){
+  let gestiones = leadFicha.gestiones || [];
+  if(!demoMode && sb && leadFicha.id){
+    try { const { data } = await sb.from('gestiones').select('*')
+      .eq('lead_id', leadFicha.id).order('fecha_contacto',{ascending:false});
+      gestiones = (data||[]).map(g=>({fecha:g.fecha_contacto, motivo:g.motivo,
+        descripcion:g.descripcion, estado:g.estado, responsable:g.responsable_id}));
+    } catch(e){ console.warn(e); }
+  }
+  const cont = $('f-gestiones');
+  cont.innerHTML = gestiones.length ? '' :
+    '<div style="color:var(--muted);font-size:13px;padding:8px 0">Sin gestiones registradas. Cargá la primera con “Nueva gestión”.</div>';
+  // Orden cronológico inverso (más reciente arriba)
+  gestiones.sort((a,b)=> (a.fecha<b.fecha?1:-1)).forEach(g=>{
+    const [txt,col] = EST_GESTION[g.estado] || EST_GESTION.abierta;
+    const item=document.createElement('div');
+    item.style.cssText='position:relative;padding:0 0 18px 18px';
+    item.innerHTML=`
+      <span style="position:absolute;left:-27px;top:2px;width:12px;height:12px;border-radius:50%;background:${col};border:2px solid var(--panel)"></span>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+        <span style="font-weight:600;font-size:14px">${g.motivo}</span>
+        <span style="font-size:12px;color:var(--muted);white-space:nowrap">${fmtFecha(g.fecha)}</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--muted);margin:4px 0 6px;line-height:1.5">${g.descripcion||''}</div>
+      <div style="display:flex;gap:8px">
+        <span class="pill" style="color:${col}">${txt}</span>
+        ${g.responsable?`<span class="pill">👤 ${g.responsable}</span>`:''}
+      </div>`;
+    cont.appendChild(item);
+  });
+}
+function fmtFecha(f){
+  try { return new Date(f+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}); }
+  catch(e){ return f; }
+}
+$('ficha-close').onclick=()=> $('ficha-modal').style.display='none';
+$('ficha-modal').addEventListener('click', e=>{ if(e.target.id==='ficha-modal') $('ficha-modal').style.display='none'; });
+$('f-add-gestion').onclick=async()=>{
+  const motivo = prompt('Motivo de la gestión (ej: Accidente laboral, Sucesión):'); if(!motivo) return;
+  const descripcion = prompt('Descripción / detalle:')||'';
+  const nueva = {fecha:new Date().toISOString().slice(0,10), motivo, descripcion, estado:'abierta', responsable:$('u-name').textContent};
+  if(demoMode || !sb){
+    leadFicha.gestiones = leadFicha.gestiones || [];
+    leadFicha.gestiones.push(nueva);
+    pintarGestiones();
+    return;
+  }
+  try { const org = await miOrg();
+    await sb.from('gestiones').insert({organizacion_id:org, lead_id:leadFicha.id, motivo, descripcion});
+    pintarGestiones();
+  } catch(e){ alert('Error: '+e.message); }
+};
+
+/* ---------- Widget web: generar código ---------- */
+function generarCodigoWidget(){
+  var canalWeb = 'antuhene-' + (DEMO && demoMode ? 'demo1234' : 'tucanal');
+  var titulo = ($('w-titulo')?.value || 'Asistente');
+  var color = ($('w-color')?.value || '#8B5CF6');
+  var code =
+'<script src="' + (BACKEND_URL||'https://tu-backend') + '/widget.js"\n' +
+'  data-canal="' + canalWeb + '"\n' +
+'  data-backend="' + (BACKEND_URL||'https://tu-backend') + '"\n' +
+'  data-titulo="' + titulo + '"\n' +
+'  data-color="' + color + '"><\/script>';
+  var pre = $('w-code'); if(pre) pre.textContent = code;
+}
+['w-titulo','w-color'].forEach(function(id){
+  var el = $(id); if(el) el.addEventListener('input', generarCodigoWidget);
+});
+if($('w-copiar')){
+  $('w-copiar').onclick = function(){
+    var t = $('w-code').textContent;
+    navigator.clipboard.writeText(t).then(function(){
+      $('w-copiar').textContent = '¡Copiado!';
+      setTimeout(function(){ $('w-copiar').textContent='Copiar'; }, 1500);
+    });
+  };
+}
+
+/* ---------- Sesión persistente ---------- */
+(async () => {
+  if(sb){
+    const { data:{ session } } = await sb.auth.getSession();
+    if(session) entrar();
+  }
+})();
+</script>
+</body>
+</html>
