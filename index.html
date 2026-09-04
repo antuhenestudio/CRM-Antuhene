@@ -460,6 +460,38 @@ input,textarea,select{font-family:inherit}
 
       <!-- CONFIGURAR BOT -->
       <section class="view" data-view="config">
+        <!-- Plantillas modelo -->
+        <div class="tile" style="margin-bottom:18px">
+          <h3 style="font-size:15px;margin-bottom:4px">Plantillas para completar</h3>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Descargá el modelo, completalo con tus datos y volvé a subirlo. Traen un ejemplo adentro para que veas cómo llenarlos.</p>
+          <div class="grid g3" id="plantillas-list">
+            <div class="tile" style="background:var(--panel2)">
+              <div style="font-size:22px;margin-bottom:8px">📄</div>
+              <h3 style="font-size:14px">Ficha del negocio</h3>
+              <p style="font-size:12px;color:var(--muted);margin:4px 0 12px">Datos, contacto, horarios y qué ofrecés (Word)</p>
+              <a class="btn-ghost" style="font-size:12.5px;display:inline-block" href="plantillas/1-Ficha-del-negocio.docx" download>Descargar</a>
+            </div>
+            <div class="tile" style="background:var(--panel2)">
+              <div style="font-size:22px;margin-bottom:8px">❓</div>
+              <h3 style="font-size:14px">Preguntas frecuentes</h3>
+              <p style="font-size:12px;color:var(--muted);margin:4px 0 12px">Las consultas típicas y sus respuestas (Word)</p>
+              <a class="btn-ghost" style="font-size:12.5px;display:inline-block" href="plantillas/2-Preguntas-frecuentes.docx" download>Descargar</a>
+            </div>
+            <div class="tile" style="background:var(--panel2)">
+              <div style="font-size:22px;margin-bottom:8px">📋</div>
+              <h3 style="font-size:14px">Catálogo de servicios</h3>
+              <p style="font-size:12px;color:var(--muted);margin:4px 0 12px">Tus servicios/productos y precios (Excel)</p>
+              <a class="btn-ghost" style="font-size:12.5px;display:inline-block" href="plantillas/3-Catalogo-de-servicios.xlsx" download>Descargar</a>
+            </div>
+            <div class="tile" style="background:var(--panel2)">
+              <div style="font-size:22px;margin-bottom:8px">👥</div>
+              <h3 style="font-size:14px">Base de clientes</h3>
+              <p style="font-size:12px;color:var(--muted);margin:4px 0 12px">Tu cartera actual para migrar (Excel)</p>
+              <a class="btn-ghost" style="font-size:12.5px;display:inline-block" href="plantillas/4-Base-de-clientes.xlsx" download>Descargar</a>
+            </div>
+          </div>
+        </div>
+
         <!-- Conocimiento del bot -->
         <div class="tile" style="margin-bottom:18px">
           <h3 style="font-size:15px;margin-bottom:4px">Memoria del bot (conocimiento)</h3>
@@ -512,6 +544,27 @@ input,textarea,select{font-family:inherit}
   </div>
 </div>
 
+<!-- ANTÜ: burbuja flotante de la IA analista -->
+<div id="antu-bubble" style="display:none;position:fixed;bottom:24px;right:24px;z-index:90;cursor:pointer">
+  <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--cyan));display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(139,92,246,.4);position:relative">
+    <span style="font-family:'Fraunces',serif;font-weight:700;font-size:24px;color:#fff">A</span>
+    <span id="antu-badge" style="display:none;position:absolute;top:-2px;right:-2px;background:var(--coral);color:#fff;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg)">0</span>
+  </div>
+</div>
+
+<!-- ANTÜ: panel de insights -->
+<div id="antu-panel" style="display:none;position:fixed;bottom:92px;right:24px;width:340px;max-height:70vh;background:var(--panel);border:1px solid var(--line);border-radius:18px;z-index:91;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.5)">
+  <div style="padding:16px 18px;background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(34,211,238,.08));border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px">
+    <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--cyan));display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:700;font-size:19px;color:#fff">A</div>
+    <div>
+      <div style="font-weight:600;font-size:14px">Antü</div>
+      <div style="font-size:11px;color:var(--muted)">La IA que cuida tu negocio</div>
+    </div>
+    <button id="antu-close" style="margin-left:auto;color:var(--muted);font-size:18px">✕</button>
+  </div>
+  <div id="antu-list" style="overflow-y:auto;max-height:calc(70vh - 70px)"></div>
+</div>
+
 <!-- MURO DE PAGO -->
 <div id="paywall" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:20px;max-width:760px;width:100%;padding:32px;max-height:90vh;overflow-y:auto">
@@ -544,6 +597,14 @@ try {
 const DEMO = {
   perfil: { nombre:'María', rol:'dueno' },
   suscripcion: 'trial',   // 'inactiva' | 'trial' | 'activa'
+  insights:[
+    {tipo:'alerta', zona:'leads', prioridad:3, titulo:'Tenés 3 leads calificados sin contactar',
+     mensaje:'Soy Antü. Vi que hay 3 leads Tier A esperando. Son los más propensos a convertir: contactalos hoy mientras el interés está caliente.', accion_texto:'Ver leads', accion_zona:'leads'},
+    {tipo:'felicitacion', zona:'resumen', prioridad:2, titulo:'¡Gran semana! 2 clientes ganados',
+     mensaje:'Cerraste 2 clientes esta semana, ¡vas muy bien! Si querés sostener la racha, revisá que no queden leads Tier A sin seguimiento.'},
+    {tipo:'sugerencia', zona:'publicaciones', prioridad:1, titulo:'Poco contenido programado',
+     mensaje:'Te sugiero programar 2 o 3 posts esta semana para mantener tu negocio presente en las redes.', accion_texto:'Programar contenido', accion_zona:'publicaciones'},
+  ],
   resumen: { conv:12, leads:8, tier:3, pub:5 },
   bots:[
     {nombre:'Bot Jubilaciones', objetivo:'Calificar y agendar revisión sin cargo', rubro:'juridico', canal:'WhatsApp Jubilaciones'},
@@ -551,9 +612,9 @@ const DEMO = {
     {nombre:'Bot ART', objetivo:'Consulta inicial de accidentes laborales', rubro:'juridico', canal:null},
   ],
   planes:[
-    {id:'emprendedor', nombre:'Emprendedor', precio_ars:0, max_bots:1, max_canales:1, descripcion:'Definí el precio'},
-    {id:'profesional', nombre:'Profesional', precio_ars:0, max_bots:3, max_canales:5, descripcion:'Definí el precio'},
-    {id:'negocio', nombre:'Negocio', precio_ars:0, max_bots:10, max_canales:20, descripcion:'Definí el precio'},
+    {id:'emprendedor', nombre:'Emprendedor', precio_ars:35000, max_bots:1, max_canales:1, descripcion:'Para el que arranca'},
+    {id:'profesional', nombre:'Profesional', precio_ars:70000, max_bots:3, max_canales:5, descripcion:'Para equipos'},
+    {id:'negocio', nombre:'Negocio', precio_ars:120000, max_bots:10, max_canales:20, descripcion:'Alto volumen'},
   ],
   leads:[
     {registro_interno:'AH-2026-0001', nombre:'Carlos Ruiz', dni:'27.345.678', interes:'Jubilación petrolera', zona:'Neuquén', estado:'filtrado_tier_a', tier:'A', convenio:'petroleros', secretario:'Laura', fecha_ingreso:'2026-08-12', birth_date:'1975-03-14'},
@@ -723,6 +784,7 @@ async function entrar(){
   cargarAgenda(usaDemo);
   cargarNegocio(usaDemo);
   cargarBots(usaDemo);
+  cargarAntu(usaDemo);
 
   // Estado de suscripción: controla el acceso a las vinculaciones
   let estadoSusc = DEMO.suscripcion;
@@ -1381,6 +1443,81 @@ async function suscribir(planId){
     else alert('No se pudo iniciar la suscripción.');
   } catch(e){ alert('Error: '+e.message); }
 }
+
+/* ---------- Antü: la IA analista ---------- */
+let insights = [];
+const TIPO_ICONO = {alerta:'⚠️', felicitacion:'🎉', sugerencia:'💡', recomendacion:'✨'};
+
+async function cargarAntu(demo){
+  insights = DEMO.insights;
+  if(!demo && sb){
+    try { const org = await miOrg();
+      const { data } = await sb.from('insights_activos').select('*').eq('organizacion_id',org);
+      insights = data || [];
+    } catch(e){ console.warn(e); }
+  }
+  $('antu-bubble').style.display = 'block';
+  pintarAntu();
+  // A los pocos segundos, Antü saluda con lo más prioritario
+  setTimeout(saludoAntu, 4000);
+}
+function pintarAntu(){
+  const activos = insights.filter(i=>!i.descartado);
+  const badge = $('antu-badge');
+  const noVistos = activos.filter(i=>!i.visto).length;
+  if(noVistos>0){ badge.style.display='flex'; badge.textContent = noVistos>9?'9+':noVistos; }
+  else badge.style.display='none';
+
+  const list = $('antu-list');
+  list.innerHTML = activos.length ? '' :
+    '<div style="padding:30px 20px;text-align:center;color:var(--muted);font-size:13px">Todo en orden por ahora. Segui así 👌</div>';
+  activos.sort((a,b)=>b.prioridad-a.prioridad).forEach((ins,idx)=>{
+    const el=document.createElement('div');
+    el.style.cssText='padding:14px 16px;border-bottom:1px solid var(--line)';
+    el.innerHTML=`
+      <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px">
+        <span style="font-size:16px">${TIPO_ICONO[ins.tipo]||'💬'}</span>
+        <span style="font-weight:600;font-size:13.5px;line-height:1.3">${ins.titulo}</span>
+      </div>
+      <p style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">${ins.mensaje}</p>
+      <div style="display:flex;gap:8px">
+        ${ins.accion_texto?`<button class="btn-sm" style="font-size:12px;padding:6px 12px" data-zona="${ins.accion_zona}">${ins.accion_texto}</button>`:''}
+        <button style="font-size:12px;color:var(--muted)" data-descartar="${idx}">Descartar</button>
+      </div>`;
+    if(ins.accion_zona){
+      el.querySelector('[data-zona]').onclick=()=>{
+        document.querySelector(`[data-view="${ins.accion_zona}"]`)?.click();
+        $('antu-panel').style.display='none';
+      };
+    }
+    el.querySelector('[data-descartar]').onclick=async()=>{
+      ins.descartado=true;
+      if(!demoMode && sb && ins.id){ try{ await sb.from('insights').update({descartado:true}).eq('id',ins.id);}catch(e){} }
+      pintarAntu();
+    };
+    list.appendChild(el);
+  });
+}
+function saludoAntu(){
+  const prio = insights.filter(i=>!i.descartado && !i.visto).sort((a,b)=>b.prioridad-a.prioridad)[0];
+  if(prio && $('antu-panel').style.display==='none'){
+    // Abre el panel una vez para presentarse (no molesta si ya lo vio)
+    if(!sessionStorage.getItem('antu-saludo')){
+      $('antu-panel').style.display='block';
+      try{ sessionStorage.setItem('antu-saludo','1'); }catch(e){}
+    }
+  }
+}
+$('antu-bubble').onclick=()=>{
+  const p=$('antu-panel');
+  p.style.display = p.style.display==='none' ? 'block' : 'none';
+  if(p.style.display==='block'){
+    insights.forEach(i=>i.visto=true);
+    if(!demoMode && sb){ miOrg().then(org=>sb.from('insights').update({visto:true}).eq('organizacion_id',org).eq('visto',false)); }
+    pintarAntu();
+  }
+};
+$('antu-close').onclick=()=> $('antu-panel').style.display='none';
 
 /* ---------- Sesión persistente ---------- */
 (async () => {
