@@ -1,0 +1,16 @@
+{
+  "name": "antuhene-ai-studio",
+  "version": "0.1.0",
+  "description": "AntüHene AI Studio — CRM SaaS multicanal: WhatsApp Cloud API + IA con RAG + Supabase (protocolo de humanización AntüHene)",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}
