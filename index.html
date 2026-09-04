@@ -213,6 +213,10 @@ input,textarea,select{font-family:inherit}
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="3.5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="3.5" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>
         Clientes
       </button>
+      <button class="nav-item" data-view="metricas">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+        Decisiones
+      </button>
       <button class="nav-item" data-view="publicaciones">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         Publicaciones
@@ -220,6 +224,10 @@ input,textarea,select{font-family:inherit}
       <button class="nav-item" data-view="canales">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>
         Conectar redes
+      </button>
+      <button class="nav-item" data-view="config">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Configurar bot
       </button>
       <div class="sidebar-foot">
         <div class="user-chip">
@@ -275,7 +283,51 @@ input,textarea,select{font-family:inherit}
 
       <!-- LEADS / KANBAN -->
       <section class="view" data-view="leads">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <p style="color:var(--muted);font-size:13.5px">Cada cliente lleva su número de registro interno y su responsable asignado.</p>
+          <div style="display:flex;gap:8px">
+            <button class="btn-ghost" id="btn-export">Descargar base (CSV)</button>
+            <button class="btn-ghost" id="btn-import" data-owner>Importar base (CSV)</button>
+            <input type="file" id="file-import" accept=".csv" style="display:none">
+          </div>
+        </div>
         <div class="kanban" id="kanban"></div>
+      </section>
+
+      <!-- MÉTRICAS / DECISIONES -->
+      <section class="view" data-view="metricas">
+        <div id="metricas-aviso"></div>
+        <div class="grid g3" style="margin-bottom:18px">
+          <div class="tile"><p>Inversión en publicidad</p><div class="big" id="k-inv">—</div><p id="k-inv-sub">Total cargado</p></div>
+          <div class="tile"><p>Costo por cliente (CAC)</p><div class="big" id="k-cac">—</div><p>Cuánto cuesta ganar un cliente</p></div>
+          <div class="tile"><p>Retorno (ROI)</p><div class="big" id="k-roi">—</div><p>Ganancia por peso invertido</p></div>
+          <div class="tile"><p>Tasa de conversión</p><div class="big" id="k-conv">—</div><p>De lead a cliente ganado</p></div>
+          <div class="tile"><p>Ingresos de ganados</p><div class="big" id="k-ing">—</div><p>Suma del valor de casos ganados</p></div>
+          <div class="tile"><p>Clientes ganados</p><div class="big" id="k-gan">—</div><p>En total</p></div>
+        </div>
+        <div class="tile" style="margin-bottom:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h3 style="font-size:15px">Registrar gasto de publicidad</h3>
+            <span style="font-size:12px;color:var(--muted)">Hasta conectar las APIs de Ads, se carga a mano</span>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+            <div class="field" style="margin:0"><label>Plataforma</label>
+              <select id="g-plat" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)">
+                <option value="meta">Meta (IG/FB)</option><option value="google">Google</option>
+                <option value="tiktok">TikTok</option><option value="otro">Otro</option>
+              </select></div>
+            <div class="field" style="margin:0"><label>Monto (ARS)</label>
+              <input id="g-monto" type="number" placeholder="50000" style="width:130px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)"></div>
+            <div class="field" style="margin:0"><label>Desde</label>
+              <input id="g-desde" type="date" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--ink)"></div>
+            <div class="field" style="margin:0"><label>Hasta</label>
+              <input id="g-hasta" type="date" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--ink)"></div>
+            <button class="btn-sm" id="btn-gasto" style="height:42px">Registrar</button>
+          </div>
+        </div>
+        <div class="demo-banner" style="color:var(--muted);background:var(--panel);border-color:var(--line)">
+          El CAC y el ROI se calculan solo con números reales: el gasto que cargás acá y el <strong>valor de caso</strong> que asignás a cada cliente ganado en su ficha. Si falta alguno, la métrica queda en “—” en vez de mostrar un número inventado.
+        </div>
       </section>
 
       <!-- PUBLICACIONES -->
@@ -291,6 +343,57 @@ input,textarea,select{font-family:inherit}
       <section class="view" data-view="canales">
         <p style="color:var(--muted);font-size:13.5px;margin-bottom:16px">Conectá las cuentas de tu negocio. Se abre el ingreso oficial de cada red; nunca te pedimos tu contraseña.</p>
         <div id="channel-list"></div>
+      </section>
+
+      <!-- CONFIGURAR BOT -->
+      <section class="view" data-view="config">
+        <!-- Conocimiento del bot -->
+        <div class="tile" style="margin-bottom:18px">
+          <h3 style="font-size:15px;margin-bottom:4px">Memoria del bot (conocimiento)</h3>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Subí PDF, Word, Excel o una URL. El bot aprende de estos documentos y responde solo con esta información: nunca inventa datos.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+            <button class="btn-sm" id="btn-subir-doc">Subir archivo</button>
+            <input type="file" id="file-doc" accept=".pdf,.doc,.docx,.xls,.xlsx" style="display:none">
+            <button class="btn-ghost" id="btn-agregar-url">Agregar una URL</button>
+          </div>
+          <div id="fuentes-list"></div>
+        </div>
+
+        <!-- Campos personalizados de la ficha -->
+        <div class="tile" style="margin-bottom:18px">
+          <h3 style="font-size:15px;margin-bottom:4px">Campos propios de tu ficha de cliente</h3>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Agregá los datos que tu negocio necesita seguir (ej: N° de expediente, m² buscados). Solo los ves vos.</p>
+          <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px">
+            <div class="field" style="margin:0"><label>Nombre del campo</label>
+              <input id="cp-etiqueta" placeholder="N° de expediente" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)"></div>
+            <div class="field" style="margin:0"><label>Tipo</label>
+              <select id="cp-tipo" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)">
+                <option value="texto">Texto</option><option value="numero">Número</option>
+                <option value="fecha">Fecha</option><option value="booleano">Sí/No</option>
+              </select></div>
+            <button class="btn-sm" id="btn-add-campo" style="height:42px">Agregar campo</button>
+          </div>
+          <div id="campos-list"></div>
+        </div>
+
+        <!-- Reglas de notificación -->
+        <div class="tile">
+          <h3 style="font-size:15px;margin-bottom:4px">Avisos automáticos por WhatsApp</h3>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Elegí a quién avisar cuando pasa algo en tu negocio. Los avisos respetan horarios y tiempos humanos para cuidar el número.</p>
+          <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px">
+            <div class="field" style="margin:0"><label>Cuando…</label>
+              <select id="rn-evento" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)">
+                <option value="lead_nuevo">Entra un lead nuevo</option>
+                <option value="tier_a">Se califica un Tier A</option>
+                <option value="cita_agendada">Se agenda una cita</option>
+                <option value="ganado">Se gana un cliente</option>
+              </select></div>
+            <div class="field" style="margin:0"><label>Avisar a (teléfono)</label>
+              <input id="rn-contacto" placeholder="549299..." style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)"></div>
+            <button class="btn-sm" id="btn-add-regla" style="height:42px">Crear aviso</button>
+          </div>
+          <div id="reglas-list"></div>
+        </div>
       </section>
     </div>
   </div>
@@ -317,15 +420,17 @@ try {
 /* ---------- Datos de ejemplo (demo / estado vacío) ---------- */
 const DEMO = {
   perfil: { nombre:'María', rol:'dueno' },
-  metricas: { conv:12, leads:8, tier:3, pub:5 },
+  resumen: { conv:12, leads:8, tier:3, pub:5 },
   leads:[
-    {nombre:'Carlos Ruiz', interes:'Jubilación petrolera', zona:'Neuquén', estado:'filtrado_tier_a', tier:'A', convenio:'petroleros'},
-    {nombre:'Ana López', interes:'Sucesión', zona:'Cipolletti', estado:'nuevo_lead'},
-    {nombre:'Jorge Díaz', interes:'ART', zona:'Añelo', estado:'cita_agendada', convenio:'camioneros'},
-    {nombre:'Lucía Sosa', interes:'Jubilación docente', zona:'Neuquén', estado:'en_tramite'},
-    {nombre:'Pedro Gómez', interes:'Consulta general', zona:'Plottier', estado:'nuevo_lead'},
-    {nombre:'Sofía Vera', interes:'Sucesión', zona:'Neuquén', estado:'ganado'},
+    {registro_interno:'AH-2026-0001', nombre:'Carlos Ruiz', dni:'27.345.678', interes:'Jubilación petrolera', zona:'Neuquén', estado:'filtrado_tier_a', tier:'A', convenio:'petroleros', secretario:'Laura', fecha_ingreso:'2026-08-12', birth_date:'1975-03-14'},
+    {registro_interno:'AH-2026-0002', nombre:'Ana López', dni:'30.111.222', interes:'Sucesión', zona:'Cipolletti', estado:'nuevo_lead', secretario:'Laura', fecha_ingreso:'2026-08-28'},
+    {registro_interno:'AH-2026-0003', nombre:'Jorge Díaz', dni:'25.987.654', interes:'ART', zona:'Añelo', estado:'cita_agendada', convenio:'camioneros', secretario:'Diego', fecha_ingreso:'2026-08-20'},
+    {registro_interno:'AH-2026-0004', nombre:'Lucía Sosa', dni:'32.444.555', interes:'Jubilación docente', zona:'Neuquén', estado:'en_tramite', secretario:'Diego', fecha_ingreso:'2026-07-30', valor_caso:180000},
+    {registro_interno:'AH-2026-0005', nombre:'Pedro Gómez', dni:'28.777.888', interes:'Consulta general', zona:'Plottier', estado:'nuevo_lead', secretario:'Laura', fecha_ingreso:'2026-09-01'},
+    {registro_interno:'AH-2026-0006', nombre:'Sofía Vera', dni:'29.333.444', interes:'Sucesión', zona:'Neuquén', estado:'ganado', secretario:'Diego', fecha_ingreso:'2026-06-15', valor_caso:250000},
+    {registro_interno:'AH-2026-0007', nombre:'Raúl Ibáñez', dni:'24.222.111', interes:'Jubilación', zona:'Neuquén', estado:'ganado', secretario:'Laura', fecha_ingreso:'2026-06-02', valor_caso:200000, convenio:'petroleros'},
   ],
+  metricas:{ inversion_ads:120000, ingresos:450000, ganados:2, cac:60000, roi:2.75, tasa_conversion:28.6 },
   convs:[
     {who:'Carlos Ruiz', ch:'whatsapp', prev:'Perfecto, ¿el jueves a las 10 te queda bien?', modo:'bot',
      msgs:[{d:'in',t:'Hola, quería consultar por mi jubilación, soy petrolero'},
@@ -352,6 +457,20 @@ const DEMO = {
     {tipo:'whatsapp', nombre:'+54 299 673-2977', activo:true},
     {tipo:'instagram', nombre:'@portanko.abogados', activo:true},
     {tipo:'facebook', nombre:'Portanko Abogados', activo:false},
+  ],
+  fuentes:[
+    {nombre:'Requisitos jubilación petrolera.pdf', tipo:'pdf', estado:'listo', fragmentos:14},
+    {nombre:'Aranceles y honorarios 2026.xlsx', tipo:'excel', estado:'listo', fragmentos:6},
+    {nombre:'https://portanko.com/preguntas-frecuentes', tipo:'url', estado:'procesando', fragmentos:0},
+  ],
+  campos:[
+    {etiqueta:'N° de expediente', tipo:'texto'},
+    {etiqueta:'Juzgado interviniente', tipo:'texto'},
+    {etiqueta:'Años de aportes', tipo:'numero'},
+  ],
+  reglas:[
+    {evento:'tier_a', contactos:['549299xxxxxxx'], texto:'Nuevo Tier A: {nombre} ({registro_interno})'},
+    {evento:'ganado', contactos:['549299yyyyyyy'], texto:'¡Cliente ganado! {nombre}'},
   ],
 };
 
@@ -438,10 +557,12 @@ async function entrar(){
   $('demo-banner').style.display = usaDemo ? 'block' : 'none';
 
   cargarResumen(usaDemo);
+  cargarMetricas(usaDemo);
   cargarKanban(usaDemo);
   cargarInbox(usaDemo);
   cargarPublicaciones(usaDemo);
   cargarCanales(usaDemo);
+  cargarConfig(usaDemo);
 
   // Restringir acciones según rol (los miembros no borran)
   if(perfil.rol === 'miembro'){
@@ -454,8 +575,10 @@ const TITLES = {
   resumen:['Resumen','Un vistazo a tu negocio hoy'],
   inbox:['Conversaciones','Todos tus canales en una bandeja'],
   leads:['Clientes','Seguí cada lead por su etapa'],
+  metricas:['Decisiones','Números reales para decidir dónde invertir'],
   publicaciones:['Publicaciones','Contenido programado para tus redes'],
   canales:['Conectar redes','Vinculá las cuentas de tu negocio'],
+  config:['Configurar bot','Memoria, campos propios y avisos automáticos'],
 };
 document.querySelectorAll('.nav-item').forEach(btn => {
   btn.onclick = () => {
@@ -469,7 +592,7 @@ document.querySelectorAll('.nav-item').forEach(btn => {
 
 /* ---------- Resumen ---------- */
 async function cargarResumen(demo){
-  let m = DEMO.metricas;
+  let m = DEMO.resumen;
   if(!demo && sb){
     try {
       const org = await miOrg();
@@ -517,10 +640,15 @@ async function cargarKanban(demo){
 function cardEl(l){
   const el = document.createElement('div');
   el.className='card'; el.draggable=true; el.dataset.id=l.id||'';
-  el.innerHTML = `<div class="cn">${l.nombre||'Sin nombre'}</div>
+  const sec = l.secretario || (l.secretario_id ? '' : '');
+  el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:baseline">
+      <div class="cn">${l.nombre||'Sin nombre'}</div>
+      ${l.registro_interno?`<span style="font-size:10px;color:var(--muted);font-family:'Fraunces',serif">${l.registro_interno}</span>`:''}
+    </div>
     <div class="cd">${l.interes||'—'}</div>
     <div class="tags">${l.tier==='A'?'<span class="tag a">Tier A</span>':''}
-    ${l.zona?`<span class="tag z">${l.zona}</span>`:''}</div>`;
+    ${l.zona?`<span class="tag z">${l.zona}</span>`:''}
+    ${sec?`<span class="tag" style="background:var(--panel);color:var(--muted)">👤 ${sec}</span>`:''}</div>`;
   return el;
 }
 function habilitarDragDrop(demo){
@@ -620,6 +748,99 @@ async function cargarPublicaciones(demo){
 }
 $('btn-nueva-pub').onclick = () => alert('El formulario para programar contenido se conecta acá (subir imagen/video, elegir canal, formato, fecha y repetición).');
 
+/* ---------- Métricas / Decisiones ---------- */
+const fmtARS = (n) => n==null ? '—' : '$' + Number(n).toLocaleString('es-AR');
+async function cargarMetricas(demo){
+  let m = DEMO.metricas;
+  if(!demo && sb){
+    try {
+      const org = await miOrg();
+      const { data } = await sb.from('metricas_negocio').select('*').eq('organizacion_id',org).maybeSingle();
+      if(data) m = data;
+    } catch(e){ console.warn(e); }
+  }
+  $('k-inv').textContent = fmtARS(m.inversion_ads);
+  $('k-cac').textContent = m.cac!=null ? fmtARS(m.cac) : '—';
+  $('k-roi').textContent = m.roi!=null ? (m.roi>=0?'+':'')+Number(m.roi).toFixed(2)+'x' : '—';
+  $('k-conv').textContent = m.tasa_conversion!=null ? m.tasa_conversion+'%' : '—';
+  $('k-ing').textContent = fmtARS(m.ingresos);
+  $('k-gan').textContent = m.ganados ?? '—';
+
+  const aviso = $('metricas-aviso');
+  if(m.cac==null || m.roi==null){
+    aviso.innerHTML = '<div class="demo-banner">Para ver CAC y ROI necesitás cargar el gasto de publicidad (abajo) y el valor de caso de tus clientes ganados (en su ficha). Mientras falten, esas métricas quedan en “—”.</div>';
+  } else aviso.innerHTML='';
+}
+$('btn-gasto').onclick = async () => {
+  const monto = parseFloat($('g-monto').value);
+  const desde = $('g-desde').value, hasta = $('g-hasta').value;
+  if(!monto || !desde || !hasta){ alert('Completá monto, desde y hasta.'); return; }
+  if(demoMode || !sb){ alert('En la demo no se guardan datos. Con tu cuenta, esto registra el gasto y recalcula CAC y ROI.'); return; }
+  try {
+    const org = await miOrg();
+    await sb.from('gastos_publicidad').insert({
+      organizacion_id:org, plataforma:$('g-plat').value, monto, desde, hasta
+    });
+    $('g-monto').value=''; cargarMetricas(false);
+  } catch(e){ alert('No se pudo registrar: '+e.message); }
+};
+
+/* ---------- Exportar / Importar base (CSV) ---------- */
+const CAMPOS_CSV = ['registro_interno','nombre','apellido','dni','email','telefono',
+  'domicilio','interes','zona','convenio','secretario','fecha_ingreso','birth_date',
+  'valor_caso','estado','tier'];
+
+function aCSV(rows){
+  const esc = (v) => {
+    v = (v==null?'':String(v));
+    return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v;
+  };
+  const head = CAMPOS_CSV.join(',');
+  const body = rows.map(r => CAMPOS_CSV.map(c => esc(r[c])).join(',')).join('\n');
+  return head+'\n'+body;
+}
+$('btn-export').onclick = async () => {
+  let rows = DEMO.leads;
+  if(!demoMode && sb){
+    try { const { data } = await sb.from('leads').select('*'); rows = data||[]; }
+    catch(e){ console.warn(e); }
+  }
+  const blob = new Blob([aCSV(rows)], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'clientes-antuhene-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+};
+$('btn-import').onclick = () => $('file-import').click();
+$('file-import').onchange = (e) => {
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const filas = parseCSV(reader.result);
+    if(demoMode || !sb){ alert(`Se leyeron ${filas.length} registros. Con tu cuenta, se importan a tu base (y cada uno recibe su número de registro interno).`); return; }
+    try {
+      const org = await miOrg();
+      const conOrg = filas.map(f => ({...f, organizacion_id:org}));
+      const { error } = await sb.from('leads').insert(conOrg);
+      if(error) throw error;
+      alert(`Importados ${filas.length} clientes.`); cargarKanban(false);
+    } catch(err){ alert('Error al importar: '+err.message); }
+  };
+  reader.readAsText(file);
+};
+function parseCSV(texto){
+  const lineas = texto.split(/\r?\n/).filter(l => l.trim());
+  if(!lineas.length) return [];
+  const cols = lineas[0].split(',').map(c => c.trim());
+  return lineas.slice(1).map(l => {
+    const vals = l.match(/("([^"]|"")*"|[^,]*)(,|$)/g).map(v =>
+      v.replace(/,$/,'').replace(/^"|"$/g,'').replace(/""/g,'"').trim());
+    const obj = {};
+    cols.forEach((c,i) => { if(vals[i]!=null && vals[i]!=='') obj[c] = vals[i]; });
+    return obj;
+  });
+}
+
 /* ---------- Canales ---------- */
 async function cargarCanales(demo){
   let canales = DEMO.canales;
@@ -657,6 +878,87 @@ async function conectar(tipo){
     window.open(`${BACKEND_URL}/conectar/meta?organizacion_id=${org}`, 'conectar', 'width=600,height=700');
   }
 }
+
+/* ---------- Configurar bot: conocimiento, campos, reglas ---------- */
+const EVENTO_LABEL = {lead_nuevo:'Entra un lead nuevo', tier_a:'Se califica un Tier A',
+  cita_agendada:'Se agenda una cita', ganado:'Se gana un cliente'};
+const EST_FUENTE = {listo:['Listo','var(--emerald)'], procesando:['Procesando…','var(--amber)'],
+  pendiente:['En cola','var(--muted)'], error:['Error','var(--coral)']};
+
+async function cargarConfig(demo){
+  // Fuentes de conocimiento
+  let fuentes = DEMO.fuentes;
+  if(!demo && sb){ try { const {data}=await sb.from('fuentes_conocimiento')
+    .select('nombre,tipo,estado,fragmentos').order('created_at',{ascending:false});
+    fuentes=data||[]; } catch(e){ console.warn(e); } }
+  const fl=$('fuentes-list'); fl.innerHTML = fuentes.length ? '' :
+    '<div class="empty">Todavía no cargaste conocimiento. Subí un PDF o agregá una URL para que el bot aprenda.</div>';
+  fuentes.forEach(f=>{
+    const [txt,col]=EST_FUENTE[f.estado]||EST_FUENTE.pendiente;
+    const el=document.createElement('div'); el.className='pub-item';
+    el.innerHTML=`<div><div style="font-weight:600;font-size:13.5px;margin-bottom:3px">${f.nombre}</div>
+      <div class="when">${f.tipo.toUpperCase()}${f.fragmentos?' · '+f.fragmentos+' fragmentos':''}</div></div>
+      <span class="pill" style="color:${col}">${txt}</span>`;
+    fl.appendChild(el);
+  });
+
+  // Campos personalizados
+  let campos = DEMO.campos;
+  if(!demo && sb){ try { const {data}=await sb.from('campos_personalizados')
+    .select('etiqueta,tipo').order('orden'); campos=data||[]; } catch(e){ console.warn(e); } }
+  const cl=$('campos-list'); cl.innerHTML = campos.length ? '' :
+    '<div class="empty">Sin campos propios todavía.</div>';
+  campos.forEach(c=>{
+    const el=document.createElement('div'); el.className='pub-item';
+    el.innerHTML=`<div style="font-weight:600;font-size:13.5px">${c.etiqueta}</div>
+      <span class="pill">${c.tipo}</span>`;
+    cl.appendChild(el);
+  });
+
+  // Reglas de notificación
+  let reglas = DEMO.reglas;
+  if(!demo && sb){ try { const {data}=await sb.from('reglas_notificacion')
+    .select('evento,contactos,plantilla'); reglas=(data||[]).map(r=>({...r,texto:r.plantilla})); }
+    catch(e){ console.warn(e); } }
+  const rl=$('reglas-list'); rl.innerHTML = reglas.length ? '' :
+    '<div class="empty">Sin avisos configurados.</div>';
+  reglas.forEach(r=>{
+    const el=document.createElement('div'); el.className='pub-item';
+    el.innerHTML=`<div><div style="font-weight:600;font-size:13.5px;margin-bottom:3px">${EVENTO_LABEL[r.evento]||r.evento}</div>
+      <div class="when">Avisa a ${(r.contactos||[]).length} contacto(s)</div></div>
+      <span class="pill" style="color:var(--emerald)">Activo</span>`;
+    rl.appendChild(el);
+  });
+}
+$('btn-subir-doc').onclick = ()=> $('file-doc').click();
+$('file-doc').onchange = (e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  if(demoMode||!sb){ alert(`Se subiría "${f.name}" y el bot lo procesaría (extrae texto y aprende). Con tu cuenta queda cargado en su memoria.`); return; }
+  alert('Subida real: se envía a /api/conocimiento/archivo en tu backend, que lo procesa.');
+};
+$('btn-agregar-url').onclick = ()=>{
+  const url = prompt('Pegá la URL que el bot debe leer:');
+  if(!url) return;
+  if(demoMode||!sb){ alert('Con tu cuenta, esta URL se procesa y su contenido nutre al bot.'); return; }
+};
+$('btn-add-campo').onclick = async ()=>{
+  const etiqueta=$('cp-etiqueta').value.trim(); if(!etiqueta) return;
+  if(demoMode||!sb){ alert('En la demo no se guarda. Con tu cuenta, este campo se agrega a tu ficha.'); return; }
+  try { const org=await miOrg();
+    await sb.from('campos_personalizados').insert({organizacion_id:org, etiqueta,
+      clave:etiqueta.toLowerCase().replace(/[^a-z0-9]+/g,'_'), tipo:$('cp-tipo').value});
+    $('cp-etiqueta').value=''; cargarConfig(false);
+  } catch(e){ alert('Error: '+e.message); }
+};
+$('btn-add-regla').onclick = async ()=>{
+  const contacto=$('rn-contacto').value.trim(); if(!contacto) return;
+  if(demoMode||!sb){ alert('En la demo no se guarda. Con tu cuenta, este aviso queda activo.'); return; }
+  try { const org=await miOrg();
+    await sb.from('reglas_notificacion').insert({organizacion_id:org,
+      evento:$('rn-evento').value, contactos:[contacto]});
+    $('rn-contacto').value=''; cargarConfig(false);
+  } catch(e){ alert('Error: '+e.message); }
+};
 
 /* ---------- Sesión persistente ---------- */
 (async () => {
