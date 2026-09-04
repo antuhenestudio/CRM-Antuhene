@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://player.vimeo.com/api/player.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 <style>
 :root{
   --bg:#0E1016; --panel:#161922; --panel2:#1D212D; --line:#2A2F3C;
@@ -156,11 +158,49 @@ input,textarea,select{font-family:inherit}
 .empty{text-align:center;color:var(--muted);padding:50px 20px;font-size:13.5px}
 .demo-banner{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);
   color:var(--amber);font-size:12.5px;padding:9px 14px;border-radius:9px;margin-bottom:18px}
-@media(max-width:820px){
+.ic[data-lucide]{width:18px;height:18px}
+@media(max-width:900px){
+  /* Sidebar como barra inferior en celular */
   .shell{grid-template-columns:1fr}
-  .sidebar{display:none}
-  .inbox{grid-template-columns:1fr}
-  .conv-list{display:none}
+  .sidebar{position:fixed;bottom:0;left:0;right:0;top:auto;height:auto;flex-direction:row;
+    border-right:none;border-top:1px solid var(--line);padding:6px 4px;z-index:50;
+    overflow-x:auto;gap:0;justify-content:flex-start}
+  .sidebar .brand, .sidebar-foot{display:none}
+  .nav-item{flex-direction:column;gap:3px;font-size:9.5px;padding:7px 9px;min-width:60px;
+    text-align:center;white-space:nowrap;flex-shrink:0}
+  .nav-item .ic{width:20px;height:20px}
+  .main{max-height:none;padding-bottom:70px}
+  .topbar{padding:14px 16px}
+  .topbar h1{font-size:18px}
+  .view{padding:16px}
+
+  /* Grids a una columna */
+  .grid.g3{grid-template-columns:1fr 1fr}
+  .inbox{grid-template-columns:1fr;height:auto}
+  .conv-list{max-height:220px;border-right:none;border-bottom:1px solid var(--line)}
+  .chat{min-height:360px}
+
+  /* Vistas de dos columnas → apiladas */
+  [style*="grid-template-columns:1fr 300px"],
+  [style*="grid-template-columns:1fr 280px"],
+  [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr !important}
+
+  /* Kanban: columnas más angostas y scroll táctil */
+  .col{min-width:200px;width:200px}
+
+  /* Modales ocupan casi toda la pantalla */
+  #ficha-modal > div, #paywall > div{max-width:100% !important;border-radius:14px}
+
+  /* Antü no tapa la barra inferior */
+  #antu-bubble{bottom:78px !important}
+  #antu-panel{bottom:146px !important;right:12px !important;width:calc(100vw - 24px) !important;max-width:340px}
+}
+@media(max-width:520px){
+  .grid.g3{grid-template-columns:1fr}
+  .topbar h1{font-size:16px}
+  .nav-item{min-width:56px;font-size:9px}
+  .col{min-width:180px;width:180px}
+  .login-card{padding:28px 20px}
 }
 </style>
 </head>
@@ -201,46 +241,17 @@ input,textarea,select{font-family:inherit}
         <div class="brand-mark">A</div>
         <div class="brand-name" style="font-size:16px">AntüHene</div>
       </div>
-      <button class="nav-item active" data-view="resumen">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-        Resumen
-      </button>
-      <button class="nav-item" data-view="inbox">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        Conversaciones
-      </button>
-      <button class="nav-item" data-view="leads">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="3.5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="3.5" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>
-        Clientes
-      </button>
-      <button class="nav-item" data-view="metricas">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
-        Decisiones
-      </button>
-      <button class="nav-item" data-view="agenda">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>
-        Agenda
-      </button>
-      <button class="nav-item" data-view="publicaciones">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        Publicaciones
-      </button>
-      <button class="nav-item" data-view="bots">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M12 8V5M9 3h6"/><circle cx="9" cy="14" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1" fill="currentColor" stroke="none"/></svg>
-        Mis bots
-      </button>
-      <button class="nav-item" data-view="canales">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>
-        Conectar redes
-      </button>
-      <button class="nav-item" data-view="negocio">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        Mi negocio
-      </button>
-      <button class="nav-item" data-view="config">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        Configurar bot
-      </button>
+      <button class="nav-item active" data-view="resumen"><i data-lucide="layout-dashboard" class="ic"></i>Resumen</button>
+      <button class="nav-item" data-view="inbox"><i data-lucide="message-circle" class="ic"></i>Conversaciones</button>
+      <button class="nav-item" data-view="leads"><i data-lucide="users" class="ic"></i>Clientes</button>
+      <button class="nav-item" data-view="metricas"><i data-lucide="trending-up" class="ic"></i>Decisiones</button>
+      <button class="nav-item" data-view="agenda"><i data-lucide="calendar-days" class="ic"></i>Agenda</button>
+      <button class="nav-item" data-view="publicaciones"><i data-lucide="calendar" class="ic"></i>Publicaciones</button>
+      <button class="nav-item" data-view="bots"><i data-lucide="bot" class="ic"></i>Mis bots</button>
+      <button class="nav-item" data-view="canales"><i data-lucide="share-2" class="ic"></i>Conectar redes</button>
+      <button class="nav-item" data-view="negocio"><i data-lucide="store" class="ic"></i>Mi negocio</button>
+      <button class="nav-item" data-view="academia"><i data-lucide="graduation-cap" class="ic"></i>Academia</button>
+      <button class="nav-item" data-view="config"><i data-lucide="settings" class="ic"></i>Configurar bot</button>
       <div class="sidebar-foot">
         <div class="user-chip">
           <div class="avatar" id="u-avatar">A</div>
@@ -458,6 +469,47 @@ input,textarea,select{font-family:inherit}
         </div>
       </section>
 
+      <!-- ACADEMIA -->
+      <section class="view" data-view="academia">
+        <div class="demo-banner" style="color:var(--muted);background:var(--panel);border-color:var(--line);margin-bottom:18px">
+          Capacitaciones de marketing, ventas y negocios. Se compran aparte (no vienen en tu plan). Al terminar, recibís un certificado firmado que podés compartir en LinkedIn.
+        </div>
+        <div id="cursos-list" class="grid g3"></div>
+        <!-- Reproductor de curso (oculto hasta abrir uno) -->
+        <div id="curso-player" style="display:none">
+          <button class="btn-ghost" id="volver-cursos" style="font-size:12.5px;margin-bottom:14px">← Volver a los cursos</button>
+          <div style="display:grid;grid-template-columns:1fr 280px;gap:16px">
+            <div class="tile" style="padding:0;overflow:hidden">
+              <div style="aspect-ratio:16/9;background:#000;position:relative">
+                <div id="vimeo-player" style="width:100%;height:100%"></div>
+                <!-- Capa que bloquea el menú contextual sobre el video -->
+                <div id="video-guard" style="position:absolute;inset:0;z-index:2;pointer-events:none"></div>
+              </div>
+              <!-- Controles propios: play, velocidad. SIN barra de adelanto. -->
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--panel2)">
+                <button id="vp-play" class="btn-ghost" style="font-size:13px;padding:6px 14px">▶ Play</button>
+                <div id="vp-progress" style="flex:1;height:5px;background:var(--line);border-radius:3px;overflow:hidden">
+                  <div id="vp-bar" style="height:100%;width:0;background:linear-gradient(90deg,var(--violet),var(--cyan))"></div>
+                </div>
+                <span id="vp-time" style="font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums">0:00</span>
+                <select id="vp-speed" style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:5px 8px;color:var(--ink);font-size:12px">
+                  <option value="1">1x</option><option value="1.25">1.25x</option>
+                  <option value="1.5">1.5x</option><option value="2">2x</option>
+                </select>
+              </div>
+              <div style="padding:18px">
+                <h3 id="leccion-titulo" style="font-size:16px;margin-bottom:12px"></h3>
+                <div id="test-box"></div>
+              </div>
+            </div>
+            <div class="tile">
+              <h3 style="font-size:14px;margin-bottom:12px" id="curso-titulo-side"></h3>
+              <div id="lecciones-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- CONFIGURAR BOT -->
       <section class="view" data-view="config">
         <!-- Plantillas modelo -->
@@ -544,6 +596,40 @@ input,textarea,select{font-family:inherit}
   </div>
 </div>
 
+<!-- FICHA DEL CLIENTE (popup grande con legajo) -->
+<div id="ficha-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:95;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:20px;max-width:820px;width:100%;max-height:90vh;overflow-y:auto">
+    <div style="padding:22px 26px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;position:sticky;top:0;background:var(--panel);z-index:2">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <h2 id="f-nombre" style="font-size:22px">—</h2>
+          <span id="f-registro" style="font-size:12px;color:var(--muted);font-family:'Fraunces',serif"></span>
+        </div>
+        <div id="f-tags" style="display:flex;gap:6px;margin-top:6px"></div>
+      </div>
+      <button id="ficha-close" style="color:var(--muted);font-size:20px">✕</button>
+    </div>
+
+    <div style="padding:24px 26px;display:grid;grid-template-columns:1fr 1fr;gap:14px 24px">
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">DNI</div><div id="f-dni" style="font-size:14px">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">Teléfono</div><div id="f-tel" style="font-size:14px">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">Email</div><div id="f-email" style="font-size:14px">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">Zona</div><div id="f-zona" style="font-size:14px">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">Responsable</div><div id="f-secretario" style="font-size:14px">—</div></div>
+      <div><div style="font-size:11px;color:var(--muted);margin-bottom:2px">Ingreso</div><div id="f-ingreso" style="font-size:14px">—</div></div>
+    </div>
+
+    <!-- Historial de gestiones -->
+    <div style="padding:0 26px 26px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0 14px">
+        <h3 style="font-size:15px">Historial de gestiones</h3>
+        <button class="btn-sm" id="f-add-gestion" style="font-size:12.5px">+ Nueva gestión</button>
+      </div>
+      <div id="f-gestiones" style="position:relative;padding-left:20px;border-left:2px solid var(--line)"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ANTÜ: burbuja flotante de la IA analista -->
 <div id="antu-bubble" style="display:none;position:fixed;bottom:24px;right:24px;z-index:90;cursor:pointer">
   <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--cyan));display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(139,92,246,.4);position:relative">
@@ -605,6 +691,28 @@ const DEMO = {
     {tipo:'sugerencia', zona:'publicaciones', prioridad:1, titulo:'Poco contenido programado',
      mensaje:'Te sugiero programar 2 o 3 posts esta semana para mantener tu negocio presente en las redes.', accion_texto:'Programar contenido', accion_zona:'publicaciones'},
   ],
+  cursos:[
+    {id:'c1', titulo:'Marketing digital para emprendedores', categoria:'marketing', precio_ars:25000, nivel:'inicial',
+     descripcion:'Aprendé a atraer clientes con redes, contenido y publicidad, desde cero.',
+     lecciones:[
+       {titulo:'Fundamentos del marketing digital', vimeo:'76979871', test:[
+         {pregunta:'¿Cuál es el primer paso de una estrategia digital?', opciones:['Comprar publicidad','Definir tu público objetivo','Abrir todas las redes'], correcta:1}]},
+       {titulo:'Cómo crear contenido que vende', vimeo:'76979871', test:[
+         {pregunta:'Un buen contenido comercial debe...', opciones:['Hablar solo de vos','Resolver un problema del cliente','Ser lo más largo posible'], correcta:1}]},
+     ]},
+    {id:'c2', titulo:'Neuroventas: vender con la mente del cliente', categoria:'ventas', precio_ars:30000, nivel:'intermedio',
+     descripcion:'Técnicas de persuasión basadas en cómo decide el cerebro humano.',
+     lecciones:[
+       {titulo:'Cómo decide el cerebro', vimeo:'76979871', test:[
+         {pregunta:'La mayoría de las decisiones de compra son...', opciones:['100% racionales','Fuertemente emocionales','Siempre por precio'], correcta:1}]},
+     ]},
+    {id:'c3', titulo:'Gestión de un negocio rentable', categoria:'negocios', precio_ars:28000, nivel:'inicial',
+     descripcion:'Números claros, costos, precios y decisiones para que tu negocio gane más.',
+     lecciones:[
+       {titulo:'Entender tus números', vimeo:'76979871', test:[
+         {pregunta:'El precio de venta nunca debería ser menor que...', opciones:['El de la competencia','Tu costo total','El del año pasado'], correcta:1}]},
+     ]},
+  ],
   resumen: { conv:12, leads:8, tier:3, pub:5 },
   bots:[
     {nombre:'Bot Jubilaciones', objetivo:'Calificar y agendar revisión sin cargo', rubro:'juridico', canal:'WhatsApp Jubilaciones'},
@@ -617,13 +725,18 @@ const DEMO = {
     {id:'negocio', nombre:'Negocio', precio_ars:120000, max_bots:10, max_canales:20, descripcion:'Alto volumen'},
   ],
   leads:[
-    {registro_interno:'AH-2026-0001', nombre:'Carlos Ruiz', dni:'27.345.678', interes:'Jubilación petrolera', zona:'Neuquén', estado:'filtrado_tier_a', tier:'A', convenio:'petroleros', secretario:'Laura', fecha_ingreso:'2026-08-12', birth_date:'1975-03-14'},
-    {registro_interno:'AH-2026-0002', nombre:'Ana López', dni:'30.111.222', interes:'Sucesión', zona:'Cipolletti', estado:'nuevo_lead', secretario:'Laura', fecha_ingreso:'2026-08-28'},
-    {registro_interno:'AH-2026-0003', nombre:'Jorge Díaz', dni:'25.987.654', interes:'ART', zona:'Añelo', estado:'cita_agendada', convenio:'camioneros', secretario:'Diego', fecha_ingreso:'2026-08-20'},
-    {registro_interno:'AH-2026-0004', nombre:'Lucía Sosa', dni:'32.444.555', interes:'Jubilación docente', zona:'Neuquén', estado:'en_tramite', secretario:'Diego', fecha_ingreso:'2026-07-30', valor_caso:180000},
-    {registro_interno:'AH-2026-0005', nombre:'Pedro Gómez', dni:'28.777.888', interes:'Consulta general', zona:'Plottier', estado:'nuevo_lead', secretario:'Laura', fecha_ingreso:'2026-09-01'},
-    {registro_interno:'AH-2026-0006', nombre:'Sofía Vera', dni:'29.333.444', interes:'Sucesión', zona:'Neuquén', estado:'ganado', secretario:'Diego', fecha_ingreso:'2026-06-15', valor_caso:250000},
-    {registro_interno:'AH-2026-0007', nombre:'Raúl Ibáñez', dni:'24.222.111', interes:'Jubilación', zona:'Neuquén', estado:'ganado', secretario:'Laura', fecha_ingreso:'2026-06-02', valor_caso:200000, convenio:'petroleros'},
+    {id:'l1', registro_interno:'AH-2026-0001', nombre:'Carlos Ruiz', dni:'27.345.678', telefono:'5492991112233', email:'carlos@mail.com', interes:'Jubilación petrolera', zona:'Neuquén', estado:'filtrado_tier_a', tier:'A', convenio:'petroleros', secretario:'Laura', fecha_ingreso:'2026-08-12', birth_date:'1975-03-14',
+     gestiones:[
+       {fecha:'2024-05-10', motivo:'Accidente laboral', descripcion:'Reclamo ART por accidente en yacimiento. Cerrado con acuerdo.', estado:'cerrada', responsable:'Diego'},
+       {fecha:'2026-08-12', motivo:'Jubilación', descripcion:'Consulta por jubilación anticipada régimen petrolero.', estado:'en_proceso', responsable:'Laura'},
+     ]},
+    {id:'l2', registro_interno:'AH-2026-0002', nombre:'Ana López', dni:'30.111.222', telefono:'5492994445566', interes:'Sucesión', zona:'Cipolletti', estado:'nuevo_lead', secretario:'Laura', fecha_ingreso:'2026-08-28',
+     gestiones:[{fecha:'2026-08-28', motivo:'Sucesión', descripcion:'Sucesión del padre. Reúne documentación.', estado:'abierta', responsable:'Laura'}]},
+    {id:'l3', registro_interno:'AH-2026-0003', nombre:'Jorge Díaz', dni:'25.987.654', interes:'ART', zona:'Añelo', estado:'cita_agendada', convenio:'camioneros', secretario:'Diego', fecha_ingreso:'2026-08-20', gestiones:[]},
+    {id:'l4', registro_interno:'AH-2026-0004', nombre:'Lucía Sosa', dni:'32.444.555', interes:'Jubilación docente', zona:'Neuquén', estado:'en_tramite', secretario:'Diego', fecha_ingreso:'2026-07-30', valor_caso:180000, gestiones:[]},
+    {id:'l5', registro_interno:'AH-2026-0005', nombre:'Pedro Gómez', dni:'28.777.888', interes:'Consulta general', zona:'Plottier', estado:'nuevo_lead', secretario:'Laura', fecha_ingreso:'2026-09-01', gestiones:[]},
+    {id:'l6', registro_interno:'AH-2026-0006', nombre:'Sofía Vera', dni:'29.333.444', interes:'Sucesión', zona:'Neuquén', estado:'ganado', secretario:'Diego', fecha_ingreso:'2026-06-15', valor_caso:250000, gestiones:[]},
+    {id:'l7', registro_interno:'AH-2026-0007', nombre:'Raúl Ibáñez', dni:'24.222.111', interes:'Jubilación', zona:'Neuquén', estado:'ganado', secretario:'Laura', fecha_ingreso:'2026-06-02', valor_caso:200000, convenio:'petroleros', gestiones:[]},
   ],
   metricas:{ inversion_ads:120000, ingresos:450000, ganados:2, cac:60000, roi:2.75, tasa_conversion:28.6 },
   convs:[
@@ -709,6 +822,8 @@ const CH_STYLE = {
 
 /* ---------- Login ---------- */
 const $ = (id) => document.getElementById(id);
+function renderIconos(){ try { lucide.createIcons(); } catch(e){} }
+renderIconos();
 let signupMode = false;
 
 $('btn-toggle').onclick = () => {
@@ -785,6 +900,8 @@ async function entrar(){
   cargarNegocio(usaDemo);
   cargarBots(usaDemo);
   cargarAntu(usaDemo);
+  cargarAcademia(usaDemo);
+  renderIconos();
 
   // Estado de suscripción: controla el acceso a las vinculaciones
   let estadoSusc = DEMO.suscripcion;
@@ -812,6 +929,7 @@ const TITLES = {
   agenda:['Agenda','Las citas que agenda el bot, en tu calendario'],
   negocio:['Mi negocio','Los datos con los que el bot responde a tus prospectos'],
   bots:['Mis bots','Creá bots y enlazalos a tus canales'],
+  academia:['Academia','Capacitate y obtené tu certificado'],
   publicaciones:['Publicaciones','Contenido programado para tus redes'],
   canales:['Conectar redes','Vinculá las cuentas de tu negocio'],
   config:['Configurar bot','Memoria, campos propios y avisos automáticos'],
@@ -885,6 +1003,8 @@ function cardEl(l){
     <div class="tags">${l.tier==='A'?'<span class="tag a">Tier A</span>':''}
     ${l.zona?`<span class="tag z">${l.zona}</span>`:''}
     ${sec?`<span class="tag" style="background:var(--panel);color:var(--muted)">👤 ${sec}</span>`:''}</div>`;
+  el.querySelector('button')?.addEventListener('click', e=>e.stopPropagation());
+  el.addEventListener('click', ()=> abrirFicha(l));
   return el;
 }
 function habilitarDragDrop(demo){
@@ -1518,6 +1638,258 @@ $('antu-bubble').onclick=()=>{
   }
 };
 $('antu-close').onclick=()=> $('antu-panel').style.display='none';
+
+/* ---------- Academia ---------- */
+let cursoActivo = null, leccionIdx = 0, progreso = {};
+async function cargarAcademia(demo){
+  let cursos = DEMO.cursos;
+  // (En producción se leen de la tabla `cursos` + `lecciones`.)
+  const el = $('cursos-list'); el.innerHTML='';
+  $('curso-player').style.display='none'; el.style.display='grid';
+  cursos.forEach(c=>{
+    const comprado = progreso[c.id]?.comprado;
+    const t=document.createElement('div'); t.className='tile';
+    t.innerHTML=`
+      <div style="height:90px;border-radius:10px;background:linear-gradient(135deg,var(--violet),var(--cyan));margin-bottom:12px;display:flex;align-items:center;justify-content:center;font-size:30px">🎓</div>
+      <span class="pill" style="color:var(--violet)">${c.categoria}</span>
+      <h3 style="font-size:15px;margin:8px 0 4px">${c.titulo}</h3>
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">${c.descripcion}</p>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--line)">
+        <span style="font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--violet)">$${c.precio_ars.toLocaleString('es-AR')}</span>
+        ${comprado
+          ? `<button class="btn-sm" style="font-size:12.5px" onclick="abrirCurso('${c.id}')">Continuar</button>`
+          : `<button class="btn-sm" style="font-size:12.5px" onclick="comprarCurso('${c.id}')">Comprar</button>`}
+      </div>`;
+    el.appendChild(t);
+  });
+}
+function comprarCurso(id){
+  if(demoMode || !sb){
+    // En demo, simular compra para poder recorrer el curso
+    progreso[id] = { comprado:true, lecciones:{} };
+    alert('En la demo simulamos la compra para que veas el curso. Con tu cuenta, esto abre el pago por Mercado Pago.');
+    cargarAcademia(true); return;
+  }
+  // Producción: POST /api/academia/comprar → checkout MP
+  alert('Redirige al checkout de Mercado Pago para comprar el curso.');
+}
+function abrirCurso(id){
+  cursoActivo = DEMO.cursos.find(c=>c.id===id);
+  if(!progreso[id]) progreso[id]={comprado:true,lecciones:{}};
+  leccionIdx = 0;
+  $('cursos-list').style.display='none';
+  $('curso-player').style.display='block';
+  $('curso-titulo-side').textContent = cursoActivo.titulo;
+  renderLeccion();
+}
+let vimeoPlayer = null, maxVisto = 0, duracionVideo = 0;
+function renderLeccion(){
+  const lec = cursoActivo.lecciones[leccionIdx];
+  $('leccion-titulo').textContent = lec.titulo;
+  cargarVideoProtegido(lec.vimeo);
+  // Lista de lecciones con estado
+  const ll = $('lecciones-list'); ll.innerHTML='';
+  cursoActivo.lecciones.forEach((l,i)=>{
+    const hecha = progreso[cursoActivo.id].lecciones[i]?.aprobado;
+    const row=document.createElement('button');
+    row.style.cssText=`display:block;width:100%;text-align:left;padding:10px;border-radius:8px;margin-bottom:6px;font-size:12.5px;background:${i===leccionIdx?'var(--panel2)':'transparent'};color:${i===leccionIdx?'var(--ink)':'var(--muted)'}`;
+    row.innerHTML=`${hecha?'✅':'▶️'} ${l.titulo}`;
+    row.onclick=()=>{ leccionIdx=i; renderLeccion(); };
+    ll.appendChild(row);
+  });
+  renderTest(lec);
+}
+
+function cargarVideoProtegido(vimeoId){
+  maxVisto = 0; duracionVideo = 0;
+  $('vp-bar').style.width='0'; $('vp-time').textContent='0:00';
+  $('vimeo-player').innerHTML='';
+  if(vimeoPlayer){ try{ vimeoPlayer.destroy(); }catch(e){} vimeoPlayer=null; }
+
+  // Player de Vimeo SIN controles nativos (sin barra de adelanto, sin menú)
+  vimeoPlayer = new Vimeo.Player('vimeo-player', {
+    id: vimeoId,
+    controls: false,      // ocultamos los controles nativos
+    title: false, byline: false, portrait: false,  // sin datos que revelen origen
+    dnt: true,
+    responsive: true,
+  });
+
+  vimeoPlayer.getDuration().then(d=>{ duracionVideo=d; }).catch(()=>{});
+
+  // Anti-adelanto: si el usuario logra saltar más allá de lo ya visto, lo devolvemos.
+  vimeoPlayer.on('timeupdate', (data)=>{
+    if(data.seconds > maxVisto + 1.5){
+      vimeoPlayer.setCurrentTime(maxVisto).catch(()=>{});
+    } else {
+      maxVisto = Math.max(maxVisto, data.seconds);
+    }
+    const pct = duracionVideo ? (data.seconds/duracionVideo)*100 : 0;
+    $('vp-bar').style.width = pct+'%';
+    $('vp-time').textContent = fmtTime(data.seconds);
+  });
+  // Al terminar, se habilita como "visto"
+  vimeoPlayer.on('ended', ()=>{ /* video completo */ });
+}
+function fmtTime(s){ const m=Math.floor(s/60), ss=Math.floor(s%60); return m+':'+String(ss).padStart(2,'0'); }
+
+$('vp-play').onclick=()=>{
+  if(!vimeoPlayer) return;
+  vimeoPlayer.getPaused().then(p=>{
+    if(p){ vimeoPlayer.play(); $('vp-play').textContent='⏸ Pausa'; }
+    else { vimeoPlayer.pause(); $('vp-play').textContent='▶ Play'; }
+  });
+};
+$('vp-speed').onchange=(e)=>{ if(vimeoPlayer) vimeoPlayer.setPlaybackRate(parseFloat(e.target.value)); };
+// Bloquear menú contextual (clic derecho) sobre el reproductor
+$('vimeo-player').addEventListener('contextmenu', e=>e.preventDefault());
+
+function renderTest(lec){
+  const tb = $('test-box'); tb.innerHTML='';
+  if(lec.test?.length){
+    tb.innerHTML='<p style="font-size:13px;font-weight:600;margin:6px 0 10px">📝 Test de la lección</p>';
+    lec.test.forEach((q)=>{
+      const box=document.createElement('div'); box.style.marginBottom='12px';
+      box.innerHTML=`<p style="font-size:13px;margin-bottom:6px">${q.pregunta}</p>`;
+      q.opciones.forEach((op,oi)=>{
+        const b=document.createElement('button');
+        b.style.cssText='display:block;width:100%;text-align:left;padding:8px 12px;border:1px solid var(--line);border-radius:8px;margin-bottom:5px;font-size:12.5px;color:var(--ink)';
+        b.textContent=op;
+        b.onclick=()=>{
+          const correcta = oi===q.correcta;
+          b.style.borderColor = correcta?'var(--emerald)':'var(--coral)';
+          b.style.color = correcta?'var(--emerald)':'var(--coral)';
+          if(correcta){
+            progreso[cursoActivo.id].lecciones[leccionIdx]={aprobado:true};
+            setTimeout(()=>{ verificarCertificado(); renderLeccion(); }, 700);
+          }
+        };
+        box.appendChild(b);
+      });
+      tb.appendChild(box);
+    });
+  } else {
+    progreso[cursoActivo.id].lecciones[leccionIdx]={aprobado:true};
+  }
+}
+function verificarCertificado(){
+  const todas = cursoActivo.lecciones.every((_,i)=>progreso[cursoActivo.id].lecciones[i]?.aprobado);
+  if(todas){
+    const cod = 'AH-CERT-'+cursoActivo.id.toUpperCase()+Date.now().toString().slice(-4);
+    setTimeout(()=>mostrarCertificado(cod), 400);
+  }
+}
+function mostrarCertificado(codigo){
+  const nombre = $('u-name').textContent;
+  const w = window.open('', 'cert', 'width=1150,height=820');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    @page{size:A4 landscape;margin:0}body{margin:0;font-family:Georgia,serif}
+    .cert{width:1123px;height:794px;background:#FCFBFA;border:18px solid #6D28D9;box-sizing:border-box;padding:50px 70px}
+    .inner{border:2px solid #8B5CF6;height:100%;padding:40px 50px;text-align:center;display:flex;flex-direction:column;box-sizing:border-box}
+    .brand{color:#6D28D9;font-size:20px;letter-spacing:2px;font-weight:bold}
+    .title{font-size:42px;color:#120E1F;margin:26px 0 6px}
+    .sub{font-size:16px;color:#645F73}
+    .name{font-size:34px;color:#6D28D9;border-bottom:2px solid #ddd;display:inline-block;padding:0 40px 8px;margin:16px 0 24px}
+    .curso{font-size:22px;font-style:italic;margin:8px 0 30px}
+    .foot{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end}
+    .firma .linea{font-family:'Brush Script MT',cursive;font-size:28px;border-bottom:1px solid #333;padding-bottom:4px}
+    .firma .cargo{font-size:12px;color:#645F73;margin-top:6px}
+    .codigo{font-size:11px;color:#999;text-align:left}
+    .btns{position:fixed;top:10px;right:10px}.btns button{margin-left:6px;padding:8px 14px;cursor:pointer}
+    @media print{.btns{display:none}}
+  </style></head><body>
+  <div class="btns"><button onclick="window.print()">Descargar PDF</button></div>
+  <div class="cert"><div class="inner">
+    <div class="brand">ANTÜHENE AI STUDIO</div>
+    <div class="title">Certificado de Finalización</div>
+    <div class="sub">Se otorga el presente certificado a</div>
+    <div class="name">${nombre}</div>
+    <div class="sub">por haber completado satisfactoriamente el curso</div>
+    <div class="curso">"${cursoActivo.titulo}"</div>
+    <div class="foot">
+      <div class="codigo">Código: ${codigo}<br>Verificable en antuhene.com/verificar</div>
+      <div class="firma"><div class="linea">Pablo Ivañez López</div><div class="cargo">Fundador / CEO — AntüHene AI Studio</div></div>
+      <div class="codigo">Fecha:<br>${new Date().toLocaleDateString('es-AR')}</div>
+    </div>
+  </div></div></body></html>`);
+  w.document.close();
+}
+$('volver-cursos').onclick=()=>{ cargarAcademia(demoMode||!sb); };
+
+/* ---------- Ficha del cliente (popup con legajo) ---------- */
+let leadFicha = null;
+const EST_GESTION = {abierta:['Abierta','var(--amber)'], en_proceso:['En proceso','var(--cyan)'], cerrada:['Cerrada','var(--emerald)']};
+
+async function abrirFicha(lead){
+  leadFicha = lead;
+  $('f-nombre').textContent = lead.nombre || 'Sin nombre';
+  $('f-registro').textContent = lead.registro_interno || '';
+  $('f-dni').textContent = lead.dni || '—';
+  $('f-tel').textContent = lead.telefono || '—';
+  $('f-email').textContent = lead.email || '—';
+  $('f-zona').textContent = lead.zona || '—';
+  $('f-secretario').textContent = lead.secretario || '—';
+  $('f-ingreso').textContent = lead.fecha_ingreso || '—';
+  const tags = $('f-tags'); tags.innerHTML =
+    (lead.tier==='A'?'<span class="tag a">Tier A</span>':'') +
+    (lead.convenio?`<span class="tag z">${lead.convenio}</span>`:'') +
+    `<span class="pill">${lead.estado?.replace(/_/g,' ')||''}</span>`;
+
+  await pintarGestiones();
+  $('ficha-modal').style.display='flex';
+}
+async function pintarGestiones(){
+  let gestiones = leadFicha.gestiones || [];
+  if(!demoMode && sb && leadFicha.id){
+    try { const { data } = await sb.from('gestiones').select('*')
+      .eq('lead_id', leadFicha.id).order('fecha_contacto',{ascending:false});
+      gestiones = (data||[]).map(g=>({fecha:g.fecha_contacto, motivo:g.motivo,
+        descripcion:g.descripcion, estado:g.estado, responsable:g.responsable_id}));
+    } catch(e){ console.warn(e); }
+  }
+  const cont = $('f-gestiones');
+  cont.innerHTML = gestiones.length ? '' :
+    '<div style="color:var(--muted);font-size:13px;padding:8px 0">Sin gestiones registradas. Cargá la primera con “Nueva gestión”.</div>';
+  // Orden cronológico inverso (más reciente arriba)
+  gestiones.sort((a,b)=> (a.fecha<b.fecha?1:-1)).forEach(g=>{
+    const [txt,col] = EST_GESTION[g.estado] || EST_GESTION.abierta;
+    const item=document.createElement('div');
+    item.style.cssText='position:relative;padding:0 0 18px 18px';
+    item.innerHTML=`
+      <span style="position:absolute;left:-27px;top:2px;width:12px;height:12px;border-radius:50%;background:${col};border:2px solid var(--panel)"></span>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">
+        <span style="font-weight:600;font-size:14px">${g.motivo}</span>
+        <span style="font-size:12px;color:var(--muted);white-space:nowrap">${fmtFecha(g.fecha)}</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--muted);margin:4px 0 6px;line-height:1.5">${g.descripcion||''}</div>
+      <div style="display:flex;gap:8px">
+        <span class="pill" style="color:${col}">${txt}</span>
+        ${g.responsable?`<span class="pill">👤 ${g.responsable}</span>`:''}
+      </div>`;
+    cont.appendChild(item);
+  });
+}
+function fmtFecha(f){
+  try { return new Date(f+'T00:00:00').toLocaleDateString('es-AR',{day:'numeric',month:'short',year:'numeric'}); }
+  catch(e){ return f; }
+}
+$('ficha-close').onclick=()=> $('ficha-modal').style.display='none';
+$('ficha-modal').addEventListener('click', e=>{ if(e.target.id==='ficha-modal') $('ficha-modal').style.display='none'; });
+$('f-add-gestion').onclick=async()=>{
+  const motivo = prompt('Motivo de la gestión (ej: Accidente laboral, Sucesión):'); if(!motivo) return;
+  const descripcion = prompt('Descripción / detalle:')||'';
+  const nueva = {fecha:new Date().toISOString().slice(0,10), motivo, descripcion, estado:'abierta', responsable:$('u-name').textContent};
+  if(demoMode || !sb){
+    leadFicha.gestiones = leadFicha.gestiones || [];
+    leadFicha.gestiones.push(nueva);
+    pintarGestiones();
+    return;
+  }
+  try { const org = await miOrg();
+    await sb.from('gestiones').insert({organizacion_id:org, lead_id:leadFicha.id, motivo, descripcion});
+    pintarGestiones();
+  } catch(e){ alert('Error: '+e.message); }
+};
 
 /* ---------- Sesión persistente ---------- */
 (async () => {
