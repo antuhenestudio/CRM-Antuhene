@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AntüHene · Calculadora de costos y precios</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0E1016; --panel:#161922; --panel2:#1D212D; --line:#2A2F3C;
+  --ink:#EDEFF4; --muted:#8B92A6; --violet:#8B5CF6; --cyan:#22D3EE;
+  --coral:#FB7185; --emerald:#34D399; --amber:#FBBF24;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);
+  -webkit-font-smoothing:antialiased;padding:28px 18px;line-height:1.5}
+h1,h2,h3{font-family:'Fraunces',serif}
+.wrap{max-width:900px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.brand-mark{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--violet),var(--cyan));
+  display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:700;font-size:21px;color:#fff}
+.sub{color:var(--muted);font-size:14px;margin-bottom:24px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:16px}
+.card h2{font-size:16px;margin-bottom:4px}
+.card .hint{font-size:12.5px;color:var(--muted);margin-bottom:16px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.row label{font-size:13.5px;flex:1}
+.row .u{font-size:11px;color:var(--muted);display:block;margin-top:1px}
+input[type=number]{width:130px;background:var(--panel2);border:1px solid var(--line);border-radius:9px;
+  padding:9px 12px;color:var(--ink);font-size:14px;text-align:right;font-variant-numeric:tabular-nums}
+input:focus{outline:none;border-color:var(--violet)}
+.note{font-size:12px;color:var(--amber);background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);
+  border-radius:9px;padding:10px 12px;margin-top:8px}
+.result{background:linear-gradient(135deg,rgba(139,92,246,.12),rgba(34,211,238,.08));
+  border:1px solid var(--line);border-radius:16px;padding:24px;margin-bottom:16px}
+.result h2{font-size:16px;margin-bottom:16px}
+.big-row{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--line)}
+.big-row:last-child{border-bottom:none}
+.big-row .l{font-size:14px;color:var(--muted)}
+.big-row .v{font-family:'Fraunces',serif;font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.big-row .v.pos{color:var(--emerald)} .big-row .v.neg{color:var(--coral)}
+.planes{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px}
+.plan{background:var(--panel2);border:1px solid var(--line);border-radius:13px;padding:16px;text-align:center}
+.plan h3{font-size:14px;margin-bottom:8px}
+.plan .precio{font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:var(--violet);font-variant-numeric:tabular-nums}
+.plan .per{font-size:11px;color:var(--muted)}
+.plan .detalle{font-size:11.5px;color:var(--muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--line);text-align:left}
+.plan .detalle div{display:flex;justify-content:space-between;margin-bottom:3px}
+.seg-controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.seg-controls label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.seg-controls input{width:90px}
+.foot{font-size:12px;color:var(--muted);text-align:center;margin-top:8px;line-height:1.7}
+@media(max-width:680px){.grid2{grid-template-columns:1fr}.planes{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <div class="brand-mark">A</div>
+    <div><div style="font-family:'Fraunces',serif;font-size:18px">Calculadora de costos y precios</div></div>
+  </div>
+  <p class="sub">Cargá tus costos reales por cliente y definí el precio de cada plan con el margen que quieras. Todos los valores son editables — los que vienen cargados son solo ejemplos para reemplazar.</p>
+
+  <div class="note" style="margin-bottom:20px">Importante: reemplazá cada número por el tuyo real (tu factura de Meta, tu consumo de OpenAI, tu plan de hosting y la comisión que te muestre tu panel de Mercado Pago). La calculadora hace las cuentas; los datos los ponés vos.</div>
+
+  <div class="grid2">
+    <!-- COSTOS VARIABLES POR CLIENTE -->
+    <div class="card">
+      <h2>Costo variable por cliente / mes</h2>
+      <p class="hint">Lo que te cuesta atender a UN cliente activo durante un mes.</p>
+
+      <div class="row">
+        <label>Conversaciones del bot / mes
+          <span class="u">por cliente</span></label>
+        <input type="number" id="conv_mes" value="1000" min="0">
+      </div>
+      <div class="row">
+        <label>Tokens de entrada por conversación
+          <span class="u">historial + prompt + ficha + RAG</span></label>
+        <input type="number" id="tok_in" value="15000" min="0">
+      </div>
+      <div class="row">
+        <label>Tokens de salida por conversación
+          <span class="u">lo que responde el bot</span></label>
+        <input type="number" id="tok_out" value="2000" min="0">
+      </div>
+      <div class="row">
+        <label>% de conversaciones con nota de voz
+          <span class="u">audio a transcribir</span></label>
+        <input type="number" id="pct_audio" value="30" min="0" max="100">
+      </div>
+      <div class="row">
+        <label>Segundos promedio por nota de voz
+          <span class="u">duración del audio</span></label>
+        <input type="number" id="seg_audio" value="30" min="0">
+      </div>
+      <div class="row">
+        <label>Tipo de cambio del dólar
+          <span class="u">ARS por USD — OpenAI cobra en USD</span></label>
+        <input type="number" id="tc" value="1500" min="1">
+      </div>
+      <div class="note">Precios OpenAI verificados (sep 2026): entrada US$0,15/M · salida US$0,60/M · Whisper US$0,006/min. Confirmalos en openai.com/api/pricing.</div>
+    </div>
+
+    <!-- COSTOS FIJOS Y NEGOCIO -->
+    <div class="card">
+      <h2>WhatsApp, fijos y parámetros</h2>
+      <p class="hint">El costo de WhatsApp (Meta) suele pesar más que los tokens. Sacalo de tu cuenta de Meta.</p>
+
+      <div class="row">
+        <label>Costo WhatsApp por cliente / mes
+          <span class="u">ARS — conversaciones de Meta</span></label>
+        <input type="number" id="wa_total" value="8000" min="0">
+      </div>
+      <div class="row">
+        <label>Otros costos variables / cliente
+          <span class="u">ARS — storage, extras</span></label>
+        <input type="number" id="otros_var" value="200" min="0">
+      </div>
+
+      <div class="row">
+        <label>Costo fijo mensual total
+          <span class="u">ARS — hosting, dominios, herramientas</span></label>
+        <input type="number" id="fijo_total" value="60000" min="0">
+      </div>
+      <div class="row">
+        <label>Cantidad de clientes activos
+          <span class="u">entre cuántos repartís el costo fijo</span></label>
+        <input type="number" id="clientes" value="10" min="1">
+      </div>
+      <div class="row">
+        <label>Comisión de Mercado Pago
+          <span class="u">% — confirmalo en tu panel de MP</span></label>
+        <input type="number" id="mp_pct" value="6" min="0" step="0.1">
+      </div>
+      <div class="row">
+        <label>Margen de ganancia deseado
+          <span class="u">% sobre tu costo total</span></label>
+        <input type="number" id="margen" value="120" min="0">
+      </div>
+      <div class="row">
+        <label>Impuestos sobre la venta
+          <span class="u">% — IVA/IIBB si corresponde</span></label>
+        <input type="number" id="impuestos" value="0" min="0" step="0.1">
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTADO -->
+  <div class="result">
+    <h2>Tu costo y precio sugerido (por cliente / mes)</h2>
+    <div class="big-row"><span class="l">Costo de IA (tokens texto + audio)</span><span class="v" id="r-tokens">—</span></div>
+    <div class="big-row"><span class="l">Costo variable por cliente (IA + WhatsApp + otros)</span><span class="v" id="r-var">—</span></div>
+    <div class="big-row"><span class="l">Costo fijo prorrateado</span><span class="v" id="r-fijo">—</span></div>
+    <div class="big-row"><span class="l">Costo total por cliente</span><span class="v" id="r-total">—</span></div>
+    <div class="big-row"><span class="l">Precio sugerido (con margen, comisión e impuestos)</span><span class="v pos" id="r-precio">—</span></div>
+    <div class="big-row"><span class="l">Ganancia neta por cliente</span><span class="v" id="r-ganancia">—</span></div>
+  </div>
+
+  <!-- PLANES POR SEGMENTO -->
+  <div class="card">
+    <h2>Precios por plan</h2>
+    <p class="hint">A partir del precio sugerido, definí un multiplicador por segmento (más bots y canales = más valor). Editá los multiplicadores a tu criterio.</p>
+    <div class="seg-controls">
+      <label>Emprendedor ×<input type="number" id="m-emp" value="1" min="0.1" step="0.1"></label>
+      <label>Profesional ×<input type="number" id="m-pro" value="2" min="0.1" step="0.1"></label>
+      <label>Negocio ×<input type="number" id="m-neg" value="3.5" min="0.1" step="0.1"></label>
+    </div>
+    <div class="planes" style="margin-top:16px">
+      <div class="plan">
+        <h3>Emprendedor</h3>
+        <div class="precio" id="p-emp">—</div><div class="per">por mes</div>
+        <div class="detalle"><div><span>Bots</span><span>1</span></div><div><span>Canales</span><span>1</span></div></div>
+      </div>
+      <div class="plan" style="border-color:var(--violet)">
+        <h3>Profesional</h3>
+        <div class="precio" id="p-pro">—</div><div class="per">por mes</div>
+        <div class="detalle"><div><span>Bots</span><span>3</span></div><div><span>Canales</span><span>5</span></div></div>
+      </div>
+      <div class="plan">
+        <h3>Negocio</h3>
+        <div class="precio" id="p-neg">—</div><div class="per">por mes</div>
+        <div class="detalle"><div><span>Bots</span><span>10</span></div><div><span>Canales</span><span>20</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="foot">
+    Punto de equilibrio: el precio no debería bajar nunca del “costo total por cliente”, o perdés plata en cada cuenta.<br>
+    Para fijar el precio final, compará también con lo que cobran herramientas similares en Argentina (buscá precios actuales de Kommo, ManyChat, etc.).
+  </p>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const num = (id) => parseFloat($(id).value) || 0;
+const ars = (n) => '$' + Math.round(n).toLocaleString('es-AR');
+
+function calcular(){
+  const tc = num('tc');
+  // Precios OpenAI (USD) verificados sep 2026
+  const IN = 0.15/1e6, OUT = 0.60/1e6, WHISPER = 0.006, EMB = 0.02/1e6;
+
+  const convs = num('conv_mes');
+  // Costo de tokens de texto (USD) — embeddings incluidos (~1000 tok/conv)
+  const usdTexto = convs * (num('tok_in')*IN + num('tok_out')*OUT + 1000*EMB);
+  // Costo de audio (USD)
+  const minutos = convs * (num('pct_audio')/100) * (num('seg_audio')/60);
+  const usdAudio = minutos * WHISPER;
+  const costoIA = (usdTexto + usdAudio) * tc;  // a pesos
+
+  // Costo variable total por cliente
+  const cvar = costoIA + num('wa_total') + num('otros_var');
+
+  // Costo fijo prorrateado
+  const cfijo = num('fijo_total') / Math.max(1, num('clientes'));
+  const total = cvar + cfijo;
+
+  // Precio con margen, cubriendo comisión MP e impuestos
+  const conMargen = total * (1 + num('margen')/100);
+  const factor = 1 - (num('mp_pct') + num('impuestos'))/100;
+  const precio = factor > 0 ? conMargen/factor : conMargen;
+  const ganancia = precio * factor - total;
+
+  $('r-tokens').textContent = ars(costoIA);
+  $('r-var').textContent = ars(cvar);
+  $('r-fijo').textContent = ars(cfijo);
+  $('r-total').textContent = ars(total);
+  $('r-precio').textContent = ars(precio);
+  const g = $('r-ganancia');
+  g.textContent = ars(ganancia);
+  g.className = 'v ' + (ganancia >= 0 ? 'pos' : 'neg');
+
+  $('p-emp').textContent = ars(precio * num('m-emp'));
+  $('p-pro').textContent = ars(precio * num('m-pro'));
+  $('p-neg').textContent = ars(precio * num('m-neg'));
+}
+
+document.querySelectorAll('input').forEach(i => i.addEventListener('input', calcular));
+calcular();
+</script>
+</body>
+</html>
