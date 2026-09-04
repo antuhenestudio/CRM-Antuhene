@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AntüHene AI Studio · Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#0E1016; --panel:#161922; --panel2:#1D212D; --line:#2A2F3C;
+  --ink:#EDEFF4; --muted:#8B92A6; --violet:#8B5CF6; --cyan:#22D3EE;
+  --coral:#FB7185; --amber:#FBBF24; --emerald:#34D399;
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);
+  -webkit-font-smoothing:antialiased;line-height:1.5}
+h1,h2,h3,.serif{font-family:'Fraunces',serif}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit}
+::selection{background:var(--violet);color:#fff}
+
+/* ---------- Login ---------- */
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.login-card{width:100%;max-width:400px;background:var(--panel);border:1px solid var(--line);
+  border-radius:20px;padding:40px 32px}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.brand-mark{width:42px;height:42px;border-radius:12px;
+  background:linear-gradient(135deg,var(--violet),var(--cyan));
+  display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;
+  font-weight:700;font-size:22px;color:#fff}
+.brand-name{font-family:'Fraunces',serif;font-size:19px}
+.brand-name span{color:var(--violet)}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:6px;font-weight:500}
+.field input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+  padding:12px 14px;color:var(--ink);font-size:14.5px;transition:border-color .15s}
+.field input:focus{outline:none;border-color:var(--violet)}
+.btn-primary{width:100%;background:linear-gradient(135deg,var(--violet),var(--cyan));
+  color:#fff;font-weight:600;font-size:14.5px;padding:12px;border-radius:10px;transition:opacity .15s}
+.btn-primary:hover{opacity:.92}
+.btn-primary:disabled{opacity:.5;cursor:default}
+.login-alt{text-align:center;margin-top:18px;font-size:13px;color:var(--muted)}
+.login-alt button{color:var(--violet);font-weight:600}
+.login-msg{font-size:13px;margin-top:14px;padding:10px 12px;border-radius:8px;display:none}
+.login-msg.err{display:block;background:rgba(251,113,133,.12);color:var(--coral)}
+.login-msg.ok{display:block;background:rgba(52,211,153,.12);color:var(--emerald)}
+
+/* ---------- App shell ---------- */
+#app{display:none;min-height:100vh}
+.shell{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+.sidebar{background:var(--panel);border-right:1px solid var(--line);padding:20px 14px;
+  display:flex;flex-direction:column;gap:4px}
+.sidebar .brand{padding:0 8px 20px}
+.nav-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;
+  color:var(--muted);font-size:14px;font-weight:500;width:100%;text-align:left;transition:all .15s}
+.nav-item:hover{background:var(--panel2);color:var(--ink)}
+.nav-item.active{background:var(--panel2);color:var(--ink)}
+.nav-item.active .ic{color:var(--violet)}
+.ic{width:18px;height:18px;flex-shrink:0}
+.sidebar-foot{margin-top:auto;padding-top:16px;border-top:1px solid var(--line)}
+.user-chip{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;font-size:13px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--panel2);
+  display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;
+  color:var(--violet);flex-shrink:0;border:1px solid var(--line)}
+.user-chip .meta{overflow:hidden}
+.user-chip .name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-chip .role{color:var(--muted);font-size:11px;text-transform:capitalize}
+.logout{color:var(--muted);font-size:12.5px;margin-top:8px;padding:6px 8px}
+.logout:hover{color:var(--coral)}
+
+.main{overflow-y:auto;max-height:100vh}
+.topbar{position:sticky;top:0;background:rgba(14,16,22,.85);backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);padding:18px 28px;z-index:5}
+.topbar h1{font-size:22px;font-weight:600}
+.topbar p{color:var(--muted);font-size:13px;margin-top:2px}
+.view{padding:24px 28px}
+.view{display:none}
+.view.active{display:block}
+
+/* ---------- Kanban ---------- */
+.kanban{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px}
+.col{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  min-width:240px;width:240px;flex-shrink:0;display:flex;flex-direction:column;max-height:calc(100vh - 150px)}
+.col-head{padding:13px 14px;border-bottom:1px solid var(--line);display:flex;
+  align-items:center;justify-content:space-between}
+.col-head .t{font-size:13px;font-weight:600}
+.col-head .n{font-size:11px;color:var(--muted);background:var(--panel2);
+  padding:2px 8px;border-radius:20px}
+.col-body{padding:10px;display:flex;flex-direction:column;gap:9px;overflow-y:auto}
+.card{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;
+  cursor:grab;transition:border-color .15s}
+.card:hover{border-color:var(--violet)}
+.card.drag{opacity:.4}
+.card .cn{font-weight:600;font-size:13.5px;margin-bottom:3px}
+.card .cd{font-size:12px;color:var(--muted)}
+.card .tags{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
+.tag{font-size:10.5px;padding:2px 7px;border-radius:20px;font-weight:600}
+.tag.a{background:rgba(52,211,153,.14);color:var(--emerald)}
+.tag.z{background:rgba(139,92,246,.14);color:var(--violet)}
+
+/* ---------- Inbox ---------- */
+.inbox{display:grid;grid-template-columns:290px 1fr;gap:0;background:var(--panel);
+  border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;height:calc(100vh - 150px)}
+.conv-list{border-right:1px solid var(--line);overflow-y:auto}
+.conv{padding:14px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s}
+.conv:hover{background:var(--panel2)}
+.conv.active{background:var(--panel2)}
+.conv .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+.conv .who{font-weight:600;font-size:13.5px}
+.conv .ch{font-size:10px;color:var(--muted)}
+.conv .prev{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat{display:flex;flex-direction:column}
+.chat-head{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;
+  justify-content:space-between;align-items:center}
+.chat-head .who{font-weight:600}
+.chat-head .mode{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;
+  background:rgba(139,92,246,.14);color:var(--violet)}
+.chat-body{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:72%;padding:10px 13px;border-radius:12px;font-size:13.5px;line-height:1.45}
+.msg.in{background:var(--panel2);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:3px}
+.msg.out{background:linear-gradient(135deg,var(--violet),var(--cyan));color:#fff;
+  align-self:flex-end;border-bottom-right-radius:3px}
+.msg .by{font-size:10px;opacity:.7;margin-top:4px}
+.chat-input{padding:14px 18px;border-top:1px solid var(--line);display:flex;gap:10px}
+.chat-input input{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:10px;
+  padding:11px 14px;color:var(--ink);font-size:14px}
+.chat-input input:focus{outline:none;border-color:var(--violet)}
+.chat-input button{background:linear-gradient(135deg,var(--violet),var(--cyan));color:#fff;
+  padding:0 18px;border-radius:10px;font-weight:600}
+
+/* ---------- Cards genéricas / grids ---------- */
+.grid{display:grid;gap:16px}
+.g3{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.tile h3{font-size:15px;margin-bottom:4px}
+.tile p{font-size:13px;color:var(--muted)}
+.tile .big{font-family:'Fraunces',serif;font-size:30px;font-weight:600;margin:6px 0}
+.channel-row{display:flex;align-items:center;justify-content:space-between;
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.channel-row .l{display:flex;align-items:center;gap:12px}
+.channel-row .dot{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center}
+.btn-ghost{border:1px solid var(--line);border-radius:9px;padding:8px 14px;font-size:13px;
+  font-weight:600;color:var(--ink);transition:border-color .15s}
+.btn-ghost:hover{border-color:var(--violet)}
+.btn-sm{background:linear-gradient(135deg,var(--violet),var(--cyan));color:#fff;
+  border-radius:9px;padding:8px 14px;font-size:13px;font-weight:600}
+.pub-item{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;
+  margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.pub-item .when{font-size:12px;color:var(--muted)}
+.pill{font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;background:var(--panel2)}
+.empty{text-align:center;color:var(--muted);padding:50px 20px;font-size:13.5px}
+.demo-banner{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);
+  color:var(--amber);font-size:12.5px;padding:9px 14px;border-radius:9px;margin-bottom:18px}
+@media(max-width:820px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .inbox{grid-template-columns:1fr}
+  .conv-list{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="login">
+  <div class="login-card">
+    <div class="brand">
+      <div class="brand-mark">A</div>
+      <div class="brand-name">AntüHene <span>AI Studio</span></div>
+    </div>
+    <div class="field">
+      <label for="email">Correo</label>
+      <input id="email" type="email" placeholder="vos@tunegocio.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label for="pass">Contraseña</label>
+      <input id="pass" type="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button id="btn-login" class="btn-primary">Entrar</button>
+    <div id="login-msg" class="login-msg"></div>
+    <div class="login-alt">
+      <span id="alt-text">¿No tenés cuenta?</span>
+      <button id="btn-toggle">Crear una</button>
+    </div>
+    <div class="login-alt" style="margin-top:8px">
+      <button id="btn-demo" style="color:var(--muted)">Ver demo sin cuenta →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app">
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">A</div>
+        <div class="brand-name" style="font-size:16px">AntüHene</div>
+      </div>
+      <button class="nav-item active" data-view="resumen">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Resumen
+      </button>
+      <button class="nav-item" data-view="inbox">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Conversaciones
+      </button>
+      <button class="nav-item" data-view="leads">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="3.5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="3.5" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>
+        Clientes
+      </button>
+      <button class="nav-item" data-view="publicaciones">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Publicaciones
+      </button>
+      <button class="nav-item" data-view="canales">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>
+        Conectar redes
+      </button>
+      <div class="sidebar-foot">
+        <div class="user-chip">
+          <div class="avatar" id="u-avatar">A</div>
+          <div class="meta">
+            <div class="name" id="u-name">Cargando…</div>
+            <div class="role" id="u-role">—</div>
+          </div>
+        </div>
+        <button class="logout" id="btn-logout">Cerrar sesión</button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar">
+        <h1 id="view-title">Resumen</h1>
+        <p id="view-sub">Un vistazo a tu negocio hoy</p>
+      </div>
+
+      <div id="demo-banner" class="view-banner" style="display:none;padding:24px 28px 0">
+        <div class="demo-banner">Estás viendo datos de ejemplo. Cuando conectes tus redes y entren consultas reales, aparecen acá.</div>
+      </div>
+
+      <!-- RESUMEN -->
+      <section class="view active" data-view="resumen">
+        <div class="grid g3">
+          <div class="tile"><p>Conversaciones hoy</p><div class="big" id="m-conv">—</div><p>El bot respondió al instante</p></div>
+          <div class="tile"><p>Leads nuevos</p><div class="big" id="m-leads">—</div><p>Capturados esta semana</p></div>
+          <div class="tile"><p>Tier A calificados</p><div class="big" id="m-tier">—</div><p>Listos para contactar</p></div>
+          <div class="tile"><p>Publicaciones programadas</p><div class="big" id="m-pub">—</div><p>En cola para salir</p></div>
+        </div>
+      </section>
+
+      <!-- INBOX -->
+      <section class="view" data-view="inbox">
+        <div class="inbox">
+          <div class="conv-list" id="conv-list"></div>
+          <div class="chat">
+            <div class="chat-head">
+              <div class="who" id="chat-who">Elegí una conversación</div>
+              <div class="mode" id="chat-mode" style="display:none">IA activa</div>
+            </div>
+            <div class="chat-body" id="chat-body">
+              <div class="empty">Seleccioná una conversación de la izquierda para verla.</div>
+            </div>
+            <div class="chat-input" id="chat-input" style="display:none">
+              <input id="chat-text" placeholder="Escribí una respuesta… (queda registrada con tu nombre)">
+              <button id="chat-send">Enviar</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- LEADS / KANBAN -->
+      <section class="view" data-view="leads">
+        <div class="kanban" id="kanban"></div>
+      </section>
+
+      <!-- PUBLICACIONES -->
+      <section class="view" data-view="publicaciones">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <p style="color:var(--muted);font-size:13.5px">Contenido programado para tus redes</p>
+          <button class="btn-sm" id="btn-nueva-pub">Programar publicación</button>
+        </div>
+        <div id="pub-list"></div>
+      </section>
+
+      <!-- CANALES -->
+      <section class="view" data-view="canales">
+        <p style="color:var(--muted);font-size:13.5px;margin-bottom:16px">Conectá las cuentas de tu negocio. Se abre el ingreso oficial de cada red; nunca te pedimos tu contraseña.</p>
+        <div id="channel-list"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURACIÓN — reemplazá con los datos de tu proyecto Supabase
+   (Settings → API en tu panel de Supabase). La clave anon es
+   pública y segura de exponer: el aislamiento lo garantiza RLS.
+   ============================================================ */
+const SUPABASE_URL = 'https://TU-PROYECTO.supabase.co';
+const SUPABASE_ANON_KEY = 'TU-CLAVE-ANON';
+const BACKEND_URL = 'https://TU-BACKEND.railway.app'; // para conectar redes
+
+let sb = null;
+let demoMode = false;
+try {
+  if (!SUPABASE_URL.includes('TU-PROYECTO')) {
+    sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch(e){ console.warn('Supabase no configurado, solo demo'); }
+
+/* ---------- Datos de ejemplo (demo / estado vacío) ---------- */
+const DEMO = {
+  perfil: { nombre:'María', rol:'dueno' },
+  metricas: { conv:12, leads:8, tier:3, pub:5 },
+  leads:[
+    {nombre:'Carlos Ruiz', interes:'Jubilación petrolera', zona:'Neuquén', estado:'filtrado_tier_a', tier:'A', convenio:'petroleros'},
+    {nombre:'Ana López', interes:'Sucesión', zona:'Cipolletti', estado:'nuevo_lead'},
+    {nombre:'Jorge Díaz', interes:'ART', zona:'Añelo', estado:'cita_agendada', convenio:'camioneros'},
+    {nombre:'Lucía Sosa', interes:'Jubilación docente', zona:'Neuquén', estado:'en_tramite'},
+    {nombre:'Pedro Gómez', interes:'Consulta general', zona:'Plottier', estado:'nuevo_lead'},
+    {nombre:'Sofía Vera', interes:'Sucesión', zona:'Neuquén', estado:'ganado'},
+  ],
+  convs:[
+    {who:'Carlos Ruiz', ch:'whatsapp', prev:'Perfecto, ¿el jueves a las 10 te queda bien?', modo:'bot',
+     msgs:[{d:'in',t:'Hola, quería consultar por mi jubilación, soy petrolero'},
+           {d:'out',t:'¡Hola Carlos! Con gusto te ayudo. ¿Me contás cuántos años de aportes tenés aproximadamente?',by:'IA'},
+           {d:'in',t:'Unos 28 años'},
+           {d:'out',t:'Buenísimo. Con ese régimen y esos aportes conviene revisar tu historia laboral sin cargo. ¿El jueves a las 10 te queda bien?',by:'IA'}]},
+    {who:'Ana López', ch:'instagram', prev:'Gracias, quedo atenta', modo:'humano',
+     msgs:[{d:'in',t:'Hola, vi que hacen sucesiones'},
+           {d:'out',t:'Hola Ana, así es. ¿Es una sucesión de un familiar directo?',by:'IA'},
+           {d:'in',t:'Sí, de mi papá'},
+           {d:'out',t:'Te va a atender la Dra. Godoy. Le paso tu contacto y te escribe hoy.',by:'María'}]},
+    {who:'Jorge Díaz', ch:'whatsapp', prev:'Listo, ahí agendo', modo:'bot',
+     msgs:[{d:'in',t:'Necesito asesoramiento por un tema de ART'},
+           {d:'out',t:'Hola Jorge, te ayudo con eso. ¿El accidente fue laboral y estás en relación de dependencia?',by:'IA'}]},
+  ],
+  pubs:[
+    {texto:'Horarios de atención de esta semana', formato:'story', canal:'instagram', when:'Lun 09:00', rec:'semanal'},
+    {texto:'3 señales de que te conviene revisar tu jubilación', formato:'feed', canal:'instagram', when:'Mié 18:00'},
+    {texto:'Testimonio de cliente – sucesión resuelta', formato:'reel', canal:'facebook', when:'Vie 12:00'},
+    {texto:'Tip legal del viernes', formato:'feed', canal:'facebook', when:'Vie 19:00'},
+    {texto:'Recordatorio: consulta inicial sin cargo', formato:'story', canal:'instagram', when:'Sáb 10:00'},
+  ],
+  canales:[
+    {tipo:'whatsapp', nombre:'+54 299 673-2977', activo:true},
+    {tipo:'instagram', nombre:'@portanko.abogados', activo:true},
+    {tipo:'facebook', nombre:'Portanko Abogados', activo:false},
+  ],
+};
+
+const COLUMNS = [
+  {k:'nuevo_lead', t:'Nuevo'},
+  {k:'filtrado_tier_a', t:'Tier A'},
+  {k:'historia_laboral_recibida', t:'Doc. recibida'},
+  {k:'cita_agendada', t:'Cita agendada'},
+  {k:'en_tramite', t:'En trámite'},
+  {k:'ganado', t:'Ganado'},
+  {k:'perdido', t:'Perdido'},
+];
+const CH_STYLE = {
+  whatsapp:{c:'#25D366', bg:'rgba(37,211,102,.15)', l:'WA'},
+  instagram:{c:'#E4405F', bg:'rgba(228,64,95,.15)', l:'IG'},
+  facebook:{c:'#1877F2', bg:'rgba(24,119,242,.15)', l:'FB'},
+  web:{c:'#8B5CF6', bg:'rgba(139,92,246,.15)', l:'Web'},
+};
+
+/* ---------- Login ---------- */
+const $ = (id) => document.getElementById(id);
+let signupMode = false;
+
+$('btn-toggle').onclick = () => {
+  signupMode = !signupMode;
+  $('btn-login').textContent = signupMode ? 'Crear cuenta' : 'Entrar';
+  $('alt-text').textContent = signupMode ? '¿Ya tenés cuenta?' : '¿No tenés cuenta?';
+  $('btn-toggle').textContent = signupMode ? 'Entrar' : 'Crear una';
+};
+
+function showLoginMsg(txt, ok){
+  const m = $('login-msg');
+  m.textContent = txt;
+  m.className = 'login-msg ' + (ok ? 'ok' : 'err');
+}
+
+$('btn-login').onclick = async () => {
+  const email = $('email').value.trim();
+  const pass = $('pass').value;
+  if(!email || !pass){ showLoginMsg('Completá correo y contraseña.'); return; }
+  if(!sb){ showLoginMsg('Falta configurar Supabase. Podés ver la demo abajo.'); return; }
+
+  $('btn-login').disabled = true;
+  try {
+    if(signupMode){
+      const { error } = await sb.auth.signUp({ email, password: pass });
+      if(error) throw error;
+      showLoginMsg('Cuenta creada. Revisá tu correo para confirmar y luego entrá.', true);
+    } else {
+      const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if(error) throw error;
+      await entrar();
+    }
+  } catch(e){
+    showLoginMsg(e.message || 'No se pudo iniciar sesión.');
+  } finally {
+    $('btn-login').disabled = false;
+  }
+};
+
+$('btn-demo').onclick = () => { demoMode = true; entrar(); };
+$('btn-logout').onclick = async () => {
+  if(sb && !demoMode) await sb.auth.signOut();
+  location.reload();
+};
+
+/* ---------- Entrar a la app ---------- */
+async function entrar(){
+  $('login').style.display = 'none';
+  $('app').style.display = 'block';
+
+  let perfil = DEMO.perfil;
+  if(sb && !demoMode){
+    const { data:{ user } } = await sb.auth.getUser();
+    const { data } = await sb.from('perfiles').select('nombre, rol').eq('user_id', user.id).maybeSingle();
+    if(data) perfil = data;
+    else perfil = { nombre: user.email.split('@')[0], rol:'dueno' };
+  }
+  $('u-name').textContent = perfil.nombre || 'Usuario';
+  $('u-role').textContent = perfil.rol || 'miembro';
+  $('u-avatar').textContent = (perfil.nombre || 'U')[0].toUpperCase();
+
+  const usaDemo = demoMode || !sb;
+  $('demo-banner').style.display = usaDemo ? 'block' : 'none';
+
+  cargarResumen(usaDemo);
+  cargarKanban(usaDemo);
+  cargarInbox(usaDemo);
+  cargarPublicaciones(usaDemo);
+  cargarCanales(usaDemo);
+
+  // Restringir acciones según rol (los miembros no borran)
+  if(perfil.rol === 'miembro'){
+    document.querySelectorAll('[data-owner]').forEach(el => el.style.display='none');
+  }
+}
+
+/* ---------- Navegación ---------- */
+const TITLES = {
+  resumen:['Resumen','Un vistazo a tu negocio hoy'],
+  inbox:['Conversaciones','Todos tus canales en una bandeja'],
+  leads:['Clientes','Seguí cada lead por su etapa'],
+  publicaciones:['Publicaciones','Contenido programado para tus redes'],
+  canales:['Conectar redes','Vinculá las cuentas de tu negocio'],
+};
+document.querySelectorAll('.nav-item').forEach(btn => {
+  btn.onclick = () => {
+    const v = btn.dataset.view;
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b===btn));
+    document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.dataset.view===v));
+    $('view-title').textContent = TITLES[v][0];
+    $('view-sub').textContent = TITLES[v][1];
+  };
+});
+
+/* ---------- Resumen ---------- */
+async function cargarResumen(demo){
+  let m = DEMO.metricas;
+  if(!demo && sb){
+    try {
+      const org = await miOrg();
+      const desde = new Date(Date.now()-7*864e5).toISOString();
+      const [{count:leads}, {count:tier}, {count:pub}] = await Promise.all([
+        sb.from('leads').select('*',{count:'exact',head:true}).gte('created_at',desde),
+        sb.from('leads').select('*',{count:'exact',head:true}).eq('tier','A'),
+        sb.from('publicaciones').select('*',{count:'exact',head:true}).eq('estado','programada'),
+      ]);
+      m = { conv:'—', leads:leads||0, tier:tier||0, pub:pub||0 };
+    } catch(e){ console.warn(e); }
+  }
+  $('m-conv').textContent = m.conv;
+  $('m-leads').textContent = m.leads;
+  $('m-tier').textContent = m.tier;
+  $('m-pub').textContent = m.pub;
+}
+
+async function miOrg(){
+  const { data:{ user } } = await sb.auth.getUser();
+  const { data } = await sb.from('perfiles').select('organizacion_id').eq('user_id',user.id).maybeSingle();
+  return data?.organizacion_id;
+}
+
+/* ---------- Kanban ---------- */
+async function cargarKanban(demo){
+  let leads = DEMO.leads;
+  if(!demo && sb){
+    try { const { data } = await sb.from('leads').select('*').order('updated_at',{ascending:false});
+      leads = data || []; } catch(e){ console.warn(e); }
+  }
+  const k = $('kanban'); k.innerHTML='';
+  COLUMNS.forEach(col => {
+    const items = leads.filter(l => l.estado === col.k);
+    const el = document.createElement('div');
+    el.className='col';
+    el.innerHTML = `<div class="col-head"><span class="t">${col.t}</span><span class="n">${items.length}</span></div>
+      <div class="col-body" data-col="${col.k}"></div>`;
+    const body = el.querySelector('.col-body');
+    items.forEach(l => body.appendChild(cardEl(l)));
+    k.appendChild(el);
+  });
+  habilitarDragDrop(demo);
+}
+function cardEl(l){
+  const el = document.createElement('div');
+  el.className='card'; el.draggable=true; el.dataset.id=l.id||'';
+  el.innerHTML = `<div class="cn">${l.nombre||'Sin nombre'}</div>
+    <div class="cd">${l.interes||'—'}</div>
+    <div class="tags">${l.tier==='A'?'<span class="tag a">Tier A</span>':''}
+    ${l.zona?`<span class="tag z">${l.zona}</span>`:''}</div>`;
+  return el;
+}
+function habilitarDragDrop(demo){
+  let dragged=null;
+  document.querySelectorAll('.card').forEach(c => {
+    c.addEventListener('dragstart',()=>{dragged=c;c.classList.add('drag')});
+    c.addEventListener('dragend',()=>{c.classList.remove('drag')});
+  });
+  document.querySelectorAll('.col-body').forEach(b => {
+    b.addEventListener('dragover',e=>e.preventDefault());
+    b.addEventListener('drop',async e=>{
+      e.preventDefault();
+      if(!dragged) return;
+      b.appendChild(dragged);
+      const nuevoEstado = b.dataset.col;
+      const id = dragged.dataset.id;
+      if(!demo && sb && id){
+        try { await sb.from('leads').update({estado:nuevoEstado}).eq('id',id); }
+        catch(err){ console.warn(err); }
+      }
+    });
+  });
+}
+
+/* ---------- Inbox ---------- */
+let convActiva = null;
+async function cargarInbox(demo){
+  let convs = DEMO.convs;
+  // (En producción se leería de `conversaciones` con su último mensaje.)
+  const list = $('conv-list'); list.innerHTML='';
+  convs.forEach((c,i) => {
+    const el = document.createElement('div');
+    el.className='conv'; el.dataset.i=i;
+    const st = CH_STYLE[c.ch]||CH_STYLE.web;
+    el.innerHTML = `<div class="top"><span class="who">${c.who}</span><span class="ch" style="color:${st.c}">${st.l}</span></div>
+      <div class="prev">${c.prev}</div>`;
+    el.onclick = () => abrirConv(convs, i);
+    list.appendChild(el);
+  });
+}
+function abrirConv(convs, i){
+  convActiva = i;
+  document.querySelectorAll('.conv').forEach(c=>c.classList.toggle('active', +c.dataset.i===i));
+  const c = convs[i];
+  $('chat-who').textContent = c.who;
+  const modeEl = $('chat-mode');
+  modeEl.style.display='inline-block';
+  modeEl.textContent = c.modo==='bot' ? 'IA activa' : 'Atención humana';
+  const body = $('chat-body'); body.innerHTML='';
+  c.msgs.forEach(m => {
+    const el=document.createElement('div');
+    el.className='msg '+(m.d==='in'?'in':'out');
+    el.innerHTML = m.t + (m.by?`<div class="by">${m.by}</div>`:'');
+    body.appendChild(el);
+  });
+  body.scrollTop = body.scrollHeight;
+  $('chat-input').style.display='flex';
+}
+$('chat-send').onclick = () => {
+  const inp = $('chat-text'); const t = inp.value.trim();
+  if(!t || convActiva===null) return;
+  const body = $('chat-body');
+  const el=document.createElement('div');
+  el.className='msg out';
+  el.innerHTML = t + `<div class="by">${$('u-name').textContent}</div>`;
+  body.appendChild(el); body.scrollTop=body.scrollHeight;
+  inp.value='';
+  // En producción: POST al backend, que envía por el canal y firma el mensaje con tu sesión.
+};
+$('chat-text')?.addEventListener('keydown',e=>{ if(e.key==='Enter') $('chat-send').click(); });
+
+/* ---------- Publicaciones ---------- */
+async function cargarPublicaciones(demo){
+  let pubs = DEMO.pubs;
+  if(!demo && sb){
+    try { const { data } = await sb.from('publicaciones').select('*, canal:canales(tipo)')
+      .order('programada_para'); 
+      pubs = (data||[]).map(p=>({texto:p.texto, formato:p.formato, canal:p.canal?.tipo,
+        when:new Date(p.programada_para).toLocaleString('es-AR',{weekday:'short',hour:'2-digit',minute:'2-digit'}),
+        rec:p.recurrencia})); } catch(e){ console.warn(e); }
+  }
+  const list = $('pub-list'); list.innerHTML='';
+  if(!pubs.length){ list.innerHTML='<div class="empty">Todavía no programaste ninguna publicación. Tocá “Programar publicación” para empezar.</div>'; return; }
+  pubs.forEach(p => {
+    const st = CH_STYLE[p.canal]||CH_STYLE.web;
+    const el=document.createElement('div'); el.className='pub-item';
+    el.innerHTML = `<div>
+        <div style="font-weight:600;font-size:14px;margin-bottom:4px">${p.texto}</div>
+        <div class="when">${p.when}${p.rec?' · se repite '+p.rec:''}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="pill" style="color:${st.c}">${st.l}</span>
+        <span class="pill">${p.formato}</span>
+      </div>`;
+    list.appendChild(el);
+  });
+}
+$('btn-nueva-pub').onclick = () => alert('El formulario para programar contenido se conecta acá (subir imagen/video, elegir canal, formato, fecha y repetición).');
+
+/* ---------- Canales ---------- */
+async function cargarCanales(demo){
+  let canales = DEMO.canales;
+  if(!demo && sb){
+    try { const { data } = await sb.from('canales').select('tipo, identificador, metadatos, activo');
+      canales = (data||[]).map(c=>({tipo:c.tipo, nombre:c.metadatos?.numero||c.metadatos?.username||c.metadatos?.nombre||c.identificador, activo:c.activo})); }
+    catch(e){ console.warn(e); }
+  }
+  const list = $('channel-list'); list.innerHTML='';
+  const disponibles = ['whatsapp','instagram','facebook'];
+  disponibles.forEach(tipo => {
+    const st = CH_STYLE[tipo];
+    const conectado = canales.find(c => c.tipo===tipo);
+    const el = document.createElement('div'); el.className='channel-row';
+    const nombreRed = {whatsapp:'WhatsApp', instagram:'Instagram', facebook:'Facebook'}[tipo];
+    el.innerHTML = `<div class="l">
+        <div class="dot" style="background:${st.bg};color:${st.c};font-weight:700;font-size:13px">${st.l}</div>
+        <div>
+          <div style="font-weight:600;font-size:14px">${nombreRed}</div>
+          <div style="font-size:12.5px;color:var(--muted)">${conectado?conectado.nombre:'Sin conectar'}</div>
+        </div>
+      </div>
+      ${conectado
+        ? `<span class="pill" style="color:var(--emerald)">Conectado</span>`
+        : `<button class="btn-sm" onclick="conectar('${tipo}')">Conectar</button>`}`;
+    list.appendChild(el);
+  });
+}
+async function conectar(tipo){
+  if(demoMode || !sb){ alert('En la demo no se conectan redes reales. Con tu cuenta, este botón abre el ingreso oficial de '+tipo+'.'); return; }
+  const org = await miOrg();
+  if(tipo==='whatsapp'){
+    alert('WhatsApp se conecta con el asistente de Meta (Embedded Signup). Se integra con tu backend.');
+  } else {
+    window.open(`${BACKEND_URL}/conectar/meta?organizacion_id=${org}`, 'conectar', 'width=600,height=700');
+  }
+}
+
+/* ---------- Sesión persistente ---------- */
+(async () => {
+  if(sb){
+    const { data:{ session } } = await sb.auth.getSession();
+    if(session) entrar();
+  }
+})();
+</script>
+</body>
+</html>
