@@ -225,6 +225,10 @@ input,textarea,select{font-family:inherit}
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         Publicaciones
       </button>
+      <button class="nav-item" data-view="bots">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M12 8V5M9 3h6"/><circle cx="9" cy="14" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="14" r="1" fill="currentColor" stroke="none"/></svg>
+        Mis bots
+      </button>
       <button class="nav-item" data-view="canales">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>
         Conectar redes
@@ -379,6 +383,15 @@ input,textarea,select{font-family:inherit}
         <div id="pub-list"></div>
       </section>
 
+      <!-- BOTS -->
+      <section class="view" data-view="bots">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <p style="color:var(--muted);font-size:13.5px">Creá los bots que necesites y enlazá cada uno a un canal (ej: “Bot Jubilaciones” → WhatsApp Jubilaciones).</p>
+          <button class="btn-sm" id="btn-nuevo-bot">Crear bot</button>
+        </div>
+        <div id="bots-list" class="grid g3"></div>
+      </section>
+
       <!-- CANALES -->
       <section class="view" data-view="canales">
         <p style="color:var(--muted);font-size:13.5px;margin-bottom:16px">Conectá las cuentas de tu negocio. Se abre el ingreso oficial de cada red; nunca te pedimos tu contraseña.</p>
@@ -499,6 +512,16 @@ input,textarea,select{font-family:inherit}
   </div>
 </div>
 
+<!-- MURO DE PAGO -->
+<div id="paywall" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:20px;max-width:760px;width:100%;padding:32px;max-height:90vh;overflow-y:auto">
+    <h2 style="font-size:22px;margin-bottom:6px">Activá tu cuenta para vincular canales</h2>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:24px">Podés recorrer todo el panel, pero para conectar tus redes y activar tus bots necesitás una suscripción. Se debita automáticamente cada mes y la cancelás cuando quieras.</p>
+    <div class="grid g3" id="planes-list"></div>
+    <button id="paywall-close" style="margin-top:20px;color:var(--muted);font-size:13px">Seguir explorando el panel</button>
+  </div>
+</div>
+
 <script>
 /* ============================================================
    CONFIGURACIÓN — reemplazá con los datos de tu proyecto Supabase
@@ -520,7 +543,18 @@ try {
 /* ---------- Datos de ejemplo (demo / estado vacío) ---------- */
 const DEMO = {
   perfil: { nombre:'María', rol:'dueno' },
+  suscripcion: 'trial',   // 'inactiva' | 'trial' | 'activa'
   resumen: { conv:12, leads:8, tier:3, pub:5 },
+  bots:[
+    {nombre:'Bot Jubilaciones', objetivo:'Calificar y agendar revisión sin cargo', rubro:'juridico', canal:'WhatsApp Jubilaciones'},
+    {nombre:'Bot Sucesiones', objetivo:'Derivar a la Dra. Godoy', rubro:'juridico', canal:'Instagram'},
+    {nombre:'Bot ART', objetivo:'Consulta inicial de accidentes laborales', rubro:'juridico', canal:null},
+  ],
+  planes:[
+    {id:'emprendedor', nombre:'Emprendedor', precio_ars:0, max_bots:1, max_canales:1, descripcion:'Definí el precio'},
+    {id:'profesional', nombre:'Profesional', precio_ars:0, max_bots:3, max_canales:5, descripcion:'Definí el precio'},
+    {id:'negocio', nombre:'Negocio', precio_ars:0, max_bots:10, max_canales:20, descripcion:'Definí el precio'},
+  ],
   leads:[
     {registro_interno:'AH-2026-0001', nombre:'Carlos Ruiz', dni:'27.345.678', interes:'Jubilación petrolera', zona:'Neuquén', estado:'filtrado_tier_a', tier:'A', convenio:'petroleros', secretario:'Laura', fecha_ingreso:'2026-08-12', birth_date:'1975-03-14'},
     {registro_interno:'AH-2026-0002', nombre:'Ana López', dni:'30.111.222', interes:'Sucesión', zona:'Cipolletti', estado:'nuevo_lead', secretario:'Laura', fecha_ingreso:'2026-08-28'},
@@ -688,6 +722,18 @@ async function entrar(){
   cargarCampanita(usaDemo);
   cargarAgenda(usaDemo);
   cargarNegocio(usaDemo);
+  cargarBots(usaDemo);
+
+  // Estado de suscripción: controla el acceso a las vinculaciones
+  let estadoSusc = DEMO.suscripcion;
+  if(!usaDemo && sb){
+    try { const { data:{ user } } = await sb.auth.getUser();
+      const { data } = await sb.from('perfiles').select('organizacion_id').eq('user_id',user.id).maybeSingle();
+      const { data:org } = await sb.from('organizaciones').select('estado_suscripcion').eq('id',data.organizacion_id).maybeSingle();
+      estadoSusc = org?.estado_suscripcion || 'inactiva';
+    } catch(e){ console.warn(e); }
+  }
+  suscripcionActiva = ['activa','trial'].includes(estadoSusc);
 
   // Restringir acciones según rol (los miembros no borran)
   if(perfil.rol === 'miembro'){
@@ -703,6 +749,7 @@ const TITLES = {
   metricas:['Decisiones','Números reales para decidir dónde invertir'],
   agenda:['Agenda','Las citas que agenda el bot, en tu calendario'],
   negocio:['Mi negocio','Los datos con los que el bot responde a tus prospectos'],
+  bots:['Mis bots','Creá bots y enlazalos a tus canales'],
   publicaciones:['Publicaciones','Contenido programado para tus redes'],
   canales:['Conectar redes','Vinculá las cuentas de tu negocio'],
   config:['Configurar bot','Memoria, campos propios y avisos automáticos'],
@@ -997,6 +1044,7 @@ async function cargarCanales(demo){
   });
 }
 async function conectar(tipo){
+  if(!suscripcionActiva){ mostrarPaywall(); return; }
   if(demoMode || !sb){ alert('En la demo no se conectan redes reales. Con tu cuenta, este botón abre el ingreso oficial de '+tipo+'.'); return; }
   const org = await miOrg();
   if(tipo==='whatsapp'){
@@ -1259,6 +1307,80 @@ $('btn-guardar-negocio').onclick=async()=>{
     alert('Ficha guardada. Tu bot ya responde con esta información.');
   } catch(e){ alert('Error al guardar: '+e.message); }
 };
+
+/* ---------- Mis bots ---------- */
+let suscripcionActiva = true;
+async function cargarBots(demo){
+  let bots = DEMO.bots, canales = DEMO.canales;
+  if(!demo && sb){
+    try {
+      const { data:ag } = await sb.from('agentes').select('*, canal:canales(metadatos,tipo)');
+      bots = (ag||[]).map(a=>({nombre:a.nombre,objetivo:a.objetivo,rubro:a.rubro,
+        canal:a.canal?.[0]?.metadatos?.numero||a.canal?.[0]?.tipo||null, id:a.id}));
+    } catch(e){ console.warn(e); }
+  }
+  const el=$('bots-list'); el.innerHTML='';
+  if(!bots.length){ el.innerHTML='<div class="empty">Todavía no creaste ningún bot. Tocá “Crear bot” para empezar.</div>'; return; }
+  bots.forEach(b=>{
+    const t=document.createElement('div'); t.className='tile';
+    t.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <h3 style="font-size:15px">${b.nombre}</h3>
+        <span class="pill" style="color:var(--violet)">${b.rubro||'general'}</span></div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">${b.objetivo||''}</p>
+      <div style="padding-top:12px;border-top:1px solid var(--line)">
+        ${b.canal
+          ? `<div style="font-size:12.5px;color:var(--emerald)">🔗 Enlazado a ${b.canal}</div>`
+          : `<button class="btn-ghost" style="font-size:12.5px" onclick="enlazarBot('${b.nombre}')">Enlazar a un canal</button>`}
+      </div>`;
+    el.appendChild(t);
+  });
+}
+$('btn-nuevo-bot').onclick = async () => {
+  const nombre = prompt('Nombre del bot (ej: Bot Jubilaciones):'); if(!nombre) return;
+  const objetivo = prompt('¿Cuál es su objetivo? (ej: calificar y agendar):')||'';
+  if(demoMode||!sb){ alert(`Se crearía "${nombre}". Con tu cuenta queda listo para enlazar a un canal.`); return; }
+  try { const org=await miOrg();
+    await sb.from('agentes').insert({organizacion_id:org,nombre,objetivo,rubro:'general'});
+    cargarBots(false);
+  } catch(e){ alert('Error: '+e.message); }
+};
+function enlazarBot(nombre){
+  if(!suscripcionActiva){ mostrarPaywall(); return; }
+  alert(`Acá elegís a qué canal enlazar "${nombre}" (ej: el WhatsApp llamado Jubilaciones).`);
+}
+
+/* ---------- Muro de pago ---------- */
+async function cargarPlanes(){
+  let planes = DEMO.planes;
+  if(sb && !demoMode){ try { const {data}=await sb.from('planes').select('*').eq('activo',true);
+    if(data?.length) planes=data; } catch(e){ console.warn(e); } }
+  const el=$('planes-list'); el.innerHTML='';
+  planes.forEach(p=>{
+    const precio = p.precio_ars>0 ? '$'+Number(p.precio_ars).toLocaleString('es-AR')+'/mes' : 'A definir';
+    const t=document.createElement('div'); t.className='tile'; t.style.textAlign='center';
+    t.innerHTML=`<h3 style="font-size:16px;margin-bottom:6px">${p.nombre}</h3>
+      <div class="big" style="font-size:26px">${precio}</div>
+      <p style="font-size:12.5px;color:var(--muted);margin:8px 0 16px">${p.max_bots} bot(s) · ${p.max_canales} canal(es)</p>
+      <button class="btn-sm" style="width:100%" onclick="suscribir('${p.id}')">Elegir ${p.nombre}</button>`;
+    el.appendChild(t);
+  });
+}
+function mostrarPaywall(){ cargarPlanes(); $('paywall').style.display='flex'; }
+$('paywall-close').onclick = ()=> $('paywall').style.display='none';
+async function suscribir(planId){
+  if(demoMode || !sb){ alert('En la demo no se cobra. Con tu cuenta, esto te lleva al checkout de Mercado Pago para el débito mensual.'); return; }
+  try {
+    const org = await miOrg();
+    const { data:{ user } } = await sb.auth.getUser();
+    const r = await fetch(`${BACKEND_URL}/api/suscripcion`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ organizacion_id:org, plan_id:planId, email:user.email })
+    });
+    const d = await r.json();
+    if(d.checkout_url) window.location.href = d.checkout_url;
+    else alert('No se pudo iniciar la suscripción.');
+  } catch(e){ alert('Error: '+e.message); }
+}
 
 /* ---------- Sesión persistente ---------- */
 (async () => {
