@@ -159,47 +159,40 @@ input,textarea,select{font-family:inherit}
 .demo-banner{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);
   color:var(--amber);font-size:12.5px;padding:9px 14px;border-radius:9px;margin-bottom:18px}
 .ic[data-lucide]{width:18px;height:18px}
+#menu-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:60}
 @media(max-width:900px){
-  /* Sidebar como barra inferior en celular */
   .shell{grid-template-columns:1fr}
-  .sidebar{position:fixed;bottom:0;left:0;right:0;top:auto;height:auto;flex-direction:row;
-    border-right:none;border-top:1px solid var(--line);padding:6px 4px;z-index:50;
-    overflow-x:auto;gap:0;justify-content:flex-start}
-  .sidebar .brand, .sidebar-foot{display:none}
-  .nav-item{flex-direction:column;gap:3px;font-size:9.5px;padding:7px 9px;min-width:60px;
-    text-align:center;white-space:nowrap;flex-shrink:0}
+  /* Sidebar: panel lateral que se abre con la hamburguesa, con TODAS las secciones */
+  .sidebar{position:fixed;top:0;left:0;bottom:0;width:250px;z-index:70;
+    transform:translateX(-100%);transition:transform .28s ease;
+    border-right:1px solid var(--line);overflow-y:auto}
+  .sidebar.open{transform:translateX(0)}
+  #menu-overlay.open{display:block}
+  .nav-item{font-size:15px;padding:13px 14px}   /* más grandes, fáciles de tocar */
   .nav-item .ic{width:20px;height:20px}
-  .main{max-height:none;padding-bottom:70px}
+  #menu-toggle{display:flex !important}
+  .main{max-height:none}
   .topbar{padding:14px 16px}
   .topbar h1{font-size:18px}
   .view{padding:16px}
 
-  /* Grids a una columna */
+  /* Grids y columnas a una sola en celular */
   .grid.g3{grid-template-columns:1fr 1fr}
   .inbox{grid-template-columns:1fr;height:auto}
   .conv-list{max-height:220px;border-right:none;border-bottom:1px solid var(--line)}
   .chat{min-height:360px}
-
-  /* Vistas de dos columnas → apiladas */
   [style*="grid-template-columns:1fr 300px"],
   [style*="grid-template-columns:1fr 280px"],
   [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr !important}
+  .col{min-width:210px;width:210px}
 
-  /* Kanban: columnas más angostas y scroll táctil */
-  .col{min-width:200px;width:200px}
-
-  /* Modales ocupan casi toda la pantalla */
   #ficha-modal > div, #paywall > div{max-width:100% !important;border-radius:14px}
-
-  /* Antü no tapa la barra inferior */
-  #antu-bubble{bottom:78px !important}
-  #antu-panel{bottom:146px !important;right:12px !important;width:calc(100vw - 24px) !important;max-width:340px}
+  #antu-panel{right:12px !important;width:calc(100vw - 24px) !important;max-width:340px}
 }
 @media(max-width:520px){
   .grid.g3{grid-template-columns:1fr}
   .topbar h1{font-size:16px}
-  .nav-item{min-width:56px;font-size:9px}
-  .col{min-width:180px;width:180px}
+  .col{min-width:190px;width:190px}
   .login-card{padding:28px 20px}
 }
 </style>
@@ -234,6 +227,7 @@ input,textarea,select{font-family:inherit}
 </div>
 
 <!-- ===================== APP ===================== -->
+<div id="menu-overlay"></div>
 <div id="app">
   <div class="shell">
     <aside class="sidebar">
@@ -266,9 +260,14 @@ input,textarea,select{font-family:inherit}
 
     <div class="main">
       <div class="topbar" style="display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <h1 id="view-title">Resumen</h1>
-          <p id="view-sub">Un vistazo a tu negocio hoy</p>
+        <div style="display:flex;align-items:center;gap:12px">
+          <button id="menu-toggle" style="display:none;width:40px;height:40px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);align-items:center;justify-content:center">
+            <i data-lucide="menu" style="width:20px;height:20px"></i>
+          </button>
+          <div>
+            <h1 id="view-title">Resumen</h1>
+            <p id="view-sub">Un vistazo a tu negocio hoy</p>
+          </div>
         </div>
         <div style="position:relative">
           <button id="bell" style="position:relative;width:42px;height:42px;border-radius:12px;background:var(--panel);border:1px solid var(--line);display:flex;align-items:center;justify-content:center">
@@ -941,8 +940,15 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     document.querySelectorAll('.view').forEach(s => s.classList.toggle('active', s.dataset.view===v));
     $('view-title').textContent = TITLES[v][0];
     $('view-sub').textContent = TITLES[v][1];
+    cerrarMenu();   // en móvil, cerrar el panel tras elegir
   };
 });
+
+/* ---------- Menú móvil (hamburguesa) ---------- */
+function abrirMenu(){ document.querySelector('.sidebar').classList.add('open'); $('menu-overlay').classList.add('open'); }
+function cerrarMenu(){ document.querySelector('.sidebar').classList.remove('open'); $('menu-overlay').classList.remove('open'); }
+$('menu-toggle').onclick = abrirMenu;
+$('menu-overlay').onclick = cerrarMenu;
 
 /* ---------- Resumen ---------- */
 async function cargarResumen(demo){
