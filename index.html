@@ -406,6 +406,23 @@ input,textarea,select{font-family:inherit}
       <section class="view" data-view="canales">
         <p style="color:var(--muted);font-size:13.5px;margin-bottom:16px">Conectá las cuentas de tu negocio. Se abre el ingreso oficial de cada red; nunca te pedimos tu contraseña.</p>
         <div id="channel-list"></div>
+
+        <!-- Widget para sitio web -->
+        <div class="tile" style="margin-top:22px">
+          <h3 style="font-size:15px;margin-bottom:4px">💬 Bot para tu sitio web</h3>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Pegá este código en tu página web (antes de <code style="background:var(--panel2);padding:1px 5px;border-radius:4px">&lt;/body&gt;</code>) y tu bot va a responder, asesorar y captar contactos también desde ahí, con la misma voz y conocimiento.</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+            <div class="field" style="margin:0"><label>Título del chat</label>
+              <input id="w-titulo" value="Asistente" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--ink)"></div>
+            <div class="field" style="margin:0"><label>Color</label>
+              <input id="w-color" type="color" value="#8B5CF6" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:6px;color:var(--ink);height:42px;width:60px"></div>
+          </div>
+          <div style="position:relative">
+            <pre id="w-code" style="background:#0B0D12;border:1px solid var(--line);border-radius:10px;padding:16px;font-size:12px;color:#B7C0D8;overflow-x:auto;white-space:pre-wrap;word-break:break-all"></pre>
+            <button class="btn-sm" id="w-copiar" style="position:absolute;top:10px;right:10px;font-size:12px;padding:6px 12px">Copiar</button>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin-top:8px">El bot en la web usa tu misma configuración (alma, conocimiento, ficha del negocio) y guarda los contactos que capta en tu CRM.</p>
+        </div>
       </section>
 
       <!-- MI NEGOCIO -->
@@ -900,6 +917,7 @@ async function entrar(){
   cargarBots(usaDemo);
   cargarAntu(usaDemo);
   cargarAcademia(usaDemo);
+  generarCodigoWidget();
   renderIconos();
 
   // Estado de suscripción: controla el acceso a las vinculaciones
@@ -1896,6 +1914,32 @@ $('f-add-gestion').onclick=async()=>{
     pintarGestiones();
   } catch(e){ alert('Error: '+e.message); }
 };
+
+/* ---------- Widget web: generar código ---------- */
+function generarCodigoWidget(){
+  var canalWeb = 'antuhene-' + (DEMO && demoMode ? 'demo1234' : 'tucanal');
+  var titulo = ($('w-titulo')?.value || 'Asistente');
+  var color = ($('w-color')?.value || '#8B5CF6');
+  var code =
+'<script src="' + (BACKEND_URL||'https://tu-backend') + '/widget.js"\n' +
+'  data-canal="' + canalWeb + '"\n' +
+'  data-backend="' + (BACKEND_URL||'https://tu-backend') + '"\n' +
+'  data-titulo="' + titulo + '"\n' +
+'  data-color="' + color + '"><\/script>';
+  var pre = $('w-code'); if(pre) pre.textContent = code;
+}
+['w-titulo','w-color'].forEach(function(id){
+  var el = $(id); if(el) el.addEventListener('input', generarCodigoWidget);
+});
+if($('w-copiar')){
+  $('w-copiar').onclick = function(){
+    var t = $('w-code').textContent;
+    navigator.clipboard.writeText(t).then(function(){
+      $('w-copiar').textContent = '¡Copiado!';
+      setTimeout(function(){ $('w-copiar').textContent='Copiar'; }, 1500);
+    });
+  };
+}
 
 /* ---------- Sesión persistente ---------- */
 (async () => {
