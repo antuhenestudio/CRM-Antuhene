@@ -217,6 +217,10 @@ input,textarea,select{font-family:inherit}
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
         Decisiones
       </button>
+      <button class="nav-item" data-view="agenda">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>
+        Agenda
+      </button>
       <button class="nav-item" data-view="publicaciones">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         Publicaciones
@@ -224,6 +228,10 @@ input,textarea,select{font-family:inherit}
       <button class="nav-item" data-view="canales">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>
         Conectar redes
+      </button>
+      <button class="nav-item" data-view="negocio">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Mi negocio
       </button>
       <button class="nav-item" data-view="config">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -242,9 +250,21 @@ input,textarea,select{font-family:inherit}
     </aside>
 
     <div class="main">
-      <div class="topbar">
-        <h1 id="view-title">Resumen</h1>
-        <p id="view-sub">Un vistazo a tu negocio hoy</p>
+      <div class="topbar" style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <h1 id="view-title">Resumen</h1>
+          <p id="view-sub">Un vistazo a tu negocio hoy</p>
+        </div>
+        <div style="position:relative">
+          <button id="bell" style="position:relative;width:42px;height:42px;border-radius:12px;background:var(--panel);border:1px solid var(--line);display:flex;align-items:center;justify-content:center">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span id="bell-count" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--coral);color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px"></span>
+          </button>
+          <div id="bell-panel" style="display:none;position:absolute;right:0;top:52px;width:320px;background:var(--panel);border:1px solid var(--line);border-radius:14px;z-index:20;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.5)">
+            <div style="padding:14px 16px;border-bottom:1px solid var(--line);font-weight:600;font-size:14px">Leads calificados sin contactar</div>
+            <div id="bell-list" style="max-height:340px;overflow-y:auto"></div>
+          </div>
+        </div>
       </div>
 
       <div id="demo-banner" class="view-banner" style="display:none;padding:24px 28px 0">
@@ -330,6 +350,26 @@ input,textarea,select{font-family:inherit}
         </div>
       </section>
 
+      <!-- AGENDA -->
+      <section class="view" data-view="agenda">
+        <div id="agenda-sin-conectar" class="tile" style="text-align:center;padding:40px">
+          <h3 style="font-size:16px;margin-bottom:8px">Conectá tu Google Calendar</h3>
+          <p style="font-size:13.5px;color:var(--muted);margin-bottom:18px;max-width:440px;margin-left:auto;margin-right:auto">Cuando un cliente confirma día y horario con el bot, la cita se agenda sola acá. Se abre el ingreso oficial de Google; no guardamos tu contraseña.</p>
+          <button class="btn-sm" id="btn-conectar-google">Conectar Google Calendar</button>
+        </div>
+        <div id="agenda-conectada" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 300px;gap:16px">
+            <div class="tile" style="padding:0;overflow:hidden">
+              <iframe id="cal-frame" style="width:100%;height:560px;border:0" title="Calendario"></iframe>
+            </div>
+            <div class="tile">
+              <h3 style="font-size:15px;margin-bottom:12px">Próximas citas</h3>
+              <div id="citas-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- PUBLICACIONES -->
       <section class="view" data-view="publicaciones">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -343,6 +383,66 @@ input,textarea,select{font-family:inherit}
       <section class="view" data-view="canales">
         <p style="color:var(--muted);font-size:13.5px;margin-bottom:16px">Conectá las cuentas de tu negocio. Se abre el ingreso oficial de cada red; nunca te pedimos tu contraseña.</p>
         <div id="channel-list"></div>
+      </section>
+
+      <!-- MI NEGOCIO -->
+      <section class="view" data-view="negocio">
+        <p style="color:var(--muted);font-size:13.5px;margin-bottom:16px">Estos datos alimentan a tu bot: cuando un prospecto pregunta dirección, servicios, horarios o precios, responde con esta información.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="tile">
+            <h3 style="font-size:15px;margin-bottom:14px">Datos del negocio</h3>
+            <div class="field"><label>Tipo de negocio</label><input id="n-tipo" placeholder="Estudio jurídico" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)"></div>
+            <div class="field"><label>A qué se dedica</label><textarea id="n-desc" rows="2" placeholder="Asesoramiento previsional y sucesiones" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink);resize:vertical"></textarea></div>
+            <div class="field"><label>Dirección</label><input id="n-dir" placeholder="Av. Argentina 123, Neuquén" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)"><button class="btn-ghost" id="btn-buscar-dir" style="margin-top:8px;font-size:12px">Ubicar en el mapa</button></div>
+            <div style="display:flex;gap:10px">
+              <div class="field" style="flex:1"><label>Teléfono</label><input id="n-tel" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)"></div>
+              <div class="field" style="flex:1"><label>WhatsApp</label><input id="n-wa" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)"></div>
+            </div>
+            <div class="field"><label>Canales de atención</label><input id="n-canales" placeholder="WhatsApp, presencial, teléfono" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)"></div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);margin-top:6px">
+              <input type="checkbox" id="n-online"> Es un negocio online (atiende sin horario fijo)
+            </label>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="tile" style="padding:0;overflow:hidden">
+              <iframe id="map-frame" style="width:100%;height:230px;border:0" title="Mapa del negocio"></iframe>
+            </div>
+            <div class="tile">
+              <h3 style="font-size:15px;margin-bottom:12px">Horarios de atención</h3>
+              <p style="font-size:12px;color:var(--muted);margin-bottom:12px">El bot solo ofrece turnos dentro de estas franjas.</p>
+              <div id="horarios-list"></div>
+              <div style="display:flex;gap:6px;align-items:flex-end;margin-top:12px;flex-wrap:wrap">
+                <select id="h-dia" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px;color:var(--ink);font-size:12.5px">
+                  <option value="1">Lunes</option><option value="2">Martes</option><option value="3">Miércoles</option>
+                  <option value="4">Jueves</option><option value="5">Viernes</option><option value="6">Sábado</option><option value="0">Domingo</option>
+                </select>
+                <input id="h-desde" type="time" value="09:00" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px;color:var(--ink)">
+                <input id="h-hasta" type="time" value="18:00" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px;color:var(--ink)">
+                <button class="btn-sm" id="btn-add-horario" style="font-size:12.5px">Agregar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tile" style="margin-top:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h3 style="font-size:15px">Servicios / productos</h3>
+            <button class="btn-ghost" id="btn-add-servicio" style="font-size:12.5px">+ Agregar</button>
+          </div>
+          <div id="servicios-list"></div>
+        </div>
+
+        <div class="tile" style="margin-top:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h3 style="font-size:15px">Preguntas frecuentes</h3>
+            <button class="btn-ghost" id="btn-add-faq" style="font-size:12.5px">+ Agregar</button>
+          </div>
+          <div id="faq-list"></div>
+        </div>
+
+        <div style="margin-top:18px;text-align:right">
+          <button class="btn-sm" id="btn-guardar-negocio" style="padding:12px 28px">Guardar ficha del negocio</button>
+        </div>
       </section>
 
       <!-- CONFIGURAR BOT -->
@@ -472,6 +572,28 @@ const DEMO = {
     {evento:'tier_a', contactos:['549299xxxxxxx'], texto:'Nuevo Tier A: {nombre} ({registro_interno})'},
     {evento:'ganado', contactos:['549299yyyyyyy'], texto:'¡Cliente ganado! {nombre}'},
   ],
+  calendarConectado:true,
+  calendarId:'es.ar#holiday@group.v.calendar.google.com',
+  citas:[
+    {titulo:'Revisión historia laboral – Carlos Ruiz', cuando:'Jue 11 · 10:00'},
+    {titulo:'Consulta sucesión – Ana López', cuando:'Vie 12 · 16:30'},
+    {titulo:'Primera reunión – Jorge Díaz', cuando:'Lun 15 · 09:00'},
+  ],
+  negocio:{
+    tipo_negocio:'Estudio jurídico previsional', descripcion:'Asesoramiento en jubilaciones, sucesiones y ART',
+    direccion:'Av. Argentina 123, Neuquén Capital', telefono:'0299 123-4567', whatsapp:'549299xxxxxxx',
+    canales_atencion:'WhatsApp, presencial, teléfono', es_online:false, lat:-38.9516, lng:-68.0591,
+    servicios:[{nombre:'Jubilación ordinaria',descripcion:'Gestión completa del trámite'},
+      {nombre:'Sucesiones',descripcion:'Declaratoria de herederos'},
+      {nombre:'ART',descripcion:'Reclamos por accidentes laborales'}],
+    faq:[{pregunta:'¿La primera consulta tiene costo?',respuesta:'No, la primera revisión es sin cargo.'},
+      {pregunta:'¿Atienden de forma online?',respuesta:'Sí, coordinamos videollamada si preferís.'}],
+  },
+  horarios:[
+    {dia:1,desde:'09:00',hasta:'13:00'},{dia:1,desde:'16:00',hasta:'20:00'},
+    {dia:2,desde:'09:00',hasta:'13:00'},{dia:3,desde:'09:00',hasta:'13:00'},
+    {dia:4,desde:'09:00',hasta:'13:00'},{dia:5,desde:'09:00',hasta:'13:00'},
+  ],
 };
 
 const COLUMNS = [
@@ -563,6 +685,9 @@ async function entrar(){
   cargarPublicaciones(usaDemo);
   cargarCanales(usaDemo);
   cargarConfig(usaDemo);
+  cargarCampanita(usaDemo);
+  cargarAgenda(usaDemo);
+  cargarNegocio(usaDemo);
 
   // Restringir acciones según rol (los miembros no borran)
   if(perfil.rol === 'miembro'){
@@ -576,6 +701,8 @@ const TITLES = {
   inbox:['Conversaciones','Todos tus canales en una bandeja'],
   leads:['Clientes','Seguí cada lead por su etapa'],
   metricas:['Decisiones','Números reales para decidir dónde invertir'],
+  agenda:['Agenda','Las citas que agenda el bot, en tu calendario'],
+  negocio:['Mi negocio','Los datos con los que el bot responde a tus prospectos'],
   publicaciones:['Publicaciones','Contenido programado para tus redes'],
   canales:['Conectar redes','Vinculá las cuentas de tu negocio'],
   config:['Configurar bot','Memoria, campos propios y avisos automáticos'],
@@ -958,6 +1085,179 @@ $('btn-add-regla').onclick = async ()=>{
       evento:$('rn-evento').value, contactos:[contacto]});
     $('rn-contacto').value=''; cargarConfig(false);
   } catch(e){ alert('Error: '+e.message); }
+};
+
+/* ---------- Campanita: leads calificados sin contactar ---------- */
+async function cargarCampanita(demo){
+  let pendientes = DEMO.leads.filter(l => l.tier==='A' && ['nuevo_lead','filtrado_tier_a'].includes(l.estado));
+  if(!demo && sb){
+    try { const org = await miOrg();
+      const { data } = await sb.from('leads_pendientes').select('*').eq('organizacion_id',org);
+      pendientes = data || []; } catch(e){ console.warn(e); }
+  }
+  const count = pendientes.length;
+  const badge = $('bell-count');
+  if(count>0){ badge.style.display='flex'; badge.textContent = count>9?'9+':count; }
+  else badge.style.display='none';
+
+  const list = $('bell-list');
+  list.innerHTML = count ? '' : '<div class="empty" style="padding:30px">No hay leads calificados esperando. ¡Al día!</div>';
+  pendientes.forEach(l => {
+    const el = document.createElement('div');
+    el.style.cssText='padding:13px 16px;border-bottom:1px solid var(--line);cursor:pointer';
+    el.onmouseover=()=>el.style.background='var(--panel2)';
+    el.onmouseout=()=>el.style.background='';
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-weight:600;font-size:13.5px">${l.nombre||'Sin nombre'}</span>
+        <span class="tag a">Tier A${l.puntaje?' · '+l.puntaje:''}</span></div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">${l.interes||'—'}${l.telefono?' · '+l.telefono:''}</div>`;
+    el.onclick=()=>{ document.querySelector('[data-view="leads"]').click(); $('bell-panel').style.display='none'; };
+    list.appendChild(el);
+  });
+}
+$('bell').onclick = (e) => {
+  e.stopPropagation();
+  const p = $('bell-panel');
+  p.style.display = p.style.display==='none' ? 'block' : 'none';
+};
+document.addEventListener('click', () => { $('bell-panel').style.display='none'; });
+$('bell-panel').addEventListener('click', e => e.stopPropagation());
+
+/* ---------- Agenda / Google Calendar ---------- */
+async function cargarAgenda(demo){
+  let conectado = DEMO.calendarConectado, calId = DEMO.calendarId, citas = DEMO.citas;
+  if(!demo && sb){
+    try { const org = await miOrg();
+      const { data:cal } = await sb.from('canales').select('metadatos')
+        .eq('organizacion_id',org).eq('tipo','google_calendar').eq('activo',true).maybeSingle();
+      conectado = !!cal;
+      calId = cal?.metadatos?.calendar_id || 'primary';
+      const { data:cts } = await sb.from('citas').select('titulo,inicio')
+        .eq('organizacion_id',org).gte('inicio',new Date().toISOString()).order('inicio').limit(10);
+      citas = (cts||[]).map(c=>({titulo:c.titulo,
+        cuando:new Date(c.inicio).toLocaleString('es-AR',{weekday:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}));
+    } catch(e){ console.warn(e); }
+  }
+  $('agenda-sin-conectar').style.display = conectado ? 'none' : 'block';
+  $('agenda-conectada').style.display = conectado ? 'block' : 'none';
+  if(conectado){
+    $('cal-frame').src = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(calId)}&ctz=America/Argentina/Buenos_Aires&mode=WEEK`;
+    const cl = $('citas-list');
+    cl.innerHTML = citas.length ? '' : '<div class="empty">Sin citas próximas.</div>';
+    citas.forEach(c=>{
+      const el=document.createElement('div');
+      el.style.cssText='padding:11px 0;border-bottom:1px solid var(--line)';
+      el.innerHTML=`<div style="font-weight:600;font-size:13px;margin-bottom:2px">${c.titulo}</div>
+        <div style="font-size:12px;color:var(--violet)">${c.cuando}</div>`;
+      cl.appendChild(el);
+    });
+  }
+}
+$('btn-conectar-google').onclick = async () => {
+  if(demoMode || !sb){ alert('Con tu cuenta, este botón abre el ingreso oficial de Google para conectar tu calendario.'); return; }
+  const org = await miOrg();
+  window.open(`${BACKEND_URL}/conectar/google?organizacion_id=${org}`, 'google', 'width=600,height=700');
+};
+
+/* ---------- Mi negocio: ficha comercial, mapa y horarios ---------- */
+const DIAS = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+let servicios = [], faqs = [];
+
+function mapaURL(lat,lng){
+  if(lat==null||lng==null) return 'https://www.openstreetmap.org/export/embed.html?bbox=-68.1,-39.0,-68.0,-38.9&layer=mapnik';
+  const d=0.01;
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${lng-d},${lat-d},${lng+d},${lat+d}&layer=mapnik&marker=${lat},${lng}`;
+}
+
+async function cargarNegocio(demo){
+  let n = DEMO.negocio, horarios = DEMO.horarios;
+  if(!demo && sb){
+    try { const org = await miOrg();
+      const { data } = await sb.from('perfil_negocio').select('*').eq('organizacion_id',org).maybeSingle();
+      if(data) n = data;
+      const { data:h } = await sb.from('horarios_atencion').select('*').eq('organizacion_id',org).order('dia_semana');
+      horarios = (h||[]).map(x=>({dia:x.dia_semana,desde:x.hora_desde?.slice(0,5),hasta:x.hora_hasta?.slice(0,5)}));
+    } catch(e){ console.warn(e); }
+  }
+  $('n-tipo').value=n.tipo_negocio||''; $('n-desc').value=n.descripcion||'';
+  $('n-dir').value=n.direccion||''; $('n-tel').value=n.telefono||'';
+  $('n-wa').value=n.whatsapp||''; $('n-canales').value=n.canales_atencion||'';
+  $('n-online').checked=!!n.es_online;
+  $('map-frame').src = mapaURL(n.lat,n.lng);
+  servicios = n.servicios||[]; faqs = n.faq||[];
+  pintarServicios(); pintarFaq(); pintarHorarios(horarios);
+}
+function pintarHorarios(horarios){
+  const el=$('horarios-list'); el.innerHTML = horarios.length?'':'<div style="font-size:12.5px;color:var(--muted)">Sin horarios cargados.</div>';
+  horarios.forEach(h=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;justify-content:space-between;padding:6px 0;font-size:13px;border-bottom:1px solid var(--line)';
+    row.innerHTML=`<span>${DIAS[h.dia]}</span><span style="color:var(--muted)">${h.desde} – ${h.hasta}</span>`;
+    el.appendChild(row);
+  });
+}
+function pintarServicios(){
+  const el=$('servicios-list'); el.innerHTML = servicios.length?'':'<div style="font-size:12.5px;color:var(--muted)">Sin servicios cargados.</div>';
+  servicios.forEach((s,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)';
+    row.innerHTML=`<div><div style="font-weight:600;font-size:13.5px">${s.nombre}</div><div style="font-size:12px;color:var(--muted)">${s.descripcion||''}</div></div>
+      <button data-i="${i}" style="color:var(--coral);font-size:12px">Quitar</button>`;
+    row.querySelector('button').onclick=()=>{servicios.splice(i,1);pintarServicios();};
+    el.appendChild(row);
+  });
+}
+function pintarFaq(){
+  const el=$('faq-list'); el.innerHTML = faqs.length?'':'<div style="font-size:12.5px;color:var(--muted)">Sin preguntas cargadas.</div>';
+  faqs.forEach((f,i)=>{
+    const row=document.createElement('div');
+    row.style.cssText='padding:8px 0;border-bottom:1px solid var(--line)';
+    row.innerHTML=`<div style="font-weight:600;font-size:13px;margin-bottom:2px">${f.pregunta}</div>
+      <div style="font-size:12.5px;color:var(--muted)">${f.respuesta}</div>
+      <button data-i="${i}" style="color:var(--coral);font-size:11px;margin-top:4px">Quitar</button>`;
+    row.querySelector('button').onclick=()=>{faqs.splice(i,1);pintarFaq();};
+    el.appendChild(row);
+  });
+}
+$('btn-add-servicio').onclick=()=>{
+  const nombre=prompt('Nombre del servicio o producto:'); if(!nombre)return;
+  const descripcion=prompt('Descripción (opcional):')||'';
+  servicios.push({nombre,descripcion}); pintarServicios();
+};
+$('btn-add-faq').onclick=()=>{
+  const pregunta=prompt('Pregunta frecuente:'); if(!pregunta)return;
+  const respuesta=prompt('Respuesta:')||''; faqs.push({pregunta,respuesta}); pintarFaq();
+};
+$('btn-add-horario').onclick=async()=>{
+  const dia=+$('h-dia').value, desde=$('h-desde').value, hasta=$('h-hasta').value;
+  if(demoMode||!sb){ alert('En la demo no se guarda. Con tu cuenta, este horario queda activo para agendar.'); return; }
+  try { const org=await miOrg();
+    await sb.from('horarios_atencion').insert({organizacion_id:org,dia_semana:dia,hora_desde:desde,hora_hasta:hasta});
+    cargarNegocio(false);
+  } catch(e){ alert('Error: '+e.message); }
+};
+$('btn-buscar-dir').onclick=async()=>{
+  const dir=$('n-dir').value.trim(); if(!dir)return;
+  try {
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(dir)}`);
+    const d=await r.json();
+    if(d[0]){ $('map-frame').src=mapaURL(+d[0].lat,+d[0].lon); $('n-dir').dataset.lat=d[0].lat; $('n-dir').dataset.lng=d[0].lon; }
+    else alert('No se encontró esa dirección. Probá agregando la ciudad.');
+  } catch(e){ alert('No se pudo ubicar la dirección.'); }
+};
+$('btn-guardar-negocio').onclick=async()=>{
+  if(demoMode||!sb){ alert('En la demo no se guarda. Con tu cuenta, esta ficha queda disponible para tu bot.'); return; }
+  try {
+    const org=await miOrg();
+    await sb.from('perfil_negocio').upsert({
+      organizacion_id:org, tipo_negocio:$('n-tipo').value, descripcion:$('n-desc').value,
+      direccion:$('n-dir').value, telefono:$('n-tel').value, whatsapp:$('n-wa').value,
+      canales_atencion:$('n-canales').value, es_online:$('n-online').checked,
+      lat:$('n-dir').dataset.lat||null, lng:$('n-dir').dataset.lng||null,
+      servicios, faq:faqs, actualizado_en:new Date().toISOString(),
+    });
+    alert('Ficha guardada. Tu bot ya responde con esta información.');
+  } catch(e){ alert('Error al guardar: '+e.message); }
 };
 
 /* ---------- Sesión persistente ---------- */
