@@ -330,7 +330,12 @@ input,textarea,select{font-family:inherit}
       <!-- LEADS / KANBAN -->
       <section class="view" data-view="leads">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
-          <p style="color:var(--muted);font-size:13.5px">Cada cliente lleva su número de registro interno y su responsable asignado.</p>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div style="display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px">
+              <button id="vista-kanban" class="vista-btn" style="border:none;background:var(--violet);color:#fff;font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer">Kanban</button>
+              <button id="vista-lista" class="vista-btn" style="border:none;background:transparent;color:var(--muted);font-size:12.5px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer">Lista</button>
+            </div>
+          </div>
           <div style="display:flex;gap:8px">
             <button class="btn-ghost" id="btn-export">Descargar base (CSV)</button>
             <button class="btn-ghost" id="btn-import" data-owner>Importar base (CSV)</button>
@@ -338,6 +343,26 @@ input,textarea,select{font-family:inherit}
           </div>
         </div>
         <div class="kanban" id="kanban"></div>
+        <div id="lista-leads" style="display:none">
+          <input id="buscar-lead" placeholder="Buscar por nombre, registro, interés o zona..." style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink);font-size:14px;margin-bottom:14px">
+          <div class="tile" style="padding:0;overflow:hidden">
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:13.5px;min-width:640px">
+                <thead>
+                  <tr style="background:var(--panel2);text-align:left">
+                    <th style="padding:12px 14px;font-weight:600;color:var(--muted)">Registro</th>
+                    <th style="padding:12px 14px;font-weight:600;color:var(--muted)">Nombre</th>
+                    <th style="padding:12px 14px;font-weight:600;color:var(--muted)">Interés</th>
+                    <th style="padding:12px 14px;font-weight:600;color:var(--muted)">Zona</th>
+                    <th style="padding:12px 14px;font-weight:600;color:var(--muted)">Estado</th>
+                    <th style="padding:12px 14px;font-weight:600;color:var(--muted)">Responsable</th>
+                  </tr>
+                </thead>
+                <tbody id="tabla-leads"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- MÉTRICAS / DECISIONES -->
@@ -1028,12 +1053,14 @@ async function miOrg(){
 }
 
 /* ---------- Kanban ---------- */
+let leadsActuales = [];
 async function cargarKanban(demo){
   let leads = DEMO.leads;
   if(!demo && sb){
     try { const { data } = await sb.from('leads').select('*').order('updated_at',{ascending:false});
       leads = data || []; } catch(e){ console.warn(e); }
   }
+  leadsActuales = leads;
   const k = $('kanban'); k.innerHTML='';
   COLUMNS.forEach(col => {
     const items = leads.filter(l => l.estado === col.k);
@@ -1046,7 +1073,57 @@ async function cargarKanban(demo){
     k.appendChild(el);
   });
   habilitarDragDrop(demo);
+  pintarListaLeads(leads);
 }
+
+/* ---------- Vista de lista de leads ---------- */
+const EST_LABEL = {nuevo_lead:['Nuevo','var(--muted)'], filtrado_tier_a:['Tier A','var(--emerald)'],
+  historia_laboral_recibida:['Doc. recibida','var(--cyan)'], cita_agendada:['Cita agendada','var(--violet)'],
+  en_tramite:['En trámite','var(--amber)'], ganado:['Ganado','var(--emerald)'], perdido:['Perdido','var(--coral)']};
+
+function pintarListaLeads(leads){
+  const tbody = $('tabla-leads'); if(!tbody) return;
+  tbody.innerHTML = '';
+  if(!leads.length){ tbody.innerHTML='<tr><td colspan="6" style="padding:30px;text-align:center;color:var(--muted)">Sin clientes cargados.</td></tr>'; return; }
+  leads.forEach(l=>{
+    const [et,col] = EST_LABEL[l.estado] || ['—','var(--muted)'];
+    const tr=document.createElement('tr');
+    tr.style.cssText='border-top:1px solid var(--line);cursor:pointer';
+    tr.onmouseover=()=>tr.style.background='var(--panel2)';
+    tr.onmouseout=()=>tr.style.background='';
+    tr.innerHTML=`
+      <td style="padding:11px 14px;font-family:'Fraunces',serif;color:var(--muted);white-space:nowrap">${l.registro_interno||'—'}</td>
+      <td style="padding:11px 14px;font-weight:600">${l.nombre||'Sin nombre'}${l.tier==='A'?' <span class="tag a" style="margin-left:4px">A</span>':''}</td>
+      <td style="padding:11px 14px;color:var(--muted)">${l.interes||'—'}</td>
+      <td style="padding:11px 14px;color:var(--muted)">${l.zona||'—'}</td>
+      <td style="padding:11px 14px"><span class="pill" style="color:${col}">${et}</span></td>
+      <td style="padding:11px 14px;color:var(--muted)">${l.secretario||'—'}</td>`;
+    tr.onclick=()=>abrirFicha(l);
+    tbody.appendChild(tr);
+  });
+}
+// Toggle Kanban / Lista
+$('vista-kanban').onclick=()=>{
+  $('kanban').style.display='flex'; $('lista-leads').style.display='none';
+  $('vista-kanban').style.background='var(--violet)'; $('vista-kanban').style.color='#fff';
+  $('vista-lista').style.background='transparent'; $('vista-lista').style.color='var(--muted)';
+};
+$('vista-lista').onclick=()=>{
+  $('kanban').style.display='none'; $('lista-leads').style.display='block';
+  $('vista-lista').style.background='var(--violet)'; $('vista-lista').style.color='#fff';
+  $('vista-kanban').style.background='transparent'; $('vista-kanban').style.color='var(--muted)';
+  pintarListaLeads(leadsActuales);
+};
+// Buscador
+$('buscar-lead').addEventListener('input', (e)=>{
+  const q = e.target.value.toLowerCase().trim();
+  const filtrados = leadsActuales.filter(l =>
+    (l.nombre||'').toLowerCase().includes(q) ||
+    (l.registro_interno||'').toLowerCase().includes(q) ||
+    (l.interes||'').toLowerCase().includes(q) ||
+    (l.zona||'').toLowerCase().includes(q));
+  pintarListaLeads(filtrados);
+});
 function cardEl(l){
   const el = document.createElement('div');
   el.className='card'; el.draggable=true; el.dataset.id=l.id||'';
