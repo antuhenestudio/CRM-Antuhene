@@ -1,0 +1,41 @@
+// ============================================================
+// RESUMEN Y DETERMINACIÓN DE CONVERSACIONES (con IA)
+// Toma el historial de una conversación y devuelve:
+//  - resumen: 2-3 líneas de qué pasó
+//  - determinacion: conclusión accionable (qué necesita, próximo paso)
+//  - datos: nombre/interés/etc detectados para autocompletar la ficha
+// Usa el mismo motor Gemini/OpenAI con respaldo del módulo ia.js
+// ============================================================
+
+const { generarConRespaldo } = require('./ia');
+
+async function resumirConversacion(historial) {
+  const conversacion = historial
+    .map((m) => `${m.autor === 'cliente' ? 'Cliente' : 'Bot'}: ${m.contenido}`)
+    .join('\n');
+
+  const system = `Sos un analista de un CRM. Te paso una conversación entre un
+cliente y el bot de un negocio. Devolvé SOLO un JSON válido, sin markdown, con:
+{
+  "resumen": "2 o 3 líneas de qué necesita el cliente y cómo viene la charla",
+  "determinacion": "conclusión accionable: qué tan interesado está y cuál es el próximo paso recomendado",
+  "nombre": "nombre del cliente si lo dijo, o null",
+  "interes": "el motivo/tema principal de la consulta, o null",
+  "temperatura": "frio | tibio | caliente (qué tan listo para avanzar está)"
+}
+No inventes datos que no estén en la conversación.`;
+
+  const texto = await generarConRespaldo({
+    system,
+    mensajes: [{ role: 'user', content: conversacion }],
+    temperature: 0.3, maxTokens: 400,
+  });
+  try {
+    const limpio = texto.replace(/```json|```/g, '').trim();
+    return JSON.parse(limpio);
+  } catch {
+    return { resumen: 'No se pudo generar el resumen.', determinacion: '', nombre: null, interes: null, temperatura: 'frio' };
+  }
+}
+
+module.exports = { resumirConversacion };
