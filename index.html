@@ -56,6 +56,22 @@ input,textarea,select{font-family:inherit}
 .login-msg{font-size:13px;margin-top:14px;padding:10px 12px;border-radius:8px;display:none}
 .login-msg.err{display:block;background:rgba(251,113,133,.12);color:var(--coral)}
 .login-msg.ok{display:block;background:rgba(52,211,153,.12);color:var(--emerald)}
+.login-msg.info{display:block;background:rgba(139,92,246,.12);color:var(--violet)}
+/* Spinner del botón */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.35);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:-3px;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Barra de progreso del login */
+.login-progress{height:4px;background:var(--panel2);border-radius:4px;overflow:hidden;margin-top:14px;display:none}
+.login-progress.show{display:block}
+.login-progress-bar{height:100%;width:0;background:linear-gradient(90deg,var(--violet),var(--cyan));
+  border-radius:4px;transition:width .3s ease}
+/* Badge de modo (Ingresar / Crear cuenta) */
+.mode-badge{display:inline-block;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;
+  background:rgba(139,92,246,.14);color:var(--violet);margin-bottom:18px;transition:all .3s ease}
+.mode-badge.crear{background:rgba(52,211,153,.14);color:var(--emerald)}
+.login-card{transition:box-shadow .3s ease}
+.login-card.creando{box-shadow:0 0 0 2px var(--emerald),0 20px 60px rgba(52,211,153,.15)}
 
 /* ---------- App shell ---------- */
 #app{display:none;min-height:100vh}
@@ -207,11 +223,12 @@ input,textarea,select{font-family:inherit}
 
 <!-- ===================== LOGIN ===================== -->
 <div id="login">
-  <div class="login-card">
+  <div class="login-card" id="login-card">
     <div class="brand">
       <div class="brand-mark">A</div>
       <div class="brand-name">AntüHene <span>AI Studio</span></div>
     </div>
+    <div id="mode-badge" class="mode-badge">Iniciar sesión</div>
     <div class="field">
       <label for="email">Correo</label>
       <input id="email" type="email" placeholder="vos@tunegocio.com" autocomplete="email">
@@ -221,6 +238,7 @@ input,textarea,select{font-family:inherit}
       <input id="pass" type="password" placeholder="••••••••" autocomplete="current-password">
     </div>
     <button id="btn-login" class="btn-primary">Entrar</button>
+    <div class="login-progress" id="login-progress"><div class="login-progress-bar" id="login-progress-bar"></div></div>
     <div id="login-msg" class="login-msg"></div>
     <div class="login-alt">
       <span id="alt-text">¿No tenés cuenta?</span>
@@ -1081,38 +1099,90 @@ let signupMode = false;
 
 $('btn-toggle').onclick = () => {
   signupMode = !signupMode;
-  $('btn-login').textContent = signupMode ? 'Crear cuenta' : 'Entrar';
+  $('btn-login').textContent = signupMode ? 'Crear mi cuenta' : 'Entrar';
   $('alt-text').textContent = signupMode ? '¿Ya tenés cuenta?' : '¿No tenés cuenta?';
-  $('btn-toggle').textContent = signupMode ? 'Entrar' : 'Crear una';
+  $('btn-toggle').textContent = signupMode ? 'Iniciar sesión' : 'Crear una';
+  // Badge que cambia visualmente según el modo
+  const badge = $('mode-badge');
+  badge.textContent = signupMode ? 'Crear cuenta nueva' : 'Iniciar sesión';
+  badge.classList.toggle('crear', signupMode);
+  $('login-msg').className = 'login-msg'; // limpiar mensajes
 };
 
-function showLoginMsg(txt, ok){
+function showLoginMsg(txt, tipo){
   const m = $('login-msg');
   m.textContent = txt;
-  m.className = 'login-msg ' + (ok ? 'ok' : 'err');
+  m.className = 'login-msg ' + (tipo || 'err');
+}
+
+/* Barra de progreso animada del login */
+function progresoLogin(activar){
+  const cont = $('login-progress'), bar = $('login-progress-bar');
+  if(activar){
+    cont.classList.add('show');
+    bar.style.width = '0';
+    // Avance progresivo simulado (no llega al 100 hasta que responde el server)
+    let p = 0;
+    progresoLogin._timer = setInterval(()=>{
+      p = Math.min(p + Math.random()*15, 90); // avanza hasta 90% y espera
+      bar.style.width = p + '%';
+    }, 250);
+  } else {
+    clearInterval(progresoLogin._timer);
+    bar.style.width = '100%'; // completa al terminar
+    setTimeout(()=>{ cont.classList.remove('show'); bar.style.width='0'; }, 400);
+  }
 }
 
 $('btn-login').onclick = async () => {
   const email = $('email').value.trim();
   const pass = $('pass').value;
-  if(!email || !pass){ showLoginMsg('Completá correo y contraseña.'); return; }
-  if(!sb){ showLoginMsg('Falta configurar Supabase. Podés ver la demo abajo.'); return; }
+  if(!email || !pass){ showLoginMsg('Completá correo y contraseña.','err'); return; }
+  if(!sb){ showLoginMsg('Falta configurar Supabase. Podés ver la demo abajo.','err'); return; }
 
-  $('btn-login').disabled = true;
+  const btn = $('btn-login');
+  const textoOriginal = signupMode ? 'Crear mi cuenta' : 'Entrar';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>' + (signupMode ? 'Creando tu cuenta…' : 'Ingresando…');
+  $('login-card').classList.toggle('creando', signupMode);
+  progresoLogin(true);
+  $('login-msg').className = 'login-msg';
+
   try {
     if(signupMode){
       const { error } = await sb.auth.signUp({ email, password: pass });
       if(error) throw error;
-      showLoginMsg('Cuenta creada. Revisá tu correo para confirmar y luego entrá.', true);
+      progresoLogin(false);
+      showLoginMsg('✅ ¡Cuenta creada! Si te pide confirmar, revisá tu correo. Luego iniciá sesión.','ok');
+      // Volver a modo login para que entre
+      setTimeout(()=>{
+        signupMode = false;
+        $('btn-login').textContent = 'Entrar';
+        $('alt-text').textContent = '¿No tenés cuenta?';
+        $('btn-toggle').textContent = 'Crear una';
+        $('mode-badge').textContent = 'Iniciar sesión';
+        $('mode-badge').classList.remove('crear');
+        $('login-card').classList.remove('creando');
+      }, 1200);
     } else {
       const { error } = await sb.auth.signInWithPassword({ email, password: pass });
       if(error) throw error;
-      await entrar();
+      progresoLogin(false);
+      showLoginMsg('✅ ¡Bienvenido! Cargando tu panel…','ok');
+      setTimeout(()=>entrar(), 500);
+      return;
     }
   } catch(e){
-    showLoginMsg(e.message || 'No se pudo iniciar sesión.');
+    progresoLogin(false);
+    let msg = e.message || 'No se pudo procesar.';
+    // Mensajes más claros para errores comunes
+    if(/invalid login/i.test(msg)) msg = 'Correo o contraseña incorrectos.';
+    if(/already registered/i.test(msg)) msg = 'Ese correo ya tiene una cuenta. Probá iniciar sesión.';
+    if(/password/i.test(msg) && /6/.test(msg)) msg = 'La contraseña debe tener al menos 6 caracteres.';
+    showLoginMsg(msg,'err');
   } finally {
-    $('btn-login').disabled = false;
+    btn.disabled = false;
+    btn.textContent = textoOriginal;
   }
 };
 
