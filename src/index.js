@@ -27,6 +27,7 @@ const { iniciarAntu } = require('./antu');
 const { comprarCurso, procesarPagoCurso, corregirTest, marcarVideoVisto, chequearCompletado } = require('./academia');
 const { certificadoHTML } = require('./certificado');
 const { resumirConversacion } = require('./resumen');
+const { canjearCodigo, iniciarRevisorTrials } = require('./trial');
 const {
   urlConexionGoogle, canjearCodeGoogle, crearEvento, detectarCita,
 } = require('./calendar');
@@ -337,6 +338,23 @@ app.post('/conectar/whatsapp', async (req, res) => {
 });
 
 // ------------------------------------------------------------
+// Trial: canjear un código de prueba de 30 días
+// ------------------------------------------------------------
+app.post('/api/trial/canjear', async (req, res) => {
+  try {
+    const { organizacion_id, codigo } = req.body;
+    if (!organizacion_id || !codigo) return res.status(400).json({ error: 'Faltan datos' });
+    const resultado = await canjearCodigo(supabase, {
+      organizacionId: organizacion_id, codigo: codigo.trim().toUpperCase(),
+    });
+    res.json({ resultado });
+  } catch (e) {
+    console.error('Error canjeando trial:', e);
+    res.status(500).json({ error: 'No se pudo canjear el código' });
+  }
+});
+
+// ------------------------------------------------------------
 // 5-pre. Suscripciones (muro de pago con Mercado Pago)
 // ------------------------------------------------------------
 app.post('/api/suscripcion', async (req, res) => {
@@ -484,6 +502,7 @@ app.post('/api/publicaciones', async (req, res) => {
 
 iniciarPublicador(supabase);
 iniciarAntu(supabase);
+iniciarRevisorTrials(supabase);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`AntüHene AI Studio escuchando en puerto ${PORT}`));
