@@ -20,6 +20,12 @@
   var COLOR = s.getAttribute('data-color') || '#8B5CF6';
   var TITULO = s.getAttribute('data-titulo') || 'Asistente';
   var SALUDO = s.getAttribute('data-saludo') || '¡Hola! ¿En qué puedo ayudarte?';
+  var FORMA = s.getAttribute('data-forma') || 'redondo';
+  var POS = s.getAttribute('data-posicion') || 'derecha';
+  var RAPIDOS = (s.getAttribute('data-rapidos') || '').split(',').map(function(r){return r.trim();}).filter(Boolean);
+  var RADIO = FORMA === 'cuadrado' ? '10px' : '50%';
+  var RADIO_VENT = FORMA === 'cuadrado' ? '6px' : '16px';
+  var LADO = POS === 'izquierda' ? 'left:20px' : 'right:20px';
   if (!CANAL || !BACKEND) { console.error('Widget AntüHene: faltan data-canal o data-backend'); return; }
 
   // Sesión persistente por visitante (para dar contexto a la conversación)
@@ -29,13 +35,13 @@
   // ---- Estilos (aislados con prefijo ahw-) ----
   var css = document.createElement('style');
   css.textContent = [
-    '.ahw-btn{position:fixed;bottom:20px;right:20px;width:60px;height:60px;border-radius:50%;',
+    '.ahw-btn{position:fixed;bottom:20px;'+LADO+';width:60px;height:60px;border-radius:'+RADIO+';',
     'background:' + COLOR + ';box-shadow:0 8px 24px rgba(0,0,0,.25);cursor:pointer;z-index:999998;',
     'display:flex;align-items:center;justify-content:center;border:none;transition:transform .2s}',
     '.ahw-btn:hover{transform:scale(1.06)}',
     '.ahw-btn svg{width:28px;height:28px;fill:#fff}',
-    '.ahw-panel{position:fixed;bottom:92px;right:20px;width:350px;max-width:calc(100vw - 40px);',
-    'height:520px;max-height:calc(100vh - 120px);background:#fff;border-radius:16px;z-index:999999;',
+    '.ahw-panel{position:fixed;bottom:92px;'+LADO+';width:350px;max-width:calc(100vw - 40px);',
+    'height:520px;max-height:calc(100vh - 120px);background:#fff;border-radius:'+RADIO_VENT+';z-index:999999;',
     'box-shadow:0 24px 60px rgba(0,0,0,.3);display:none;flex-direction:column;overflow:hidden;',
     'font-family:-apple-system,Segoe UI,Roboto,sans-serif}',
     '.ahw-panel.open{display:flex}',
@@ -79,7 +85,23 @@
   btn.onclick = function () {
     abierto = !abierto;
     panel.classList.toggle('open', abierto);
-    if (abierto && !saludoDado) { addMsg(SALUDO, 'in'); saludoDado = true; input.focus(); }
+    if (abierto && !saludoDado) {
+      addMsg(SALUDO, 'in');
+      // Botones de mensajes rápidos
+      if (RAPIDOS.length) {
+        var cont = document.createElement('div');
+        cont.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;margin:4px 0';
+        RAPIDOS.slice(0,5).forEach(function(r){
+          var b = document.createElement('button');
+          b.textContent = r;
+          b.style.cssText = 'border:1px solid '+COLOR+';color:'+COLOR+';background:#fff;border-radius:'+(FORMA==='cuadrado'?'6px':'14px')+';padding:6px 12px;font-size:13px;cursor:pointer';
+          b.onclick = function(){ input.value = r; enviar(); cont.remove(); };
+          cont.appendChild(b);
+        });
+        body.appendChild(cont);
+      }
+      saludoDado = true; input.focus();
+    }
   };
   panel.querySelector('.ahw-close').onclick = function () { abierto = false; panel.classList.remove('open'); };
 
