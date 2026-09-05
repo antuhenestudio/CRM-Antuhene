@@ -41,7 +41,7 @@ async function geminiGenerar({ system, mensajes, temperature = 0.7, maxTokens = 
   }));
 
   const res = await fetch(
-    `${GEMINI_URL}/models/gemini-2.0-flash:generateContent?key=${key}`,
+    `${GEMINI_URL}/models/gemini-3.6-flash:generateContent?key=${key}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
