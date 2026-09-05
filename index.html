@@ -732,6 +732,22 @@ input,textarea,select{font-family:inherit}
   <div id="antu-list" style="overflow-y:auto;max-height:calc(70vh - 70px)"></div>
 </div>
 
+<!-- ===== MODAL GENÉRICO DEL CRM (reemplaza alert/prompt/confirm) ===== -->
+<div id="ah-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:110;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:440px;width:100%;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4)">
+    <div style="padding:20px 22px 0">
+      <div id="ah-modal-icon" style="width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px"></div>
+      <h3 id="ah-modal-title" style="font-size:17px;margin-bottom:6px"></h3>
+      <p id="ah-modal-msg" style="font-size:13.5px;color:var(--muted);line-height:1.5"></p>
+    </div>
+    <div id="ah-modal-fields" style="padding:14px 22px 0"></div>
+    <div style="padding:20px 22px;display:flex;gap:10px;justify-content:flex-end">
+      <button id="ah-modal-cancel" class="btn-ghost" style="font-size:13.5px">Cancelar</button>
+      <button id="ah-modal-ok" class="btn-sm" style="font-size:13.5px;padding:9px 18px">Aceptar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MURO DE PAGO -->
 <div id="paywall" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:20px;max-width:760px;width:100%;padding:32px;max-height:90vh;overflow-y:auto">
@@ -913,6 +929,132 @@ const CH_STYLE = {
 
 /* ---------- Login ---------- */
 const $ = (id) => document.getElementById(id);
+
+/* ============================================================
+   SISTEMA DE MODALES PROPIOS DEL CRM
+   Reemplazan alert/prompt/confirm del navegador con modales
+   que respetan el diseño y el tema. Todos devuelven Promise.
+   ============================================================ */
+const _ahModal = {
+  el: () => $('ah-modal'),
+  cerrar(){ $('ah-modal').style.display='none'; $('ah-modal-fields').innerHTML=''; },
+};
+function _ahIcon(tipo){
+  const m = {
+    info:['ℹ️','rgba(139,92,246,.15)'], ok:['✅','rgba(52,211,153,.15)'],
+    warn:['⚠️','rgba(251,191,36,.15)'], danger:['🗑️','rgba(251,113,133,.15)'],
+    ask:['❓','rgba(34,211,238,.15)']
+  };
+  return m[tipo] || m.info;
+}
+function _ahAbrir({titulo, mensaje, tipo='info', okTexto='Aceptar', cancelTexto='Cancelar', mostrarCancel=true, campos=null, onOk}){
+  const [icono, bg] = _ahIcon(tipo);
+  $('ah-modal-icon').textContent = icono;
+  $('ah-modal-icon').style.background = bg;
+  $('ah-modal-title').textContent = titulo || '';
+  $('ah-modal-msg').textContent = mensaje || '';
+  $('ah-modal-msg').style.display = mensaje ? 'block' : 'none';
+  const okBtn = $('ah-modal-ok'), cancelBtn = $('ah-modal-cancel');
+  okBtn.textContent = okTexto;
+  cancelBtn.textContent = cancelTexto;
+  cancelBtn.style.display = mostrarCancel ? 'inline-block' : 'none';
+  // Botón OK: color rojo si es acción peligrosa
+  okBtn.style.background = tipo==='danger'
+    ? 'linear-gradient(135deg,#E11D48,#FB7185)'
+    : 'linear-gradient(135deg,var(--violet),var(--cyan))';
+
+  // Campos del formulario (inputs/selects)
+  const cont = $('ah-modal-fields');
+  cont.innerHTML = '';
+  const refs = {};
+  if(campos){
+    campos.forEach(c => {
+      const wrap = document.createElement('div');
+      wrap.style.marginBottom = '12px';
+      const lbl = document.createElement('label');
+      lbl.textContent = c.label;
+      lbl.style.cssText = 'display:block;font-size:12.5px;color:var(--muted);margin-bottom:6px;font-weight:500';
+      wrap.appendChild(lbl);
+      let input;
+      if(c.tipo === 'select'){
+        input = document.createElement('select');
+        (c.opciones||[]).forEach(o => {
+          const op = document.createElement('option');
+          op.value = o.value; op.textContent = o.label;
+          if(c.valor===o.value) op.selected = true;
+          input.appendChild(op);
+        });
+      } else if(c.tipo === 'textarea'){
+        input = document.createElement('textarea');
+        input.rows = 3; input.value = c.valor || '';
+      } else {
+        input = document.createElement('input');
+        input.type = c.tipo || 'text';
+        input.value = c.valor || '';
+        if(c.placeholder) input.placeholder = c.placeholder;
+      }
+      input.style.cssText = 'width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink);font-size:14px';
+      wrap.appendChild(input);
+      refs[c.key] = input;
+      cont.appendChild(wrap);
+    });
+    // Foco en el primer campo
+    setTimeout(()=>{ const f=Object.values(refs)[0]; if(f) f.focus(); }, 50);
+  }
+
+  $('ah-modal').style.display = 'flex';
+  okBtn.onclick = () => onOk(refs);
+  cancelBtn.onclick = () => { _ahModal.cerrar(); if(_ahModal._reject) _ahModal._reject(); };
+}
+
+/** Reemplaza ahAlert(). Devuelve Promise que resuelve al aceptar. */
+function ahAlert(mensaje, titulo='Aviso', tipo='info'){
+  return new Promise(res => {
+    _ahAbrir({titulo, mensaje, tipo, mostrarCancel:false, okTexto:'Entendido',
+      onOk:()=>{ _ahModal.cerrar(); res(); }});
+  });
+}
+
+/** Reemplaza confirm(). Devuelve Promise<boolean>. */
+function ahConfirm(mensaje, titulo='¿Confirmás?', tipo='ask'){
+  return new Promise(res => {
+    _ahModal._reject = ()=>res(false);
+    _ahAbrir({titulo, mensaje, tipo, okTexto:'Sí, confirmar',
+      onOk:()=>{ _ahModal.cerrar(); res(true); }});
+  });
+}
+
+/** Confirmación DOBLE para acciones destructivas (confirmar y reconfirmar). */
+function ahConfirmDoble(mensaje, titulo='¿Estás seguro?'){
+  return new Promise(res => {
+    _ahModal._reject = ()=>res(false);
+    _ahAbrir({titulo, mensaje, tipo:'danger', okTexto:'Sí, continuar',
+      onOk:()=>{
+        // Segundo paso de reconfirmación
+        _ahAbrir({titulo:'Confirmá una vez más', mensaje:'Esta acción no se puede deshacer. ¿Querés continuar de todas formas?',
+          tipo:'danger', okTexto:'Sí, hacerlo',
+          onOk:()=>{ _ahModal.cerrar(); res(true); }});
+      }});
+  });
+}
+
+/** Reemplaza prompt() con uno o varios campos. Devuelve Promise<obj|null>. */
+function ahForm({titulo, mensaje, campos, okTexto='Guardar', tipo='ask'}){
+  return new Promise(res => {
+    _ahModal._reject = ()=>res(null);
+    _ahAbrir({titulo, mensaje, tipo, okTexto, campos,
+      onOk:(refs)=>{
+        const datos = {};
+        Object.keys(refs).forEach(k => datos[k] = refs[k].value.trim());
+        _ahModal.cerrar(); res(datos);
+      }});
+  });
+}
+// Cerrar al hacer clic en el fondo oscuro
+$('ah-modal').addEventListener('click', e=>{
+  if(e.target.id==='ah-modal'){ _ahModal.cerrar(); if(_ahModal._reject) _ahModal._reject(); }
+});
+
 function renderIconos(){ try { lucide.createIcons(); } catch(e){} }
 renderIconos();
 
@@ -1275,7 +1417,7 @@ async function cargarPublicaciones(demo){
     list.appendChild(el);
   });
 }
-$('btn-nueva-pub').onclick = () => alert('El formulario para programar contenido se conecta acá (subir imagen/video, elegir canal, formato, fecha y repetición).');
+$('btn-nueva-pub').onclick = () => ahAlert('El formulario para programar contenido se conecta acá (subir imagen/video, elegir canal, formato, fecha y repetición).');
 
 /* ---------- Métricas / Decisiones ---------- */
 const fmtARS = (n) => n==null ? '—' : '$' + Number(n).toLocaleString('es-AR');
@@ -1303,15 +1445,15 @@ async function cargarMetricas(demo){
 $('btn-gasto').onclick = async () => {
   const monto = parseFloat($('g-monto').value);
   const desde = $('g-desde').value, hasta = $('g-hasta').value;
-  if(!monto || !desde || !hasta){ alert('Completá monto, desde y hasta.'); return; }
-  if(demoMode || !sb){ alert('En la demo no se guardan datos. Con tu cuenta, esto registra el gasto y recalcula CAC y ROI.'); return; }
+  if(!monto || !desde || !hasta){ ahAlert('Completá monto, desde y hasta.'); return; }
+  if(demoMode || !sb){ ahAlert('En la demo no se guardan datos. Con tu cuenta, esto registra el gasto y recalcula CAC y ROI.'); return; }
   try {
     const org = await miOrg();
     await sb.from('gastos_publicidad').insert({
       organizacion_id:org, plataforma:$('g-plat').value, monto, desde, hasta
     });
     $('g-monto').value=''; cargarMetricas(false);
-  } catch(e){ alert('No se pudo registrar: '+e.message); }
+  } catch(e){ ahAlert('No se pudo registrar: '+e.message); }
 };
 
 /* ---------- Exportar / Importar base (CSV) ---------- */
@@ -1346,14 +1488,14 @@ $('file-import').onchange = (e) => {
   const reader = new FileReader();
   reader.onload = async () => {
     const filas = parseCSV(reader.result);
-    if(demoMode || !sb){ alert(`Se leyeron ${filas.length} registros. Con tu cuenta, se importan a tu base (y cada uno recibe su número de registro interno).`); return; }
+    if(demoMode || !sb){ ahAlert(`Se leyeron ${filas.length} registros. Con tu cuenta, se importan a tu base (y cada uno recibe su número de registro interno).`); return; }
     try {
       const org = await miOrg();
       const conOrg = filas.map(f => ({...f, organizacion_id:org}));
       const { error } = await sb.from('leads').insert(conOrg);
       if(error) throw error;
-      alert(`Importados ${filas.length} clientes.`); cargarKanban(false);
-    } catch(err){ alert('Error al importar: '+err.message); }
+      ahAlert(`Importados ${filas.length} clientes.`); cargarKanban(false);
+    } catch(err){ ahAlert('Error al importar: '+err.message); }
   };
   reader.readAsText(file);
 };
@@ -1400,10 +1542,10 @@ async function cargarCanales(demo){
 }
 async function conectar(tipo){
   if(!suscripcionActiva){ mostrarPaywall(); return; }
-  if(demoMode || !sb){ alert('En la demo no se conectan redes reales. Con tu cuenta, este botón abre el ingreso oficial de '+tipo+'.'); return; }
+  if(demoMode || !sb){ ahAlert('En la demo no se conectan redes reales. Con tu cuenta, este botón abre el ingreso oficial de '+tipo+'.'); return; }
   const org = await miOrg();
   if(tipo==='whatsapp'){
-    alert('WhatsApp se conecta con el asistente de Meta (Embedded Signup). Se integra con tu backend.');
+    ahAlert('WhatsApp se conecta con el asistente de Meta (Embedded Signup). Se integra con tu backend.');
   } else {
     window.open(`${BACKEND_URL}/conectar/meta?organizacion_id=${org}`, 'conectar', 'width=600,height=700');
   }
@@ -1463,31 +1605,32 @@ async function cargarConfig(demo){
 $('btn-subir-doc').onclick = ()=> $('file-doc').click();
 $('file-doc').onchange = (e)=>{
   const f=e.target.files[0]; if(!f) return;
-  if(demoMode||!sb){ alert(`Se subiría "${f.name}" y el bot lo procesaría (extrae texto y aprende). Con tu cuenta queda cargado en su memoria.`); return; }
-  alert('Subida real: se envía a /api/conocimiento/archivo en tu backend, que lo procesa.');
+  if(demoMode||!sb){ ahAlert(`Se subiría "${f.name}" y el bot lo procesaría (extrae texto y aprende). Con tu cuenta queda cargado en su memoria.`); return; }
+  ahAlert('Subida real: se envía a /api/conocimiento/archivo en tu backend, que lo procesa.');
 };
-$('btn-agregar-url').onclick = ()=>{
-  const url = prompt('Pegá la URL que el bot debe leer:');
-  if(!url) return;
-  if(demoMode||!sb){ alert('Con tu cuenta, esta URL se procesa y su contenido nutre al bot.'); return; }
+$('btn-agregar-url').onclick = async ()=>{
+  const datos = await ahForm({titulo:'Agregar URL al conocimiento', okTexto:'Agregar',
+    campos:[{key:'url', label:'URL que el bot debe leer', placeholder:'https://tunegocio.com/preguntas'}]});
+  if(!datos || !datos.url) return;
+  if(demoMode||!sb){ await ahAlert('Con tu cuenta, esta URL se procesa y su contenido nutre al bot.','Modo demo','info'); return; }
 };
 $('btn-add-campo').onclick = async ()=>{
   const etiqueta=$('cp-etiqueta').value.trim(); if(!etiqueta) return;
-  if(demoMode||!sb){ alert('En la demo no se guarda. Con tu cuenta, este campo se agrega a tu ficha.'); return; }
+  if(demoMode||!sb){ ahAlert('En la demo no se guarda. Con tu cuenta, este campo se agrega a tu ficha.'); return; }
   try { const org=await miOrg();
     await sb.from('campos_personalizados').insert({organizacion_id:org, etiqueta,
       clave:etiqueta.toLowerCase().replace(/[^a-z0-9]+/g,'_'), tipo:$('cp-tipo').value});
     $('cp-etiqueta').value=''; cargarConfig(false);
-  } catch(e){ alert('Error: '+e.message); }
+  } catch(e){ ahAlert('Error: '+e.message); }
 };
 $('btn-add-regla').onclick = async ()=>{
   const contacto=$('rn-contacto').value.trim(); if(!contacto) return;
-  if(demoMode||!sb){ alert('En la demo no se guarda. Con tu cuenta, este aviso queda activo.'); return; }
+  if(demoMode||!sb){ ahAlert('En la demo no se guarda. Con tu cuenta, este aviso queda activo.'); return; }
   try { const org=await miOrg();
     await sb.from('reglas_notificacion').insert({organizacion_id:org,
       evento:$('rn-evento').value, contactos:[contacto]});
     $('rn-contacto').value=''; cargarConfig(false);
-  } catch(e){ alert('Error: '+e.message); }
+  } catch(e){ ahAlert('Error: '+e.message); }
 };
 
 /* ---------- Campanita: leads calificados sin contactar ---------- */
@@ -1557,7 +1700,7 @@ async function cargarAgenda(demo){
   }
 }
 $('btn-conectar-google').onclick = async () => {
-  if(demoMode || !sb){ alert('Con tu cuenta, este botón abre el ingreso oficial de Google para conectar tu calendario.'); return; }
+  if(demoMode || !sb){ ahAlert('Con tu cuenta, este botón abre el ingreso oficial de Google para conectar tu calendario.'); return; }
   const org = await miOrg();
   window.open(`${BACKEND_URL}/conectar/google?organizacion_id=${org}`, 'google', 'width=600,height=700');
 };
@@ -1622,22 +1765,31 @@ function pintarFaq(){
     el.appendChild(row);
   });
 }
-$('btn-add-servicio').onclick=()=>{
-  const nombre=prompt('Nombre del servicio o producto:'); if(!nombre)return;
-  const descripcion=prompt('Descripción (opcional):')||'';
-  servicios.push({nombre,descripcion}); pintarServicios();
+$('btn-add-servicio').onclick=async()=>{
+  const datos = await ahForm({titulo:'Nuevo servicio o producto', okTexto:'Agregar',
+    campos:[
+      {key:'nombre', label:'Nombre', placeholder:'Ej: Gestión de jubilación'},
+      {key:'descripcion', label:'Descripción (opcional)', tipo:'textarea'},
+    ]});
+  if(!datos || !datos.nombre) return;
+  servicios.push({nombre:datos.nombre, descripcion:datos.descripcion}); pintarServicios();
 };
-$('btn-add-faq').onclick=()=>{
-  const pregunta=prompt('Pregunta frecuente:'); if(!pregunta)return;
-  const respuesta=prompt('Respuesta:')||''; faqs.push({pregunta,respuesta}); pintarFaq();
+$('btn-add-faq').onclick=async()=>{
+  const datos = await ahForm({titulo:'Nueva pregunta frecuente', okTexto:'Agregar',
+    campos:[
+      {key:'pregunta', label:'Pregunta', placeholder:'¿La primera consulta tiene costo?'},
+      {key:'respuesta', label:'Respuesta', tipo:'textarea'},
+    ]});
+  if(!datos || !datos.pregunta) return;
+  faqs.push({pregunta:datos.pregunta, respuesta:datos.respuesta}); pintarFaq();
 };
 $('btn-add-horario').onclick=async()=>{
   const dia=+$('h-dia').value, desde=$('h-desde').value, hasta=$('h-hasta').value;
-  if(demoMode||!sb){ alert('En la demo no se guarda. Con tu cuenta, este horario queda activo para agendar.'); return; }
+  if(demoMode||!sb){ ahAlert('En la demo no se guarda. Con tu cuenta, este horario queda activo para agendar.'); return; }
   try { const org=await miOrg();
     await sb.from('horarios_atencion').insert({organizacion_id:org,dia_semana:dia,hora_desde:desde,hora_hasta:hasta});
     cargarNegocio(false);
-  } catch(e){ alert('Error: '+e.message); }
+  } catch(e){ ahAlert('Error: '+e.message); }
 };
 $('btn-buscar-dir').onclick=async()=>{
   const dir=$('n-dir').value.trim(); if(!dir)return;
@@ -1645,11 +1797,11 @@ $('btn-buscar-dir').onclick=async()=>{
     const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(dir)}`);
     const d=await r.json();
     if(d[0]){ $('map-frame').src=mapaURL(+d[0].lat,+d[0].lon); $('n-dir').dataset.lat=d[0].lat; $('n-dir').dataset.lng=d[0].lon; }
-    else alert('No se encontró esa dirección. Probá agregando la ciudad.');
-  } catch(e){ alert('No se pudo ubicar la dirección.'); }
+    else ahAlert('No se encontró esa dirección. Probá agregando la ciudad.');
+  } catch(e){ ahAlert('No se pudo ubicar la dirección.'); }
 };
 $('btn-guardar-negocio').onclick=async()=>{
-  if(demoMode||!sb){ alert('En la demo no se guarda. Con tu cuenta, esta ficha queda disponible para tu bot.'); return; }
+  if(demoMode||!sb){ ahAlert('En la demo no se guarda. Con tu cuenta, esta ficha queda disponible para tu bot.'); return; }
   try {
     const org=await miOrg();
     await sb.from('perfil_negocio').upsert({
@@ -1659,8 +1811,8 @@ $('btn-guardar-negocio').onclick=async()=>{
       lat:$('n-dir').dataset.lat||null, lng:$('n-dir').dataset.lng||null,
       servicios, faq:faqs, actualizado_en:new Date().toISOString(),
     });
-    alert('Ficha guardada. Tu bot ya responde con esta información.');
-  } catch(e){ alert('Error al guardar: '+e.message); }
+    ahAlert('Ficha guardada. Tu bot ya responde con esta información.');
+  } catch(e){ ahAlert('Error al guardar: '+e.message); }
 };
 
 /* ---------- Mis bots ---------- */
@@ -1691,17 +1843,22 @@ async function cargarBots(demo){
   });
 }
 $('btn-nuevo-bot').onclick = async () => {
-  const nombre = prompt('Nombre del bot (ej: Bot Jubilaciones):'); if(!nombre) return;
-  const objetivo = prompt('¿Cuál es su objetivo? (ej: calificar y agendar):')||'';
-  if(demoMode||!sb){ alert(`Se crearía "${nombre}". Con tu cuenta queda listo para enlazar a un canal.`); return; }
+  const datos = await ahForm({titulo:'Crear nuevo bot', okTexto:'Crear bot',
+    campos:[
+      {key:'nombre', label:'Nombre del bot', placeholder:'Ej: Bot Jubilaciones'},
+      {key:'objetivo', label:'Objetivo', tipo:'textarea', placeholder:'Ej: calificar consultas y agendar revisión'},
+    ]});
+  if(!datos || !datos.nombre) return;
+  if(demoMode||!sb){ await ahAlert('Se crearía "'+datos.nombre+'". Con tu cuenta queda listo para enlazar a un canal.','Modo demo','info'); return; }
   try { const org=await miOrg();
-    await sb.from('agentes').insert({organizacion_id:org,nombre,objetivo,rubro:'general'});
+    await sb.from('agentes').insert({organizacion_id:org,nombre:datos.nombre,objetivo:datos.objetivo,rubro:'general'});
+    await ahAlert('Bot creado. Ahora podés enlazarlo a un canal.','Listo','ok');
     cargarBots(false);
-  } catch(e){ alert('Error: '+e.message); }
+  } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
 };
 function enlazarBot(nombre){
   if(!suscripcionActiva){ mostrarPaywall(); return; }
-  alert(`Acá elegís a qué canal enlazar "${nombre}" (ej: el WhatsApp llamado Jubilaciones).`);
+  ahAlert(`Acá elegís a qué canal enlazar "${nombre}" (ej: el WhatsApp llamado Jubilaciones).`);
 }
 
 /* ---------- Muro de pago ---------- */
@@ -1723,7 +1880,7 @@ async function cargarPlanes(){
 function mostrarPaywall(){ cargarPlanes(); $('paywall').style.display='flex'; }
 $('paywall-close').onclick = ()=> $('paywall').style.display='none';
 async function suscribir(planId){
-  if(demoMode || !sb){ alert('En la demo no se cobra. Con tu cuenta, esto te lleva al checkout de Mercado Pago para el débito mensual.'); return; }
+  if(demoMode || !sb){ ahAlert('En la demo no se cobra. Con tu cuenta, esto te lleva al checkout de Mercado Pago para el débito mensual.'); return; }
   try {
     const org = await miOrg();
     const { data:{ user } } = await sb.auth.getUser();
@@ -1733,8 +1890,8 @@ async function suscribir(planId){
     });
     const d = await r.json();
     if(d.checkout_url) window.location.href = d.checkout_url;
-    else alert('No se pudo iniciar la suscripción.');
-  } catch(e){ alert('Error: '+e.message); }
+    else ahAlert('No se pudo iniciar la suscripción.');
+  } catch(e){ ahAlert('Error: '+e.message); }
 }
 
 /* ---------- Antü: la IA analista ---------- */
@@ -1840,11 +1997,11 @@ function comprarCurso(id){
   if(demoMode || !sb){
     // En demo, simular compra para poder recorrer el curso
     progreso[id] = { comprado:true, lecciones:{} };
-    alert('En la demo simulamos la compra para que veas el curso. Con tu cuenta, esto abre el pago por Mercado Pago.');
+    ahAlert('En la demo simulamos la compra para que veas el curso. Con tu cuenta, esto abre el pago por Mercado Pago.');
     cargarAcademia(true); return;
   }
   // Producción: POST /api/academia/comprar → checkout MP
-  alert('Redirige al checkout de Mercado Pago para comprar el curso.');
+  ahAlert('Redirige al checkout de Mercado Pago para comprar el curso.');
 }
 function abrirCurso(id){
   cursoActivo = DEMO.cursos.find(c=>c.id===id);
@@ -2049,9 +2206,13 @@ function fmtFecha(f){
 $('ficha-close').onclick=()=> $('ficha-modal').style.display='none';
 $('ficha-modal').addEventListener('click', e=>{ if(e.target.id==='ficha-modal') $('ficha-modal').style.display='none'; });
 $('f-add-gestion').onclick=async()=>{
-  const motivo = prompt('Motivo de la gestión (ej: Accidente laboral, Sucesión):'); if(!motivo) return;
-  const descripcion = prompt('Descripción / detalle:')||'';
-  const nueva = {fecha:new Date().toISOString().slice(0,10), motivo, descripcion, estado:'abierta', responsable:$('u-name').textContent};
+  const datos = await ahForm({titulo:'Nueva gestión', okTexto:'Registrar',
+    campos:[
+      {key:'motivo', label:'Motivo', placeholder:'Ej: Accidente laboral, Sucesión'},
+      {key:'descripcion', label:'Descripción / detalle', tipo:'textarea'},
+    ]});
+  if(!datos || !datos.motivo) return;
+  const nueva = {fecha:new Date().toISOString().slice(0,10), motivo:datos.motivo, descripcion:datos.descripcion, estado:'abierta', responsable:$('u-name').textContent};
   if(demoMode || !sb){
     leadFicha.gestiones = leadFicha.gestiones || [];
     leadFicha.gestiones.push(nueva);
@@ -2059,9 +2220,9 @@ $('f-add-gestion').onclick=async()=>{
     return;
   }
   try { const org = await miOrg();
-    await sb.from('gestiones').insert({organizacion_id:org, lead_id:leadFicha.id, motivo, descripcion});
+    await sb.from('gestiones').insert({organizacion_id:org, lead_id:leadFicha.id, motivo:datos.motivo, descripcion:datos.descripcion});
     pintarGestiones();
-  } catch(e){ alert('Error: '+e.message); }
+  } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
 };
 
 /* ---------- Widget web: generar código ---------- */
@@ -2112,43 +2273,96 @@ async function cargarEquipo(demo){
 
   // Usuarios
   let equipo = DEMO.equipo;
-  if(!demo && sb){ try { const {data}=await sb.from('perfiles').select('nombre,rol,puesto, area:area_id(nombre)');
-    equipo=(data||[]).map(u=>({nombre:u.nombre,rol:u.rol,puesto:u.puesto,area:u.area?.nombre||'—'})); }
+  if(!demo && sb){ try { const {data}=await sb.from('perfiles').select('user_id,nombre,rol,puesto, area:area_id(nombre)');
+    equipo=(data||[]).map(u=>({user_id:u.user_id,nombre:u.nombre,rol:u.rol,puesto:u.puesto,area:u.area?.nombre||'—'})); }
     catch(e){ console.warn(e); } }
   const el2=$('equipo-list'); el2.innerHTML='';
-  equipo.forEach(u=>{
+  equipo.forEach((u,idx)=>{
     const [rl,rc]=ROL_LABEL[u.rol]||['—','var(--muted)'];
     const row=document.createElement('div'); row.className='pub-item';
     row.innerHTML=`<div style="display:flex;align-items:center;gap:12px">
         <div class="avatar">${(u.nombre||'U')[0]}</div>
         <div>
-          <div style="font-weight:600;font-size:13.5px">${u.nombre}${u.puesto?' · '+u.puesto:''}</div>
+          <div style="font-weight:600;font-size:13.5px">${u.nombre||'Sin nombre'}${u.puesto?' · '+u.puesto:''}</div>
           <div class="when">${u.email||''}${u.area&&u.area!=='—'?' · Área: '+u.area:''}</div>
         </div>
       </div>
-      <span class="pill" style="color:${rc}">${rl}</span>`;
+      <div style="display:flex;align-items:center;gap:10px">
+        <span class="pill" style="color:${rc}">${rl}</span>
+        ${u.rol!=='dueno'?`<button data-edit="${idx}" style="color:var(--cyan);font-size:12px">Editar</button>
+        <button data-del="${idx}" style="color:var(--coral);font-size:12px">Eliminar</button>`:''}
+      </div>`;
+    const editBtn = row.querySelector('[data-edit]');
+    if(editBtn) editBtn.onclick=()=>editarUsuario(u);
+    const delBtn = row.querySelector('[data-del]');
+    if(delBtn) delBtn.onclick=()=>eliminarUsuario(u);
     el2.appendChild(row);
   });
 }
-$('btn-add-area').onclick=async()=>{
-  const nombre=prompt('Nombre del área (ej: Jubilaciones):'); if(!nombre)return;
-  const palabras=prompt('Palabras clave que la disparan, separadas por coma (ej: jubilacion, anses, aportes):')||'';
-  if(demoMode||!sb){ alert('En la demo no se guarda. Con tu cuenta, esta área queda activa y el bot deriva por ella.'); return; }
-  try { const org=await miOrg();
-    await sb.from('areas').insert({organizacion_id:org, nombre, palabras_clave:palabras.split(',').map(p=>p.trim()).filter(Boolean)});
+async function editarUsuario(u){
+  const datos = await ahForm({
+    titulo:'Modificar usuario', mensaje:u.nombre||u.email, okTexto:'Guardar cambios',
+    campos:[
+      {key:'rol', label:'Rol', tipo:'select', valor:u.rol, opciones:[
+        {value:'miembro', label:'Miembro (opera, no borra ni configura)'},
+        {value:'admin', label:'Administrador (gestiona, no borra)'},
+      ]},
+      {key:'puesto', label:'Puesto', valor:u.puesto||'', placeholder:'Ej: Secretaria, Abogado'},
+    ]
+  });
+  if(!datos) return;
+  if(demoMode||!sb){ await ahAlert('En la demo no se guarda. Con tu cuenta, el rol y puesto se actualizan.','Modo demo','info'); return; }
+  try {
+    await sb.from('perfiles').update({rol:datos.rol, puesto:datos.puesto}).eq('user_id', u.user_id);
+    await ahAlert('Usuario actualizado.','Listo','ok');
     cargarEquipo(false);
-  } catch(e){ alert('Error: '+e.message); }
+  } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
+}
+async function eliminarUsuario(u){
+  const ok = await ahConfirmDoble('Vas a quitar a '+(u.nombre||u.email)+' del equipo. Perderá el acceso al CRM.','¿Eliminar usuario?');
+  if(!ok) return;
+  if(demoMode||!sb){ await ahAlert('En la demo no se elimina. Con tu cuenta, el usuario pierde acceso.','Modo demo','info'); return; }
+  try {
+    await sb.from('perfiles').delete().eq('user_id', u.user_id);
+    await ahAlert('Usuario eliminado del equipo.','Hecho','ok');
+    cargarEquipo(false);
+  } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
+}
+$('btn-add-area').onclick=async()=>{
+  const datos = await ahForm({
+    titulo:'Nueva área', tipo:'ask', okTexto:'Crear área',
+    campos:[
+      {key:'nombre', label:'Nombre del área', placeholder:'Ej: Jubilaciones'},
+      {key:'palabras', label:'Palabras clave (separadas por coma)', placeholder:'jubilacion, anses, aportes'},
+    ]
+  });
+  if(!datos || !datos.nombre) return;
+  if(demoMode||!sb){ await ahAlert('En la demo no se guarda. Con tu cuenta, esta área queda activa y el bot deriva por ella.','Modo demo','info'); return; }
+  try { const org=await miOrg();
+    await sb.from('areas').insert({organizacion_id:org, nombre:datos.nombre, palabras_clave:datos.palabras.split(',').map(p=>p.trim()).filter(Boolean)});
+    await ahAlert('Área creada correctamente.','Listo','ok');
+    cargarEquipo(false);
+  } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
 };
 $('btn-invitar').onclick=async()=>{
-  const email=prompt('Email del usuario a invitar:'); if(!email)return;
-  const rol=prompt('Rol (admin o miembro):','miembro')||'miembro';
-  const puesto=prompt('Puesto (ej: Secretaria, Abogado):')||'';
-  if(demoMode||!sb){ alert(`Se invitaría a ${email} como ${rol}. Cuando se registre con ese email, queda vinculado a tu estudio con ese rol.`); return; }
+  const datos = await ahForm({
+    titulo:'Invitar usuario al equipo', tipo:'ask', okTexto:'Enviar invitación',
+    campos:[
+      {key:'email', label:'Email del usuario', tipo:'email', placeholder:'persona@estudio.com'},
+      {key:'rol', label:'Rol', tipo:'select', valor:'miembro', opciones:[
+        {value:'miembro', label:'Miembro (opera, no borra ni configura)'},
+        {value:'admin', label:'Administrador (gestiona, no borra)'},
+      ]},
+      {key:'puesto', label:'Puesto', placeholder:'Ej: Secretaria, Abogado'},
+    ]
+  });
+  if(!datos || !datos.email) return;
+  if(demoMode||!sb){ await ahAlert('Se invitaría a '+datos.email+' como '+datos.rol+'. Cuando se registre con ese email, queda vinculado a tu estudio con ese rol.','Modo demo','info'); return; }
   try { const org=await miOrg();
-    await sb.from('invitaciones').insert({organizacion_id:org, email, rol, puesto});
-    alert(`Invitación creada para ${email}. Pedile que se registre con ese email.`);
+    await sb.from('invitaciones').insert({organizacion_id:org, email:datos.email, rol:datos.rol, puesto:datos.puesto});
+    await ahAlert('Invitación creada para '+datos.email+'. Pedile que se registre con ese email.','Invitación enviada','ok');
     cargarEquipo(false);
-  } catch(e){ alert('Error: '+e.message); }
+  } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
 };
 
 /* ---------- Sesión persistente ---------- */
