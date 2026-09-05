@@ -251,6 +251,7 @@ input,textarea,select{font-family:inherit}
       <button class="nav-item" data-view="canales"><i data-lucide="share-2" class="ic"></i>Conectar redes</button>
       <button class="nav-item" data-view="negocio"><i data-lucide="store" class="ic"></i>Mi negocio</button>
       <button class="nav-item" data-view="academia"><i data-lucide="graduation-cap" class="ic"></i>Academia</button>
+      <button class="nav-item" data-view="equipo"><i data-lucide="users-round" class="ic"></i>Equipo</button>
       <button class="nav-item" data-view="config"><i data-lucide="settings" class="ic"></i>Configurar bot</button>
       <div class="sidebar-foot">
         <div class="user-chip">
@@ -563,6 +564,33 @@ input,textarea,select{font-family:inherit}
         </div>
       </section>
 
+      <!-- EQUIPO -->
+      <section class="view" data-view="equipo">
+        <div class="demo-banner" style="color:var(--muted);background:var(--panel);border-color:var(--line);margin-bottom:18px">
+          Solo el dueño y los administradores pueden gestionar el equipo y las áreas. El bot deriva cada consulta al responsable del área según el tema.
+        </div>
+
+        <!-- Áreas -->
+        <div class="tile" style="margin-bottom:18px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <h3 style="font-size:15px">Áreas del negocio</h3>
+            <button class="btn-sm" id="btn-add-area" style="font-size:12.5px">+ Nueva área</button>
+          </div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Definí las áreas (Jubilaciones, ART, Sucesiones...) con sus palabras clave. El bot detecta el tema y deriva al responsable.</p>
+          <div id="areas-list"></div>
+        </div>
+
+        <!-- Usuarios / equipo -->
+        <div class="tile">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <h3 style="font-size:15px">Usuarios del equipo</h3>
+            <button class="btn-sm" id="btn-invitar" style="font-size:12.5px">+ Invitar usuario</button>
+          </div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Dá de alta a tu equipo, asignales un rol (qué pueden hacer) y un área.</p>
+          <div id="equipo-list"></div>
+        </div>
+      </section>
+
       <!-- CONFIGURAR BOT -->
       <section class="view" data-view="config">
         <!-- Plantillas modelo -->
@@ -744,8 +772,17 @@ const DEMO = {
     {tipo:'sugerencia', zona:'publicaciones', prioridad:1, titulo:'Poco contenido programado',
      mensaje:'Te sugiero programar 2 o 3 posts esta semana para mantener tu negocio presente en las redes.', accion_texto:'Programar contenido', accion_zona:'publicaciones'},
   ],
+  areas:[
+    {id:'a1', nombre:'Jubilaciones', palabras:['jubilacion','anses','aportes','retiro','moratoria'], responsable:'Laura'},
+    {id:'a2', nombre:'ART', palabras:['art','accidente','laboral','trabajo','indemnizacion'], responsable:'Diego'},
+    {id:'a3', nombre:'Sucesiones', palabras:['sucesion','herencia','fallecio','heredero'], responsable:'Laura'},
+  ],
+  equipo:[
+    {nombre:'María González', email:'maria@estudio.com', rol:'dueno', area:'—', puesto:'Titular'},
+    {nombre:'Laura Pérez', email:'laura@estudio.com', rol:'miembro', area:'Jubilaciones', puesto:'Secretaria'},
+    {nombre:'Diego Ruiz', email:'diego@estudio.com', rol:'admin', area:'ART', puesto:'Abogado'},
+  ],
   cursos:[
-    {id:'c1', titulo:'Marketing digital para emprendedores', categoria:'marketing', precio_ars:25000, nivel:'inicial',
      descripcion:'Aprendé a atraer clientes con redes, contenido y publicidad, desde cero.',
      lecciones:[
        {titulo:'Fundamentos del marketing digital', vimeo:'76979871', test:[
@@ -974,6 +1011,7 @@ async function entrar(){
   cargarBots(usaDemo);
   cargarAntu(usaDemo);
   cargarAcademia(usaDemo);
+  cargarEquipo(usaDemo);
   generarCodigoWidget();
   renderIconos();
 
@@ -1004,6 +1042,7 @@ const TITLES = {
   negocio:['Mi negocio','Los datos con los que el bot responde a tus prospectos'],
   bots:['Mis bots','Creá bots y enlazalos a tus canales'],
   academia:['Academia','Capacitate y obtené tu certificado'],
+  equipo:['Equipo','Usuarios, roles y áreas de tu negocio'],
   publicaciones:['Publicaciones','Contenido programado para tus redes'],
   canales:['Conectar redes','Vinculá las cuentas de tu negocio'],
   config:['Configurar bot','Memoria, campos propios y avisos automáticos'],
@@ -2049,6 +2088,67 @@ if($('w-copiar')){
     });
   };
 }
+
+/* ---------- Equipo: áreas y usuarios ---------- */
+const ROL_LABEL = {dueno:['Dueño','var(--violet)'], admin:['Administrador','var(--cyan)'], miembro:['Miembro','var(--muted)']};
+
+async function cargarEquipo(demo){
+  // Áreas
+  let areas = DEMO.areas;
+  if(!demo && sb){ try { const {data}=await sb.from('areas').select('*, resp:responsable_id(nombre)');
+    areas=(data||[]).map(a=>({id:a.id,nombre:a.nombre,palabras:a.palabras_clave,responsable:a.resp?.nombre})); }
+    catch(e){ console.warn(e); } }
+  const al=$('areas-list'); al.innerHTML = areas.length?'':'<div class="empty">Sin áreas. Creá la primera.</div>';
+  areas.forEach(a=>{
+    const el=document.createElement('div'); el.className='pub-item';
+    el.innerHTML=`<div>
+        <div style="font-weight:600;font-size:13.5px;margin-bottom:3px">${a.nombre}</div>
+        <div class="when">Palabras: ${(a.palabras||[]).join(', ')||'—'}</div>
+      </div>
+      <span class="pill" style="color:var(--violet)">👤 ${a.responsable||'sin asignar'}</span>`;
+    al.appendChild(el);
+  });
+
+  // Usuarios
+  let equipo = DEMO.equipo;
+  if(!demo && sb){ try { const {data}=await sb.from('perfiles').select('nombre,rol,puesto, area:area_id(nombre)');
+    equipo=(data||[]).map(u=>({nombre:u.nombre,rol:u.rol,puesto:u.puesto,area:u.area?.nombre||'—'})); }
+    catch(e){ console.warn(e); } }
+  const el2=$('equipo-list'); el2.innerHTML='';
+  equipo.forEach(u=>{
+    const [rl,rc]=ROL_LABEL[u.rol]||['—','var(--muted)'];
+    const row=document.createElement('div'); row.className='pub-item';
+    row.innerHTML=`<div style="display:flex;align-items:center;gap:12px">
+        <div class="avatar">${(u.nombre||'U')[0]}</div>
+        <div>
+          <div style="font-weight:600;font-size:13.5px">${u.nombre}${u.puesto?' · '+u.puesto:''}</div>
+          <div class="when">${u.email||''}${u.area&&u.area!=='—'?' · Área: '+u.area:''}</div>
+        </div>
+      </div>
+      <span class="pill" style="color:${rc}">${rl}</span>`;
+    el2.appendChild(row);
+  });
+}
+$('btn-add-area').onclick=async()=>{
+  const nombre=prompt('Nombre del área (ej: Jubilaciones):'); if(!nombre)return;
+  const palabras=prompt('Palabras clave que la disparan, separadas por coma (ej: jubilacion, anses, aportes):')||'';
+  if(demoMode||!sb){ alert('En la demo no se guarda. Con tu cuenta, esta área queda activa y el bot deriva por ella.'); return; }
+  try { const org=await miOrg();
+    await sb.from('areas').insert({organizacion_id:org, nombre, palabras_clave:palabras.split(',').map(p=>p.trim()).filter(Boolean)});
+    cargarEquipo(false);
+  } catch(e){ alert('Error: '+e.message); }
+};
+$('btn-invitar').onclick=async()=>{
+  const email=prompt('Email del usuario a invitar:'); if(!email)return;
+  const rol=prompt('Rol (admin o miembro):','miembro')||'miembro';
+  const puesto=prompt('Puesto (ej: Secretaria, Abogado):')||'';
+  if(demoMode||!sb){ alert(`Se invitaría a ${email} como ${rol}. Cuando se registre con ese email, queda vinculado a tu estudio con ese rol.`); return; }
+  try { const org=await miOrg();
+    await sb.from('invitaciones').insert({organizacion_id:org, email, rol, puesto});
+    alert(`Invitación creada para ${email}. Pedile que se registre con ese email.`);
+    cargarEquipo(false);
+  } catch(e){ alert('Error: '+e.message); }
+};
 
 /* ---------- Sesión persistente ---------- */
 (async () => {
