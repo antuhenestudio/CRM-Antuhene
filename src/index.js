@@ -33,6 +33,19 @@ const multer = require('multer');
 const subir = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
 
 const app = express();
+
+// ------------------------------------------------------------
+// CORS: permite que los widgets en sitios externos (y el panel)
+// hablen con el backend. Sin esto, el chat del widget no responde.
+// ------------------------------------------------------------
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PATCH, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
 app.use(express.json());
 
 // Servir el widget embebible y archivos estáticos de /web
