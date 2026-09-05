@@ -502,21 +502,70 @@ input,textarea,select{font-family:inherit}
         <p style="color:var(--muted);font-size:13.5px;margin-bottom:16px">Conectá las cuentas de tu negocio:</p>
         <div id="channel-list"></div>
 
-        <!-- Widget para sitio web -->
+        <!-- Widget para sitio web — PERSONALIZADOR -->
         <div class="tile" style="margin-top:22px">
-          <h3 style="font-size:15px;margin-bottom:4px">💬 Bot para tu sitio web</h3>
-          <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Pegá este código en tu página web (antes de <code style="background:var(--panel2);padding:1px 5px;border-radius:4px">&lt;/body&gt;</code>) y tu bot va a responder, asesorar y captar contactos también desde ahí, con la misma voz y conocimiento.</p>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-            <div class="field" style="margin:0"><label>Título del chat</label>
-              <input id="w-titulo" value="Asistente" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--ink)"></div>
-            <div class="field" style="margin:0"><label>Color</label>
-              <input id="w-color" type="color" value="#8B5CF6" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:6px;color:var(--ink);height:42px;width:60px"></div>
+          <h3 style="font-size:15px;margin-bottom:4px">Bot para tu sitio web</h3>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Personalizá tu chat, mirá la vista previa en vivo, y pegá el código en tu web.</p>
+          <div style="display:grid;grid-template-columns:1fr 320px;gap:20px">
+            <!-- Controles -->
+            <div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+                <div class="field" style="margin:0;flex:1"><label>Título del chat</label>
+                  <input id="w-titulo" value="Asistente" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--ink)"></div>
+                <div class="field" style="margin:0"><label>Color</label>
+                  <input id="w-color" type="color" value="#8B5CF6" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:4px;height:42px;width:56px"></div>
+              </div>
+              <div class="field"><label>Mensaje de bienvenida</label>
+                <input id="w-saludo" value="¡Hola! ¿En qué puedo ayudarte?" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--ink)"></div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+                <div class="field" style="margin:0;flex:1"><label>Forma de los botones</label>
+                  <select id="w-forma" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--ink)">
+                    <option value="redondo">Redondos</option>
+                    <option value="cuadrado">Cuadrados</option>
+                  </select></div>
+                <div class="field" style="margin:0;flex:1"><label>Posición</label>
+                  <select id="w-pos" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--ink)">
+                    <option value="derecha">Abajo a la derecha</option>
+                    <option value="izquierda">Abajo a la izquierda</option>
+                  </select></div>
+              </div>
+              <div class="field"><label>Mensajes rápidos (opciones que ve el visitante, separadas por coma)</label>
+                <input id="w-rapidos" placeholder="Quiero info, Precios, Agendar una cita" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--ink)"></div>
+
+              <!-- Código generado -->
+              <div style="position:relative;margin-top:14px">
+                <pre id="w-code" style="background:#0B0D12;border:1px solid var(--line);border-radius:10px;padding:16px;font-size:12px;color:#B7C0D8;overflow-x:auto;white-space:pre-wrap;word-break:break-all"></pre>
+                <button class="btn-sm" id="w-copiar" style="position:absolute;top:10px;right:10px;font-size:12px;padding:6px 12px">Copiar</button>
+              </div>
+              <p style="font-size:12px;color:var(--muted);margin-top:8px">El bot usa tu misma configuración (alma, conocimiento, ficha) y guarda los contactos en tu CRM.</p>
+            </div>
+
+            <!-- VISTA PREVIA en vivo -->
+            <div>
+              <div style="font-size:12px;color:var(--muted);margin-bottom:8px;text-align:center">Vista previa</div>
+              <div style="background:var(--panel2);border:1px solid var(--line);border-radius:16px;height:420px;position:relative;overflow:hidden">
+                <div style="padding:16px;font-size:12px;color:var(--muted)">Tu sitio web…</div>
+                <!-- Ventana del chat -->
+                <div id="wp-ventana" style="position:absolute;bottom:76px;width:88%;left:6%;background:#fff;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.2);overflow:hidden;display:flex;flex-direction:column;max-height:320px">
+                  <div id="wp-head" style="padding:12px 14px;color:#fff;font-weight:600;font-size:13px;display:flex;justify-content:space-between;align-items:center">
+                    <span id="wp-titulo">Asistente</span><span style="opacity:.8">✕</span>
+                  </div>
+                  <div style="flex:1;padding:12px;background:#F7F7F9;display:flex;flex-direction:column;gap:8px;overflow-y:auto">
+                    <div id="wp-saludo" style="background:#fff;padding:8px 11px;border-radius:11px;font-size:12px;align-self:flex-start;box-shadow:0 1px 2px rgba(0,0,0,.06);max-width:85%">¡Hola! ¿En qué puedo ayudarte?</div>
+                    <div id="wp-rapidos" style="display:flex;flex-wrap:wrap;gap:5px;align-self:flex-start"></div>
+                  </div>
+                  <div style="padding:8px;background:#fff;border-top:1px solid #eee;display:flex;gap:6px">
+                    <div style="flex:1;background:#f0f0f0;border-radius:16px;padding:7px 12px;font-size:11px;color:#999">Escribí tu mensaje…</div>
+                    <div id="wp-send" style="width:30px;height:30px;background:#8B5CF6;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px">➤</div>
+                  </div>
+                </div>
+                <!-- Burbuja flotante -->
+                <div id="wp-burbuja" style="position:absolute;bottom:16px;right:16px;width:52px;height:52px;background:#8B5CF6;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,.25)">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>
+                </div>
+              </div>
+            </div>
           </div>
-          <div style="position:relative">
-            <pre id="w-code" style="background:#0B0D12;border:1px solid var(--line);border-radius:10px;padding:16px;font-size:12px;color:#B7C0D8;overflow-x:auto;white-space:pre-wrap;word-break:break-all"></pre>
-            <button class="btn-sm" id="w-copiar" style="position:absolute;top:10px;right:10px;font-size:12px;padding:6px 12px">Copiar</button>
-          </div>
-          <p style="font-size:12px;color:var(--muted);margin-top:8px">El bot en la web usa tu misma configuración (alma, conocimiento, ficha del negocio) y guarda los contactos que capta en tu CRM.</p>
         </div>
       </section>
 
@@ -2649,19 +2698,65 @@ $('f-add-gestion').onclick=async()=>{
 
 /* ---------- Widget web: generar código ---------- */
 function generarCodigoWidget(){
-  var canalWeb = 'antuhene-' + (DEMO && demoMode ? 'demo1234' : 'tucanal');
+  var canalWeb = 'antuhene-web-01';
   var titulo = ($('w-titulo')?.value || 'Asistente');
   var color = ($('w-color')?.value || '#8B5CF6');
+  var saludo = ($('w-saludo')?.value || '¡Hola! ¿En qué puedo ayudarte?');
+  var forma = ($('w-forma')?.value || 'redondo');
+  var pos = ($('w-pos')?.value || 'derecha');
+  var rapidos = ($('w-rapidos')?.value || '').trim();
+
   var code =
 '<script src="' + (BACKEND_URL||'https://tu-backend') + '/widget.js"\n' +
 '  data-canal="' + canalWeb + '"\n' +
 '  data-backend="' + (BACKEND_URL||'https://tu-backend') + '"\n' +
 '  data-titulo="' + titulo + '"\n' +
+'  data-saludo="' + saludo + '"\n' +
+'  data-forma="' + forma + '"\n' +
+'  data-posicion="' + pos + '"\n' +
+(rapidos ? '  data-rapidos="' + rapidos + '"\n' : '') +
 '  data-color="' + color + '"><\/script>';
   var pre = $('w-code'); if(pre) pre.textContent = code;
+
+  actualizarVistaPrevia(titulo, color, saludo, forma, pos, rapidos);
 }
-['w-titulo','w-color'].forEach(function(id){
-  var el = $(id); if(el) el.addEventListener('input', generarCodigoWidget);
+
+function actualizarVistaPrevia(titulo, color, saludo, forma, pos, rapidos){
+  var radio = forma==='cuadrado' ? '8px' : '50%';
+  var radioVent = forma==='cuadrado' ? '4px' : '14px';
+  // Título y saludo
+  if($('wp-titulo')) $('wp-titulo').textContent = titulo;
+  if($('wp-saludo')) $('wp-saludo').textContent = saludo;
+  // Color
+  if($('wp-head')) $('wp-head').style.background = color;
+  if($('wp-burbuja')){ $('wp-burbuja').style.background = color; $('wp-burbuja').style.borderRadius = radio; }
+  if($('wp-send')) $('wp-send').style.background = color;
+  if($('wp-ventana')) $('wp-ventana').style.borderRadius = radioVent;
+  // Posición
+  if($('wp-burbuja')){
+    $('wp-burbuja').style.right = pos==='izquierda' ? 'auto' : '16px';
+    $('wp-burbuja').style.left = pos==='izquierda' ? '16px' : 'auto';
+  }
+  if($('wp-ventana')){
+    $('wp-ventana').style.left = pos==='izquierda' ? '6%' : 'auto';
+    $('wp-ventana').style.right = pos==='izquierda' ? 'auto' : '6%';
+  }
+  // Mensajes rápidos
+  if($('wp-rapidos')){
+    $('wp-rapidos').innerHTML = '';
+    if(rapidos){
+      rapidos.split(',').map(function(r){return r.trim();}).filter(Boolean).slice(0,5).forEach(function(r){
+        var b=document.createElement('span');
+        b.textContent=r;
+        b.style.cssText='border:1px solid '+color+';color:'+color+';border-radius:'+(forma==='cuadrado'?'4px':'14px')+';padding:4px 10px;font-size:11px;cursor:pointer';
+        $('wp-rapidos').appendChild(b);
+      });
+    }
+  }
+}
+
+['w-titulo','w-color','w-saludo','w-forma','w-pos','w-rapidos'].forEach(function(id){
+  var el = $(id); if(el){ el.addEventListener('input', generarCodigoWidget); el.addEventListener('change', generarCodigoWidget); }
 });
 if($('w-copiar')){
   $('w-copiar').onclick = function(){
