@@ -326,7 +326,7 @@ input,textarea,select{font-family:inherit}
         <div class="grid g3">
           <div class="tile"><p>Conversaciones hoy</p><div class="big" id="m-conv">—</div><p>El bot respondió al instante</p></div>
           <div class="tile"><p>Leads nuevos</p><div class="big" id="m-leads">—</div><p>Capturados esta semana</p></div>
-          <div class="tile"><p>Tier A calificados</p><div class="big" id="m-tier">—</div><p>Listos para contactar</p></div>
+          <div class="tile"><p>Clientes interesados</p><div class="big" id="m-tier">—</div><p>Listos para contactar</p></div>
           <div class="tile"><p>Publicaciones programadas</p><div class="big" id="m-pub">—</div><p>En cola para salir</p></div>
         </div>
       </section>
@@ -366,7 +366,9 @@ input,textarea,select{font-family:inherit}
             <input type="file" id="file-import" accept=".csv" style="display:none">
           </div>
         </div>
+        <div id="filtro-temas" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
         <div class="kanban" id="kanban"></div>
+        <div id="filtro-temas-old" style="display:none"></div>
         <div id="lista-leads" style="display:none">
           <input id="buscar-lead" placeholder="Buscar por nombre, registro, interés o zona..." style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink);font-size:14px;margin-bottom:14px">
           <div class="tile" style="padding:0;overflow:hidden">
@@ -639,6 +641,14 @@ input,textarea,select{font-family:inherit}
       <section class="view" data-view="planes">
         <p style="color:var(--muted);font-size:13.5px;margin-bottom:18px">Elegí el plan que mejor se adapta a tu negocio. Podés cambiar o cancelar cuando quieras.</p>
         <div id="mi-plan-estado" style="margin-bottom:18px"></div>
+        <div class="tile" style="margin-bottom:18px">
+          <h3 style="font-size:15px;margin-bottom:6px">🎁 ¿Tenés un código de prueba?</h3>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Si te dieron un código promocional, ingresalo para activar tu prueba gratis.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input id="codigo-trial" placeholder="Ej: EMPRENDE30" style="flex:1;min-width:180px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink);text-transform:uppercase">
+            <button class="btn-sm" id="btn-canjear">Activar prueba</button>
+          </div>
+        </div>
         <div class="grid g3" id="planes-fijos"></div>
         <div class="tile" style="margin-top:22px">
           <h3 style="font-size:15px;margin-bottom:12px">¿Qué incluye cada plan?</h3>
@@ -747,7 +757,11 @@ input,textarea,select{font-family:inherit}
         </div>
         <div id="f-tags" style="display:flex;gap:6px;margin-top:6px"></div>
       </div>
-      <button id="ficha-close" style="color:var(--muted);font-size:20px">✕</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="f-editar" class="btn-ghost" style="font-size:12.5px">Editar datos</button>
+        <button id="f-eliminar" class="btn-ghost" style="font-size:12.5px;color:var(--coral);border-color:rgba(251,113,133,.3)" data-owner>Eliminar</button>
+        <button id="ficha-close" style="color:var(--muted);font-size:20px">✕</button>
+      </div>
     </div>
 
     <div style="padding:24px 26px;display:grid;grid-template-columns:1fr 1fr;gap:14px 24px">
@@ -990,11 +1004,11 @@ const DEMO = {
 
 const COLUMNS = [
   {k:'nuevo_lead', t:'Nuevo'},
-  {k:'filtrado_tier_a', t:'Tier A'},
+  {k:'filtrado_tier_a', t:'Cliente Interesado'},
   {k:'historia_laboral_recibida', t:'Doc. recibida'},
   {k:'cita_agendada', t:'Cita agendada'},
   {k:'en_tramite', t:'En trámite'},
-  {k:'ganado', t:'Ganado'},
+  {k:'ganado', t:'Cliente'},
   {k:'perdido', t:'Perdido'},
 ];
 const CH_STYLE = {
@@ -1372,13 +1386,58 @@ async function miOrg(){
 
 /* ---------- Kanban ---------- */
 let leadsActuales = [];
+let temasActuales = [];
+let temaFiltro = null;
 async function cargarKanban(demo){
   let leads = DEMO.leads;
   if(!demo && sb){
-    try { const { data } = await sb.from('leads').select('*').order('updated_at',{ascending:false});
+    try { const { data } = await sb.from('leads').select('*, tema:tema_id(nombre,color)').order('updated_at',{ascending:false});
       leads = data || []; } catch(e){ console.warn(e); }
   }
   leadsActuales = leads;
+  await cargarTemas(demo);
+  pintarKanban();
+  pintarListaLeads(leads);
+}
+async function cargarTemas(demo){
+  if(demo || !sb){
+    temasActuales = [
+      {id:'t1', nombre:'Jubilaciones', color:'#22D3EE'},
+      {id:'t2', nombre:'ART', color:'#FB7185'},
+      {id:'t3', nombre:'Sucesión', color:'#8B5CF6'},
+      {id:'t4', nombre:'ANSES', color:'#34D399'},
+    ];
+  } else {
+    try { const { data } = await sb.from('temas').select('*').order('orden');
+      temasActuales = data || []; } catch(e){ temasActuales=[]; }
+  }
+  pintarFiltroTemas();
+}
+function pintarFiltroTemas(){
+  const cont = $('filtro-temas'); if(!cont) return;
+  cont.innerHTML = '';
+  // Botón "Todos"
+  const todos = document.createElement('button');
+  todos.className='btn-ghost'; todos.style.cssText='font-size:12px;padding:6px 14px'+(temaFiltro===null?';border-color:var(--violet);color:var(--violet)':'');
+  todos.textContent='Todos';
+  todos.onclick=()=>{ temaFiltro=null; pintarFiltroTemas(); pintarKanban(); };
+  cont.appendChild(todos);
+  temasActuales.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='btn-ghost'; b.style.cssText='font-size:12px;padding:6px 14px'+(temaFiltro===t.id?';border-color:'+t.color+';color:'+t.color:'');
+    b.innerHTML=`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${t.color};margin-right:6px"></span>${t.nombre}`;
+    b.onclick=()=>{ temaFiltro = temaFiltro===t.id ? null : t.id; pintarFiltroTemas(); pintarKanban(); };
+    cont.appendChild(b);
+  });
+  // Botón gestionar (solo dueño/admin)
+  const gest = document.createElement('button');
+  gest.className='btn-sm'; gest.style.cssText='font-size:12px;padding:6px 12px';
+  gest.textContent='+ Temas';
+  gest.onclick=gestionarTemas;
+  cont.appendChild(gest);
+}
+function pintarKanban(){
+  const leads = temaFiltro ? leadsActuales.filter(l=>l.tema_id===temaFiltro) : leadsActuales;
   const k = $('kanban'); k.innerHTML='';
   COLUMNS.forEach(col => {
     const items = leads.filter(l => l.estado === col.k);
@@ -1390,12 +1449,31 @@ async function cargarKanban(demo){
     items.forEach(l => body.appendChild(cardEl(l)));
     k.appendChild(el);
   });
-  habilitarDragDrop(demo);
-  pintarListaLeads(leads);
+  habilitarDragDrop(demoMode||!sb);
+}
+async function gestionarTemas(){
+  const datos = await ahForm({
+    titulo:'Nuevo tema de interés', mensaje:'Los temas clasifican a tus clientes (ej: Jubilaciones, Comprar, ART).',
+    okTexto:'Crear tema',
+    campos:[
+      {key:'nombre', label:'Nombre del tema', placeholder:'Ej: Jubilaciones'},
+      {key:'color', label:'Color', tipo:'select', valor:'#8B5CF6', opciones:[
+        {value:'#8B5CF6',label:'Violeta'},{value:'#22D3EE',label:'Celeste'},
+        {value:'#FB7185',label:'Coral'},{value:'#34D399',label:'Verde'},
+        {value:'#FBBF24',label:'Amarillo'},
+      ]},
+    ]
+  });
+  if(!datos || !datos.nombre) return;
+  if(demoMode||!sb){ await ahAlert('En la demo no se guarda. Con tu cuenta, este tema queda disponible.','Modo demo','info'); return; }
+  try { const org=await miOrg();
+    await sb.from('temas').insert({organizacion_id:org, nombre:datos.nombre, color:datos.color});
+    cargarTemas(false);
+  } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
 }
 
 /* ---------- Vista de lista de leads ---------- */
-const EST_LABEL = {nuevo_lead:['Nuevo','var(--muted)'], filtrado_tier_a:['Tier A','var(--emerald)'],
+const EST_LABEL = {nuevo_lead:['Nuevo','var(--muted)'], filtrado_tier_a:['Cliente Interesado','var(--emerald)'],
   historia_laboral_recibida:['Doc. recibida','var(--cyan)'], cita_agendada:['Cita agendada','var(--violet)'],
   en_tramite:['En trámite','var(--amber)'], ganado:['Ganado','var(--emerald)'], perdido:['Perdido','var(--coral)']};
 
@@ -1411,7 +1489,7 @@ function pintarListaLeads(leads){
     tr.onmouseout=()=>tr.style.background='';
     tr.innerHTML=`
       <td style="padding:11px 14px;font-family:'Fraunces',serif;color:var(--muted);white-space:nowrap">${l.registro_interno||'—'}</td>
-      <td style="padding:11px 14px;font-weight:600">${l.nombre||'Sin nombre'}${l.tier==='A'?' <span class="tag a" style="margin-left:4px">A</span>':''}</td>
+      <td style="padding:11px 14px;font-weight:600">${l.nombre||'Sin nombre'}${l.tier==='A'?' <span class="tag a" style="margin-left:4px">Interesado</span>':''}</td>
       <td style="padding:11px 14px;color:var(--muted)">${l.interes||'—'}</td>
       <td style="padding:11px 14px;color:var(--muted)">${l.zona||'—'}</td>
       <td style="padding:11px 14px"><span class="pill" style="color:${col}">${et}</span></td>
@@ -1451,7 +1529,8 @@ function cardEl(l){
       ${l.registro_interno?`<span style="font-size:10px;color:var(--muted);font-family:'Fraunces',serif">${l.registro_interno}</span>`:''}
     </div>
     <div class="cd">${l.interes||'—'}</div>
-    <div class="tags">${l.tier==='A'?'<span class="tag a">Tier A</span>':''}
+    <div class="tags">${l.tema?`<span class="tag" style="background:${l.tema.color}22;color:${l.tema.color}">${l.tema.nombre}</span>`:''}
+    ${l.tier==='A'?'<span class="tag a">Interesado</span>':''}
     ${l.zona?`<span class="tag z">${l.zona}</span>`:''}
     ${sec?`<span class="tag" style="background:var(--panel);color:var(--muted)">👤 ${sec}</span>`:''}</div>`;
   el.querySelector('button')?.addEventListener('click', e=>e.stopPropagation());
@@ -1855,7 +1934,7 @@ async function cargarCampanita(demo){
     el.onmouseout=()=>el.style.background='';
     el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:baseline">
         <span style="font-weight:600;font-size:13.5px">${l.nombre||'Sin nombre'}</span>
-        <span class="tag a">Tier A${l.puntaje?' · '+l.puntaje:''}</span></div>
+        <span class="tag a">Interesado${l.puntaje?' · '+l.puntaje:''}</span></div>
       <div style="font-size:12px;color:var(--muted);margin-top:2px">${l.interes||'—'}${l.telefono?' · '+l.telefono:''}</div>`;
     el.onclick=()=>{ document.querySelector('[data-view="leads"]').click(); $('bell-panel').style.display='none'; };
     list.appendChild(el);
@@ -2077,6 +2156,33 @@ async function cargarPlanes(){
     el.appendChild(t);
   });
 }
+/* ---------- Canjear código de trial ---------- */
+if($('btn-canjear')){
+  $('btn-canjear').onclick = async () => {
+    const codigo = ($('codigo-trial').value||'').trim().toUpperCase();
+    if(!codigo){ await ahAlert('Ingresá un código.','Falta el código','warn'); return; }
+    if(demoMode||!sb){ await ahAlert('En la demo no se canjea. Con tu cuenta, este código activa tu prueba de 30 días.','Modo demo','info'); return; }
+    try {
+      const org = await miOrg();
+      const r = await fetch(`${BACKEND_URL}/api/trial/canjear`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ organizacion_id:org, codigo })
+      });
+      const d = await r.json();
+      const msgs = {
+        'OK': ['¡Prueba activada! Tenés 30 días para usar todo AntüHene.','ok'],
+        'CODIGO_INVALIDO': ['Ese código no existe o no está activo.','warn'],
+        'CODIGO_VENCIDO': ['Ese código ya venció.','warn'],
+        'CODIGO_AGOTADO': ['Ese código ya alcanzó su límite de usos.','warn'],
+        'YA_USASTE_TRIAL': ['Tu cuenta ya usó una prueba antes.','warn'],
+      };
+      const [txt,tipo] = msgs[d.resultado] || ['No se pudo canjear el código.','warn'];
+      await ahAlert(txt, d.resultado==='OK'?'¡Listo!':'Atención', tipo);
+      if(d.resultado==='OK'){ location.reload(); }
+    } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
+  };
+}
+
 function mostrarPaywall(){ cargarPlanes(); $('paywall').style.display='flex'; }
 $('paywall-close').onclick = ()=> $('paywall').style.display='none';
 $('paywall-x').onclick = ()=> $('paywall').style.display='none';
@@ -2392,7 +2498,7 @@ async function abrirFicha(lead){
   $('f-secretario').textContent = lead.secretario || '—';
   $('f-ingreso').textContent = lead.fecha_ingreso || '—';
   const tags = $('f-tags'); tags.innerHTML =
-    (lead.tier==='A'?'<span class="tag a">Tier A</span>':'') +
+    (lead.tier==='A'?'<span class="tag a">Cliente Interesado</span>':'') +
     (lead.convenio?`<span class="tag z">${lead.convenio}</span>`:'') +
     `<span class="pill">${lead.estado?.replace(/_/g,' ')||''}</span>`;
 
@@ -2436,6 +2542,52 @@ function fmtFecha(f){
 }
 $('ficha-close').onclick=()=> $('ficha-modal').style.display='none';
 $('ficha-modal').addEventListener('click', e=>{ if(e.target.id==='ficha-modal') $('ficha-modal').style.display='none'; });
+
+$('f-eliminar').onclick=async()=>{
+  if(!leadFicha) return;
+  const ok = await ahConfirmDoble('Vas a eliminar a '+(leadFicha.nombre||'este cliente')+' y todo su historial. Esta acción no se puede deshacer.','¿Eliminar cliente?');
+  if(!ok) return;
+  if(demoMode||!sb){ await ahAlert('En la demo no se elimina. Con tu cuenta, el cliente se borra definitivamente.','Modo demo','info'); return; }
+  try {
+    await sb.from('leads').delete().eq('id', leadFicha.id);
+    $('ficha-modal').style.display='none';
+    await ahAlert('Cliente eliminado.','Hecho','ok');
+    cargarKanban(false);
+  } catch(e){ await ahAlert('Error al eliminar: '+e.message,'Error','warn'); }
+};
+
+$('f-editar').onclick=async()=>{
+  if(!leadFicha) return;
+  const datos = await ahForm({
+    titulo:'Editar datos del cliente', okTexto:'Guardar cambios',
+    campos:[
+      {key:'nombre', label:'Nombre y apellido', valor:leadFicha.nombre||''},
+      {key:'dni', label:'DNI', valor:leadFicha.dni||''},
+      {key:'telefono', label:'Celular / WhatsApp', valor:(leadFicha.telefono||'').replace('web:','')},
+      {key:'email', label:'Correo', tipo:'email', valor:leadFicha.email||''},
+      {key:'domicilio', label:'Dirección', valor:leadFicha.domicilio||''},
+      {key:'zona', label:'Zona / Ciudad', valor:leadFicha.zona||''},
+      {key:'interes', label:'Interés / Motivo', valor:leadFicha.interes||''},
+      {key:'tema_id', label:'Tema', tipo:'select', valor:leadFicha.tema_id||'',
+        opciones:[{value:'',label:'Sin tema'}, ...temasActuales.map(t=>({value:t.id,label:t.nombre}))]},
+    ]
+  });
+  if(!datos) return;
+  if(demoMode||!sb){ await ahAlert('En la demo no se guarda. Con tu cuenta, estos datos se actualizan en la ficha.','Modo demo','info'); return; }
+  try {
+    await sb.from('leads').update({
+      nombre:datos.nombre, dni:datos.dni, telefono:datos.telefono,
+      email:datos.email, domicilio:datos.domicilio, zona:datos.zona, interes:datos.interes,
+      tema_id:datos.tema_id || null,
+    }).eq('id', leadFicha.id);
+    // Actualizar la ficha en pantalla
+    Object.assign(leadFicha, datos);
+    await abrirFicha(leadFicha);
+    await ahAlert('Datos actualizados.','Listo','ok');
+    if(typeof cargarKanban==='function') cargarKanban(false);
+  } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
+};
+
 $('f-add-gestion').onclick=async()=>{
   const datos = await ahForm({titulo:'Nueva gestión', okTexto:'Registrar',
     campos:[
