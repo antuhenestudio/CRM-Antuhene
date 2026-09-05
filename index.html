@@ -72,6 +72,7 @@ input,textarea,select{font-family:inherit}
 .mode-badge.crear{background:rgba(52,211,153,.14);color:var(--emerald)}
 .login-card{transition:box-shadow .3s ease}
 .login-card.creando{box-shadow:0 0 0 2px var(--emerald),0 20px 60px rgba(52,211,153,.15)}
+.tour-highlight{position:relative;z-index:121 !important;box-shadow:0 0 0 3px var(--violet),0 0 0 9999px rgba(0,0,0,.4);border-radius:8px}
 
 /* ---------- App shell ---------- */
 #app{display:none;min-height:100vh}
@@ -270,6 +271,7 @@ input,textarea,select{font-family:inherit}
       <button class="nav-item" data-view="negocio"><i data-lucide="store" class="ic"></i>Mi negocio</button>
       <button class="nav-item" data-view="academia"><i data-lucide="graduation-cap" class="ic"></i>Academia</button>
       <button class="nav-item" data-view="equipo"><i data-lucide="users-round" class="ic"></i>Equipo</button>
+      <button class="nav-item" data-view="planes"><i data-lucide="credit-card" class="ic"></i>Planes</button>
       <button class="nav-item" data-view="config"><i data-lucide="settings" class="ic"></i>Configurar bot</button>
       <div class="sidebar-foot">
         <div class="user-chip">
@@ -295,6 +297,9 @@ input,textarea,select{font-family:inherit}
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
+        <button id="btn-tour" style="height:42px;padding:0 14px;border-radius:12px;background:var(--panel);border:1px solid var(--line);color:var(--ink);font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px" aria-label="Cómo funciona">
+          <i data-lucide="help-circle" style="width:18px;height:18px"></i><span class="tour-txt">¿Cómo funciona?</span>
+        </button>
         <button id="theme-toggle" style="width:42px;height:42px;border-radius:12px;background:var(--panel);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink)" aria-label="Cambiar tema">
           <svg id="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
           <svg id="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
@@ -460,7 +465,28 @@ input,textarea,select{font-family:inherit}
 
       <!-- CANALES -->
       <section class="view" data-view="canales">
-        <p style="color:var(--muted);font-size:13.5px;margin-bottom:16px">Conectá las cuentas de tu negocio. Se abre el ingreso oficial de cada red; nunca te pedimos tu contraseña.</p>
+        <div class="tile" style="margin-bottom:18px;background:linear-gradient(135deg,rgba(139,92,246,.08),rgba(34,211,238,.05))">
+          <h3 style="font-size:15px;margin-bottom:12px">📋 Cómo conectar tus redes, paso a paso</h3>
+          <div style="display:grid;gap:12px">
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="width:26px;height:26px;border-radius:50%;background:var(--violet);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">1</div>
+              <div style="font-size:13.5px;color:var(--muted)"><strong style="color:var(--ink)">Tocá "Conectar"</strong> en la red que quieras (WhatsApp, Instagram o Facebook).</div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="width:26px;height:26px;border-radius:50%;background:var(--violet);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">2</div>
+              <div style="font-size:13.5px;color:var(--muted)"><strong style="color:var(--ink)">Se abre el ingreso oficial</strong> de Meta o Google. Iniciás sesión con la cuenta de tu negocio. Nunca te pedimos tu contraseña acá.</div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="width:26px;height:26px;border-radius:50%;background:var(--violet);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">3</div>
+              <div style="font-size:13.5px;color:var(--muted)"><strong style="color:var(--ink)">Autorizás el acceso</strong> y elegís qué número o cuenta conectar. Para WhatsApp, verificás con el código que te llega por SMS.</div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="width:26px;height:26px;border-radius:50%;background:var(--emerald);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">✓</div>
+              <div style="font-size:13.5px;color:var(--muted)"><strong style="color:var(--ink)">¡Listo!</strong> El canal queda conectado y tu bot empieza a responder. Podés desconectarlo cuando quieras.</div>
+            </div>
+          </div>
+        </div>
+        <p style="color:var(--muted);font-size:13.5px;margin-bottom:16px">Conectá las cuentas de tu negocio:</p>
         <div id="channel-list"></div>
 
         <!-- Widget para sitio web -->
@@ -609,6 +635,21 @@ input,textarea,select{font-family:inherit}
         </div>
       </section>
 
+      <!-- PLANES -->
+      <section class="view" data-view="planes">
+        <p style="color:var(--muted);font-size:13.5px;margin-bottom:18px">Elegí el plan que mejor se adapta a tu negocio. Podés cambiar o cancelar cuando quieras.</p>
+        <div id="mi-plan-estado" style="margin-bottom:18px"></div>
+        <div class="grid g3" id="planes-fijos"></div>
+        <div class="tile" style="margin-top:22px">
+          <h3 style="font-size:15px;margin-bottom:12px">¿Qué incluye cada plan?</h3>
+          <div style="font-size:13.5px;color:var(--muted);line-height:1.8">
+            <p><strong style="color:var(--ink)">Emprendedor</strong> — Ideal para arrancar: 1 bot con IA humanizada, 1 canal (WhatsApp), CRM completo, agenda y campanita de leads.</p>
+            <p><strong style="color:var(--ink)">Profesional</strong> — Para equipos: 3 bots, 5 canales, publicaciones programadas, métricas de decisión y derivación por áreas.</p>
+            <p><strong style="color:var(--ink)">Negocio</strong> — Alto volumen: 10 bots, 20 canales, todo incluido y soporte prioritario.</p>
+          </div>
+        </div>
+      </section>
+
       <!-- CONFIGURAR BOT -->
       <section class="view" data-view="config">
         <!-- Plantillas modelo -->
@@ -750,6 +791,23 @@ input,textarea,select{font-family:inherit}
   <div id="antu-list" style="overflow-y:auto;max-height:calc(70vh - 70px)"></div>
 </div>
 
+<!-- ===== TOUR GUIADO ===== -->
+<div id="tour-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:120"></div>
+<div id="tour-box" style="display:none;position:fixed;z-index:121;background:var(--panel);border:1px solid var(--violet);border-radius:16px;padding:22px;max-width:340px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+    <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--cyan));display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:700;color:#fff">A</div>
+    <div style="font-weight:600;font-size:14px" id="tour-title">Bienvenido</div>
+  </div>
+  <p id="tour-text" style="font-size:13.5px;color:var(--muted);line-height:1.55;margin-bottom:16px"></p>
+  <div style="display:flex;justify-content:space-between;align-items:center">
+    <span id="tour-step" style="font-size:12px;color:var(--muted)"></span>
+    <div style="display:flex;gap:8px">
+      <button id="tour-skip" style="font-size:12.5px;color:var(--muted)">Saltar</button>
+      <button id="tour-next" class="btn-sm" style="font-size:12.5px;padding:8px 16px">Siguiente</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== MODAL GENÉRICO DEL CRM (reemplaza alert/prompt/confirm) ===== -->
 <div id="ah-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:110;align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:440px;width:100%;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4)">
@@ -768,7 +826,8 @@ input,textarea,select{font-family:inherit}
 
 <!-- MURO DE PAGO -->
 <div id="paywall" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;padding:20px">
-  <div style="background:var(--panel);border:1px solid var(--line);border-radius:20px;max-width:760px;width:100%;padding:32px;max-height:90vh;overflow-y:auto">
+  <div style="background:var(--panel);border:1px solid var(--line);border-radius:20px;max-width:760px;width:100%;padding:32px;max-height:90vh;overflow-y:auto;position:relative">
+    <button id="paywall-x" style="position:absolute;top:18px;right:20px;width:34px;height:34px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);font-size:18px;display:flex;align-items:center;justify-content:center">✕</button>
     <h2 style="font-size:22px;margin-bottom:6px">Activá tu cuenta para vincular canales</h2>
     <p style="color:var(--muted);font-size:14px;margin-bottom:24px">Podés recorrer todo el panel, pero para conectar tus redes y activar tus bots necesitás una suscripción. Se debita automáticamente cada mes y la cancelás cuando quieras.</p>
     <div class="grid g3" id="planes-list"></div>
@@ -1238,11 +1297,17 @@ async function entrar(){
     } catch(e){ console.warn(e); }
   }
   suscripcionActiva = ['activa','trial'].includes(estadoSusc);
+  cargarPlanesFijos(usaDemo);
 
   // Restringir acciones según rol (los miembros no borran)
   if(perfil.rol === 'miembro'){
     document.querySelectorAll('[data-owner]').forEach(el => el.style.display='none');
   }
+
+  // Tour automático la primera vez
+  let tourVisto = false;
+  try{ tourVisto = localStorage.getItem('ah-tour-visto')==='1'; }catch(e){}
+  if(!tourVisto){ setTimeout(iniciarTour, 1200); }
 }
 
 /* ---------- Navegación ---------- */
@@ -1256,6 +1321,7 @@ const TITLES = {
   bots:['Mis bots','Creá bots y enlazalos a tus canales'],
   academia:['Academia','Capacitate y obtené tu certificado'],
   equipo:['Equipo','Usuarios, roles y áreas de tu negocio'],
+  planes:['Planes','Elegí el plan de tu negocio'],
   publicaciones:['Publicaciones','Contenido programado para tus redes'],
   canales:['Conectar redes','Vinculá las cuentas de tu negocio'],
   config:['Configurar bot','Memoria, campos propios y avisos automáticos'],
@@ -1416,27 +1482,53 @@ function habilitarDragDrop(demo){
 
 /* ---------- Inbox ---------- */
 let convActiva = null;
+let convsReales = [];
 async function cargarInbox(demo){
-  let convs = DEMO.convs;
-  // (En producción se leería de `conversaciones` con su último mensaje.)
   const list = $('conv-list'); list.innerHTML='';
-  convs.forEach((c,i) => {
-    const el = document.createElement('div');
-    el.className='conv'; el.dataset.i=i;
-    const st = CH_STYLE[c.ch]||CH_STYLE.web;
-    el.innerHTML = `<div class="top"><span class="who">${c.who}</span><span class="ch" style="color:${st.c}">${st.l}</span></div>
-      <div class="prev">${c.prev}</div>`;
-    el.onclick = () => abrirConv(convs, i);
-    list.appendChild(el);
-  });
+  // En demo, mostrar los datos de ejemplo
+  if(demo || !sb){
+    let convs = DEMO.convs;
+    convs.forEach((c,i) => {
+      const el = document.createElement('div');
+      el.className='conv'; el.dataset.i=i;
+      const st = CH_STYLE[c.ch]||CH_STYLE.web;
+      el.innerHTML = `<div class="top"><span class="who">${c.who}</span><span class="ch" style="color:${st.c}">${st.l}</span></div>
+        <div class="prev">${c.prev}</div>`;
+      el.onclick = () => abrirConvDemo(convs, i);
+      list.appendChild(el);
+    });
+    return;
+  }
+  // En real: traer del backend
+  try {
+    const org = await miOrg();
+    const r = await fetch(`${BACKEND_URL}/api/conversaciones?organizacion_id=${org}`);
+    convsReales = await r.json();
+    if(!convsReales.length){
+      list.innerHTML = '<div class="empty" style="padding:24px">Todavía no hay conversaciones. Cuando alguien escriba por tu web o WhatsApp, aparece acá.</div>';
+      return;
+    }
+    convsReales.forEach((c,i) => {
+      const el = document.createElement('div');
+      el.className='conv'; el.dataset.i=i;
+      const tipo = c.canal?.tipo || 'web';
+      const st = CH_STYLE[tipo]||CH_STYLE.web;
+      const nombre = c.lead?.nombre || (c.lead?.telefono||'').replace('web:','Visitante ') || 'Sin nombre';
+      el.innerHTML = `<div class="top"><span class="who">${nombre}</span><span class="ch" style="color:${st.c}">${st.l}</span></div>
+        <div class="prev">${c.lead?.interes || 'Conversación'}</div>`;
+      el.onclick = () => abrirConvReal(c.id, nombre, c.modo);
+      list.appendChild(el);
+    });
+  } catch(e){
+    list.innerHTML = '<div class="empty" style="padding:24px">No se pudieron cargar las conversaciones.</div>';
+    console.warn(e);
+  }
 }
-function abrirConv(convs, i){
-  convActiva = i;
-  document.querySelectorAll('.conv').forEach(c=>c.classList.toggle('active', +c.dataset.i===i));
+// Abrir conversación DEMO
+function abrirConvDemo(convs, i){
   const c = convs[i];
   $('chat-who').textContent = c.who;
-  const modeEl = $('chat-mode');
-  modeEl.style.display='inline-block';
+  const modeEl = $('chat-mode'); modeEl.style.display='inline-block';
   modeEl.textContent = c.modo==='bot' ? 'IA activa' : 'Atención humana';
   const body = $('chat-body'); body.innerHTML='';
   c.msgs.forEach(m => {
@@ -1448,9 +1540,47 @@ function abrirConv(convs, i){
   body.scrollTop = body.scrollHeight;
   $('chat-input').style.display='flex';
 }
+// Abrir conversación REAL (con resumen IA)
+async function abrirConvReal(convId, nombre, modo){
+  $('chat-who').textContent = nombre;
+  const modeEl = $('chat-mode'); modeEl.style.display='inline-block';
+  modeEl.textContent = modo==='bot' ? 'IA activa' : 'Atención humana';
+  const body = $('chat-body');
+  body.innerHTML = '<div class="empty" style="padding:20px">Cargando conversación…</div>';
+  $('chat-input').style.display='flex';
+  try {
+    const r = await fetch(`${BACKEND_URL}/api/conversaciones/${convId}`);
+    const { mensajes, analisis } = await r.json();
+    body.innerHTML='';
+    // Panel de resumen IA arriba
+    if(analisis){
+      const temp = {frio:['#22D3EE','Frío'], tibio:['#FBBF24','Tibio'], caliente:['#FB7185','Caliente']}[analisis.temperatura]||['#8B92A6','—'];
+      const box=document.createElement('div');
+      box.style.cssText='background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px';
+      box.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <span style="font-size:13px;font-weight:600">🧠 Resumen de Antü</span>
+          <span class="pill" style="color:${temp[0]}">${temp[1]}</span></div>
+        <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:8px">${analisis.resumen||''}</div>
+        <div style="font-size:12.5px;color:var(--ink);line-height:1.5"><strong>Determinación:</strong> ${analisis.determinacion||''}</div>`;
+      body.appendChild(box);
+    }
+    // Los mensajes
+    mensajes.forEach(m => {
+      const el=document.createElement('div');
+      el.className='msg '+(m.autor==='cliente'?'in':'out');
+      el.textContent = m.contenido;
+      if(m.autor!=='cliente'){ const by=document.createElement('div'); by.className='by'; by.textContent = m.autor==='bot'?'IA':'Humano'; el.appendChild(by); }
+      body.appendChild(el);
+    });
+    body.scrollTop = body.scrollHeight;
+  } catch(e){
+    body.innerHTML='<div class="empty" style="padding:20px">No se pudo cargar la conversación.</div>';
+    console.warn(e);
+  }
+}
 $('chat-send').onclick = () => {
   const inp = $('chat-text'); const t = inp.value.trim();
-  if(!t || convActiva===null) return;
+  if(!t) return;
   const body = $('chat-body');
   const el=document.createElement('div');
   el.className='msg out';
@@ -1949,6 +2079,37 @@ async function cargarPlanes(){
 }
 function mostrarPaywall(){ cargarPlanes(); $('paywall').style.display='flex'; }
 $('paywall-close').onclick = ()=> $('paywall').style.display='none';
+$('paywall-x').onclick = ()=> $('paywall').style.display='none';
+$('paywall').addEventListener('click', e=>{ if(e.target.id==='paywall') $('paywall').style.display='none'; });
+
+/* ---------- Sección fija de Planes ---------- */
+async function cargarPlanesFijos(demo){
+  let planes = DEMO.planes;
+  if(sb && !demoMode){ try { const {data}=await sb.from('planes').select('*').eq('activo',true);
+    if(data?.length) planes=data; } catch(e){ console.warn(e); } }
+  const el=$('planes-fijos'); if(!el) return; el.innerHTML='';
+  planes.forEach((p,i)=>{
+    const precio = p.precio_ars>0 ? '$'+Number(p.precio_ars).toLocaleString('es-AR') : 'A definir';
+    const destacado = i===1; // el del medio (Profesional)
+    const t=document.createElement('div'); t.className='tile'; t.style.textAlign='center';
+    if(destacado) t.style.border='2px solid var(--violet)';
+    t.innerHTML=`${destacado?'<div class="pill" style="color:var(--violet);margin-bottom:8px">Más elegido</div>':''}
+      <h3 style="font-size:17px;margin-bottom:6px">${p.nombre}</h3>
+      <div class="big" style="font-size:30px;margin:8px 0">${precio}<span style="font-size:14px;color:var(--muted)">/mes</span></div>
+      <p style="font-size:12.5px;color:var(--muted);margin:8px 0 16px">${p.max_bots} bot(s) · ${p.max_canales} canal(es)</p>
+      <button class="btn-sm" style="width:100%" onclick="suscribir('${p.id}')">Elegir ${p.nombre}</button>`;
+    el.appendChild(t);
+  });
+  // Estado del plan actual
+  const est = $('mi-plan-estado');
+  if(est){
+    if(suscripcionActiva){
+      est.innerHTML='<div class="demo-banner" style="background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.25);color:var(--emerald)">✅ Tu cuenta está activa. Podés usar todas las funciones.</div>';
+    } else {
+      est.innerHTML='<div class="demo-banner">Tu cuenta todavía no tiene un plan activo. Elegí uno para conectar tus redes y activar tus bots.</div>';
+    }
+  }
+}
 async function suscribir(planId){
   if(demoMode || !sb){ ahAlert('En la demo no se cobra. Con tu cuenta, esto te lleva al checkout de Mercado Pago para el débito mensual.'); return; }
   try {
@@ -2434,6 +2595,68 @@ $('btn-invitar').onclick=async()=>{
     cargarEquipo(false);
   } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
 };
+
+/* ---------- Tour guiado ---------- */
+const TOUR_PASOS = [
+  {sel:null, titulo:'¡Bienvenido a AntüHene! 👋', texto:'Te muestro en 1 minuto cómo sacarle provecho a tu CRM. Podés saltar cuando quieras.'},
+  {sel:'[data-view="resumen"]', titulo:'Resumen', texto:'Acá ves de un vistazo cómo viene tu negocio: conversaciones, leads nuevos y más.'},
+  {sel:'[data-view="inbox"]', titulo:'Conversaciones', texto:'Todos tus chats de WhatsApp, Instagram y Facebook en una sola bandeja. El bot responde y vos podés tomar el control cuando quieras.'},
+  {sel:'[data-view="leads"]', titulo:'Clientes', texto:'Tus leads organizados en tablero o lista. Tocá cualquiera para ver su ficha completa con historial.'},
+  {sel:'[data-view="bots"]', titulo:'Mis bots', texto:'Creá bots con IA humanizada y enlazalos a tus canales. Cada uno responde con la voz y el conocimiento que le des.'},
+  {sel:'[data-view="negocio"]', titulo:'Mi negocio', texto:'Cargá acá los datos de tu negocio (dirección, servicios, horarios). Tu bot responde a los clientes con esta info.'},
+  {sel:'[data-view="canales"]', titulo:'Conectar redes', texto:'Vinculá tu WhatsApp, Instagram y Facebook. Hay un paso a paso que te guía en cada conexión.'},
+  {sel:'[data-view="equipo"]', titulo:'Equipo', texto:'Sumá a tu equipo, asignales roles y áreas. El bot deriva cada consulta al responsable según el tema.'},
+  {sel:'#btn-tour', titulo:'¿Dudas después?', texto:'Cuando quieras, tocá "¿Cómo funciona?" y repetís este recorrido. ¡Ahora a probarlo!'},
+];
+let tourIdx = 0;
+function iniciarTour(){
+  tourIdx = 0;
+  $('tour-overlay').style.display='block';
+  mostrarPasoTour();
+}
+function mostrarPasoTour(){
+  const paso = TOUR_PASOS[tourIdx];
+  $('tour-title').textContent = paso.titulo;
+  $('tour-text').textContent = paso.texto;
+  $('tour-step').textContent = `Paso ${tourIdx+1} de ${TOUR_PASOS.length}`;
+  $('tour-next').textContent = tourIdx === TOUR_PASOS.length-1 ? 'Empezar' : 'Siguiente';
+  const box = $('tour-box');
+  box.style.display='block';
+  // Posicionar el cuadro cerca del elemento señalado
+  const paso_sel = paso.sel ? document.querySelector(paso.sel) : null;
+  // Resaltar el elemento
+  document.querySelectorAll('.tour-highlight').forEach(e=>e.classList.remove('tour-highlight'));
+  if(paso_sel){
+    paso_sel.classList.add('tour-highlight');
+    const r = paso_sel.getBoundingClientRect();
+    // Posicionar a la derecha del sidebar o debajo
+    let top = r.top, left = r.right + 16;
+    if(left + 360 > window.innerWidth){ left = r.left; top = r.bottom + 12; }
+    if(top + 200 > window.innerHeight) top = window.innerHeight - 220;
+    box.style.top = Math.max(12, top) + 'px';
+    box.style.left = Math.min(left, window.innerWidth - 360) + 'px';
+  } else {
+    // Centrado
+    box.style.top = '50%'; box.style.left = '50%';
+    box.style.transform = 'translate(-50%,-50%)';
+    return;
+  }
+  box.style.transform = 'none';
+}
+function cerrarTour(){
+  $('tour-overlay').style.display='none';
+  $('tour-box').style.display='none';
+  document.querySelectorAll('.tour-highlight').forEach(e=>e.classList.remove('tour-highlight'));
+  try{ localStorage.setItem('ah-tour-visto','1'); }catch(e){}
+}
+$('tour-next').onclick=()=>{
+  tourIdx++;
+  if(tourIdx >= TOUR_PASOS.length){ cerrarTour(); return; }
+  mostrarPasoTour();
+};
+$('tour-skip').onclick=cerrarTour;
+$('tour-overlay').onclick=cerrarTour;
+$('btn-tour').onclick=iniciarTour;
 
 /* ---------- Sesión persistente ---------- */
 (async () => {
