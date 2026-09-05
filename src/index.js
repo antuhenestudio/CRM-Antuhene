@@ -28,6 +28,7 @@ const { comprarCurso, procesarPagoCurso, corregirTest, marcarVideoVisto, chequea
 const { certificadoHTML } = require('./certificado');
 const { resumirConversacion } = require('./resumen');
 const { canjearCodigo, iniciarRevisorTrials } = require('./trial');
+const { iniciarAvisadorLeads } = require('./aviso_lead');
 const {
   urlConexionGoogle, canjearCodeGoogle, crearEvento, detectarCita,
 } = require('./calendar');
@@ -503,6 +504,7 @@ app.post('/api/publicaciones', async (req, res) => {
 iniciarPublicador(supabase);
 iniciarAntu(supabase);
 iniciarRevisorTrials(supabase);
+iniciarAvisadorLeads(supabase);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`AntüHene AI Studio escuchando en puerto ${PORT}`));
