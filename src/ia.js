@@ -10,6 +10,7 @@ const { ALMA_ANTUHENE } = require('./alma');
 
 const OPENAI_URL = 'https://api.openai.com/v1';
 const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta';
+const CLAUDE_URL = 'https://api.anthropic.com/v1/messages';
 
 // ---- Cuál usar primero: 'gemini' o 'openai' ----
 const IA_PRIMARIA = process.env.IA_PRIMARIA || 'gemini';
@@ -73,19 +74,56 @@ async function openaiGenerar({ system, mensajes, temperature = 0.7, maxTokens = 
   return texto.trim();
 }
 
+// Claude (Anthropic): genera texto
+async function claudeGenerar({ system, mensajes, temperature = 0.7, maxTokens = 800 }) {
+  const key = process.env.CLAUDE_API_KEY;
+  if (!key) throw new Error('Falta CLAUDE_API_KEY');
+  const res = await fetch(CLAUDE_URL, {
+    method: 'POST',
+    headers: {
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-5',
+      max_tokens: maxTokens,
+      temperature,
+      system,
+      messages: mensajes.map((m) => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: m.content,
+      })),
+    }),
+  });
+  const data = await res.json();
+  if (data.error) throw new Error('Claude: ' + JSON.stringify(data.error));
+  const texto = data?.content?.[0]?.text;
+  if (!texto) throw new Error('Claude no devolvió texto');
+  return texto.trim();
+}
+
 /**
  * Genera texto usando el proveedor primario; si falla, usa el otro.
  * Así, si Gemini o OpenAI se caen, el bot igual responde.
  */
 async function generarConRespaldo(opciones) {
-  const primario = IA_PRIMARIA === 'openai' ? openaiGenerar : geminiGenerar;
-  const respaldo  = IA_PRIMARIA === 'openai' ? geminiGenerar : openaiGenerar;
-  try {
-    return await primario(opciones);
-  } catch (e) {
-    console.warn('IA primaria falló, uso respaldo:', e.message);
-    return await respaldo(opciones);
+  // Motores disponibles por nombre
+  const motores = { gemini: geminiGenerar, openai: openaiGenerar, claude: claudeGenerar };
+  // Orden: el primario elegido, y después los otros dos como respaldo.
+  const primario = IA_PRIMARIA;
+  const orden = [primario, ...Object.keys(motores).filter((m) => m !== primario)];
+
+  let ultimoError = null;
+  for (const nombre of orden) {
+    try {
+      return await motores[nombre](opciones);
+    } catch (e) {
+      console.warn(`IA (${nombre}) falló, pruebo el siguiente:`, e.message);
+      ultimoError = e;
+    }
   }
+  throw ultimoError || new Error('Todos los motores de IA fallaron');
 }
 
 // ------------------------------------------------------------
@@ -211,4 +249,4 @@ mencione explícitamente. No infieras.`;
   }
 }
 
-module.exports = { responder, extraerDatos, generarEmbedding };
+module.exports = { responder, extraerDatos, generarEmbedding, generarConRespaldo };
