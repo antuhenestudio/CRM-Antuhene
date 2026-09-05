@@ -30,7 +30,7 @@ async function openai(ruta, body) {
 }
 
 // Gemini: genera texto a partir de un system prompt + historial + mensaje
-async function geminiGenerar({ system, mensajes, temperature = 0.7, maxTokens = 300 }) {
+async function geminiGenerar({ system, mensajes, temperature = 0.7, maxTokens = 800 }) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) throw new Error('Falta GEMINI_API_KEY');
 
@@ -60,7 +60,7 @@ async function geminiGenerar({ system, mensajes, temperature = 0.7, maxTokens = 
 }
 
 // OpenAI: genera texto (mismo formato que antes)
-async function openaiGenerar({ system, mensajes, temperature = 0.7, maxTokens = 300 }) {
+async function openaiGenerar({ system, mensajes, temperature = 0.7, maxTokens = 800 }) {
   const r = await openai('chat/completions', {
     model: 'gpt-4o-mini',
     messages: [{ role: 'system', content: system }, ...mensajes],
@@ -186,7 +186,7 @@ async function responder(supabase, { canal, historial, mensaje }) {
   ];
 
   // 4. Generar respuesta con Gemini o OpenAI (con respaldo)
-  return await generarConRespaldo({ system, mensajes, temperature: 0.7, maxTokens: 300 });
+  return await generarConRespaldo({ system, mensajes, temperature: 0.7, maxTokens: 800 });
 }
 
 /** Extracción conversacional pasiva (segundo plano). No rompe si falla. */
