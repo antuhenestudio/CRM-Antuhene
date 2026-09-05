@@ -26,6 +26,7 @@ const { crearSuscripcion, procesarWebhookMP, puedeVincular } = require('./suscri
 const { iniciarAntu } = require('./antu');
 const { comprarCurso, procesarPagoCurso, corregirTest, marcarVideoVisto, chequearCompletado } = require('./academia');
 const { certificadoHTML } = require('./certificado');
+const { resumirConversacion } = require('./resumen');
 const {
   urlConexionGoogle, canjearCodeGoogle, crearEvento, detectarCita,
 } = require('./calendar');
@@ -211,6 +212,50 @@ app.patch('/api/leads/:id', async (req, res) => {
     .from('leads').update({ estado }).eq('id', req.params.id).select().single();
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
+});
+
+// ------------------------------------------------------------
+// 4-bis. Conversaciones reales del inbox (para el panel)
+// ------------------------------------------------------------
+// Lista las conversaciones de una organización con el último mensaje.
+app.get('/api/conversaciones', async (req, res) => {
+  try {
+    const { organizacion_id } = req.query;
+    if (!organizacion_id) return res.status(400).json({ error: 'Falta organizacion_id' });
+    const { data, error } = await supabase
+      .from('conversaciones')
+      .select('id, modo, ultimo_mensaje, lead:lead_id(nombre, telefono, interes), canal:canal_id(tipo)')
+      .eq('organizacion_id', organizacion_id)
+      .order('ultimo_mensaje', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+    res.json(data || []);
+  } catch (e) {
+    console.error('Error /api/conversaciones:', e);
+    res.status(500).json({ error: 'Error interno' });
+  }
+});
+
+// Trae los mensajes de una conversación + un resumen con IA.
+app.get('/api/conversaciones/:id', async (req, res) => {
+  try {
+    const { data: mensajes, error } = await supabase
+      .from('mensajes')
+      .select('autor, contenido, created_at')
+      .eq('conversacion_id', req.params.id)
+      .order('created_at', { ascending: true });
+    if (error) throw error;
+
+    let analisis = null;
+    if (mensajes && mensajes.length >= 2) {
+      try { analisis = await resumirConversacion(mensajes); }
+      catch (e) { console.warn('Resumen falló:', e.message); }
+    }
+    res.json({ mensajes: mensajes || [], analisis });
+  } catch (e) {
+    console.error('Error /api/conversaciones/:id:', e);
+    res.status(500).json({ error: 'Error interno' });
+  }
 });
 
 // ------------------------------------------------------------
