@@ -136,11 +136,30 @@ async function procesarWhatsApp({ phoneNumberId, telefono, texto, wamid, nombreP
   // c) HANDOFF: si un operador humano tomó la conversación, el bot calla.
   if (conversacion.modo !== 'bot' || !canal.agente_id) return;
 
+  // c-bis) OPT-OUT: si este contacto pidió la baja, el bot no responde.
+  if (lead.no_contactar) return;
+
+  // c-ter) Contexto de horario (para que el bot pregunte en madrugada)
+  const horaAR = Number(new Intl.DateTimeFormat('es-AR', {
+    timeZone: 'America/Argentina/Buenos_Aires', hour: 'numeric', hour12: false,
+  }).format(new Date()));
+  const esMadrugada = horaAR >= 0 && horaAR < 7;
+  const contextoHora = esMadrugada ? '\n[NOTA DEL SISTEMA: es horario de madrugada, aplicá la regla de horario nocturno.]' : '';
+
   // d) Respuesta con RAG del tenant + extracción pasiva, en paralelo
   const [respuesta, datos] = await Promise.all([
-    responder(supabase, { canal, historial, mensaje: texto }),
+    responder(supabase, { canal, historial, mensaje: texto + contextoHora }),
     extraerDatos(texto, canal.agente?.rubro),
   ]);
+
+  // d-bis) Si la persona pidió la baja, marcarla para no volver a escribirle
+  if (datos.pide_baja) {
+    await supabase.from('leads').update({
+      no_contactar: true, no_contactar_fecha: new Date().toISOString(),
+    }).eq('id', lead.id);
+    delete datos.pide_baja;
+  }
+  delete datos.pide_baja;
 
   // e) Envío con MOTOR DE CADENCIA (lectura, escucha de audio, composing, segmentación)
   await responderConCadencia(
@@ -207,6 +226,7 @@ app.post('/api/chat', async (req, res) => {
     if (!canal || canal.tipo !== 'web') return res.status(404).json({ error: 'Canal web no encontrado' });
 
     const lead = await obtenerOCrearLead(`web:${session_id}`, null, canal.organizacion_id);
+    if (lead.no_contactar) return res.json({ respuesta: 'Ya no recibís mensajes nuestros. ¡Gracias!' });
     const conversacion = await obtenerOCrearConversacion(lead, canal);
     const historial = await obtenerHistorial(conversacion.id);
     await guardarMensaje({ conversacion, autor: 'cliente', contenido: mensaje });
@@ -215,6 +235,10 @@ app.post('/api/chat', async (req, res) => {
       responder(supabase, { canal, historial, mensaje }),
       extraerDatos(mensaje, canal.agente?.rubro),
     ]);
+    if (datos.pide_baja) {
+      await supabase.from('leads').update({ no_contactar: true, no_contactar_fecha: new Date().toISOString() }).eq('id', lead.id);
+    }
+    delete datos.pide_baja;
     await guardarMensaje({ conversacion, autor: 'bot', contenido: respuesta });
     await actualizarLead(lead, datos);
 
