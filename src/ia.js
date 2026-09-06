@@ -230,19 +230,32 @@ async function responder(supabase, { canal, historial, mensaje }) {
 /** Extracción conversacional pasiva (segundo plano). No rompe si falla. */
 async function extraerDatos(mensaje, rubro = 'general') {
   try {
-    const system = `Extraé datos del mensaje de un cliente (rubro: ${rubro}).
-Respondé SOLO un JSON válido, sin markdown, con las claves:
-nombre, interes, zona, plazo, convenio (anses|issn|petroleros|camioneros|otro),
-birth_date (YYYY-MM-DD o null). Usá null en todo campo que el mensaje no
-mencione explícitamente. No infieras.`;
+    const system = `Sos un extractor de datos de un CRM. Analizá el mensaje de un
+cliente (rubro: ${rubro}) y sacá todos los datos personales que mencione.
+Respondé SOLO un JSON válido, sin markdown, con estas claves:
+{
+  "nombre": "nombre de pila, o null",
+  "apellido": "apellido, o null",
+  "telefono": "teléfono/celular si lo da (solo números), o null",
+  "email": "correo si lo da, o null",
+  "dni": "DNI/documento si lo da, o null",
+  "domicilio": "dirección si la da, o null",
+  "zona": "ciudad/barrio/zona, o null",
+  "interes": "qué necesita / motivo de la consulta, o null",
+  "convenio": "anses|issn|petroleros|camioneros|otro, o null",
+  "birth_date": "fecha de nacimiento YYYY-MM-DD, o null"
+}
+REGLAS: usá null en todo campo que el mensaje NO mencione explícitamente.
+No inventes ni infieras. Extraé solo lo que la persona dijo textualmente.`;
     const texto = await generarConRespaldo({
       system, mensajes: [{ role: 'user', content: mensaje }],
-      temperature: 0, maxTokens: 200,
+      temperature: 0, maxTokens: 250,
     });
     const limpio = texto.replace(/```json|```/g, '').trim();
     const datos = JSON.parse(limpio);
+    // Devolver solo los campos con valor (para no pisar lo ya cargado)
     return Object.fromEntries(
-      Object.entries(datos).filter(([, v]) => v !== null && v !== '')
+      Object.entries(datos).filter(([, v]) => v !== null && v !== '' && v !== 'null')
     );
   } catch {
     return {};
