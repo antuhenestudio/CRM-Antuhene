@@ -2641,7 +2641,50 @@ async function abrirFicha(lead){
     `<span class="pill">${lead.estado?.replace(/_/g,' ')||''}</span>`;
 
   await pintarGestiones();
+  await revisarDuplicado(lead);
   $('ficha-modal').style.display='flex';
+}
+
+async function revisarDuplicado(lead){
+  // Quitar banner previo si existe
+  const prev = document.getElementById('dup-banner'); if(prev) prev.remove();
+  if(demoMode || !sb || !lead.posible_duplicado_de || lead.duplicado_resuelto) return;
+  try {
+    const { data: orig } = await sb.from('leads').select('nombre,telefono,registro_interno')
+      .eq('id', lead.posible_duplicado_de).maybeSingle();
+    if(!orig) return;
+    const banner = document.createElement('div');
+    banner.id='dup-banner';
+    banner.style.cssText='background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);border-radius:12px;padding:14px;margin:0 26px 16px';
+    banner.innerHTML=`<div style="font-size:13.5px;font-weight:600;color:var(--amber);margin-bottom:6px">⚠️ Posible duplicado</div>
+      <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Este contacto tiene el mismo teléfono/email que <strong style="color:var(--ink)">${orig.nombre||'otro cliente'}</strong> (${orig.registro_interno||''}). ¿Es la misma persona?</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-sm" id="dup-fusionar" style="font-size:12px;padding:6px 12px">Sí, es el mismo (fusionar)</button>
+        <button class="btn-ghost" id="dup-distinto" style="font-size:12px;padding:6px 12px">No, son distintos</button>
+      </div>`;
+    // Insertarlo arriba en el modal
+    const cont = $('ficha-modal').querySelector('div');
+    cont.insertBefore(banner, cont.querySelector('[style*="padding:0 26px 26px"]') || cont.lastChild);
+
+    $('dup-fusionar').onclick=async()=>{
+      const ok = await ahConfirm('Se van a unir los dos contactos en uno solo (el más antiguo). ¿Continuar?','Fusionar contactos','ask');
+      if(!ok) return;
+      try {
+        // Mover gestiones y mensajes al lead original, y borrar el duplicado
+        await sb.from('gestiones').update({lead_id:lead.posible_duplicado_de}).eq('lead_id',lead.id);
+        await sb.from('leads').delete().eq('id',lead.id);
+        await ahAlert('Contactos fusionados.','Listo','ok');
+        $('ficha-modal').style.display='none'; cargarKanban(false);
+      } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
+    };
+    $('dup-distinto').onclick=async()=>{
+      try {
+        await sb.from('leads').update({duplicado_resuelto:true}).eq('id',lead.id);
+        banner.remove();
+        await ahAlert('Marcado como contacto distinto.','Listo','ok');
+      } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
+    };
+  } catch(e){ console.warn(e); }
 }
 async function pintarGestiones(){
   let gestiones = leadFicha.gestiones || [];
