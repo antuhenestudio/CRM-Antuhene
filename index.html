@@ -3058,7 +3058,7 @@ async function crearCursoFlujo(){
       okTexto: lecciones.length>0 ? 'Agregar otra / Terminar' : 'Agregar lección',
       campos:[
         {key:'titulo', label:'Título de la lección', placeholder:'Ej: Clase 1 - Introducción'},
-        {key:'video', label:'Link del video (YouTube o Vimeo)', placeholder:'https://youtube.com/watch?v=... o vimeo.com/...'},
+        {key:'video', label:'Link o ID del video de Vimeo', placeholder:'vimeo.com/76979871 o solo 76979871'},
       ]
     });
     if(!lec || !lec.titulo){ seguir = false; break; }
@@ -3102,23 +3102,53 @@ async function crearCursoFlujo(){
   // Guardar todo en la base
   if(demoMode||!sb){ await ahAlert('En la demo no se guarda. Con tu cuenta, el curso "'+datos.titulo+'" quedaría creado con '+lecciones.length+' lección(es) y '+preguntas.length+' pregunta(s).','Modo demo','info'); return; }
   try {
-    // 1. Crear el curso (los cursos son globales, sin organizacion_id)
+    // 1. Crear el curso (global, sin organizacion_id)
     const { data:curso, error:e1 } = await sb.from('cursos').insert({
       titulo:datos.titulo, descripcion:datos.descripcion,
       categoria:datos.categoria, nivel:datos.nivel,
       precio_ars:Number(datos.precio_ars)||0, publicado:true, orden:0,
     }).select().single();
     if(e1) throw e1;
-    // 2. Crear las lecciones
+
+    // 2. Crear las lecciones (extraer el ID de Vimeo de la URL)
+    let ultimaLeccionId = null;
     for(const l of lecciones){
-      await sb.from('lecciones').insert({
-        curso_id:curso.id, titulo:l.titulo, video_url:l.video, orden:l.orden,
-        test: (l.orden===lecciones.length-1 && preguntas.length) ? preguntas : null,
-      });
+      const vimeoId = extraerVimeoId(l.video);
+      const { data:lecc, error:e2 } = await sb.from('lecciones').insert({
+        curso_id:curso.id, titulo:l.titulo, vimeo_id:vimeoId, orden:l.orden,
+      }).select().single();
+      if(e2) throw e2;
+      ultimaLeccionId = lecc.id;
     }
-    await ahAlert('¡Curso "'+datos.titulo+'" creado con '+lecciones.length+' lección(es)!','Listo','ok');
+
+    // 3. Guardar las preguntas del test en preguntas_test (ligadas a la última lección)
+    if(preguntas.length && ultimaLeccionId){
+      for(let i=0;i<preguntas.length;i++){
+        const p = preguntas[i];
+        await sb.from('preguntas_test').insert({
+          leccion_id: ultimaLeccionId,
+          pregunta: p.pregunta,
+          opciones: p.opciones,        // jsonb
+          correcta: p.correcta,        // integer (índice de la correcta)
+          orden: i,
+          momento_seg: p.segundos,     // segundo del video (null = al final)
+        });
+      }
+    }
+
+    await ahAlert('¡Curso "'+datos.titulo+'" creado con '+lecciones.length+' lección(es) y '+preguntas.length+' pregunta(s)!','Listo','ok');
     cargarAcademia(false);
   } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
+}
+
+// Extrae el ID de Vimeo de una URL (vimeo.com/76979871 → "76979871")
+function extraerVimeoId(url){
+  if(!url) return '';
+  var m = String(url).match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  if(m) return m[1];
+  // Si pegó solo el número, usarlo tal cual
+  if(/^\d+$/.test(String(url).trim())) return String(url).trim();
+  return String(url).trim();
 }
 
 /* ---------- Ficha del cliente (popup con legajo) ---------- */
