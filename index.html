@@ -1360,6 +1360,7 @@ async function entrar(){
   cargarEquipo(usaDemo);
   generarCodigoWidget();
   renderIconos();
+  activarTiempoReal();
 
   // Estado de suscripción: controla el acceso a las vinculaciones
   let estadoSusc = DEMO.suscripcion;
@@ -2997,6 +2998,35 @@ $('tour-next').onclick=()=>{
 $('tour-skip').onclick=cerrarTour;
 $('tour-overlay').onclick=cerrarTour;
 $('btn-tour').onclick=iniciarTour;
+
+/* ---------- Actualización en VIVO (Supabase Realtime) ---------- */
+// Cuando cambian los leads o entran conversaciones, el panel se refresca solo.
+let canalRealtime = null;
+async function activarTiempoReal(){
+  if(!sb || demoMode) return;
+  try {
+    const org = await miOrg();
+    canalRealtime = sb.channel('cambios-crm')
+      // Cambios en leads (nuevo, actualizado por la IA, movido)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, (payload)=>{
+        // Refrescar Kanban y lista si estamos en Clientes
+        if(document.querySelector('.view[data-view="leads"].active')){
+          cargarKanban(false);
+        }
+        // Refrescar resumen si aplica
+        cargarResumen(false);
+        cargarCampanita(false);
+      })
+      // Nuevas conversaciones / mensajes
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversaciones' }, ()=>{
+        if(document.querySelector('.view[data-view="inbox"].active')){
+          cargarInbox(false);
+        }
+      })
+      .subscribe();
+    console.log('Tiempo real activado');
+  } catch(e){ console.warn('Realtime no disponible:', e); }
+}
 
 /* ---------- Sesión persistente ---------- */
 (async () => {
