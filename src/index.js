@@ -29,6 +29,8 @@ const { certificadoHTML } = require('./certificado');
 const { resumirConversacion } = require('./resumen');
 const { canjearCodigo, iniciarRevisorTrials } = require('./trial');
 const { iniciarAvisadorLeads } = require('./aviso_lead');
+const { procesarAudio } = require('./audio');
+const { responderConCadencia } = require('./cadencia');
 const {
   urlConexionGoogle, canjearCodeGoogle, crearEvento, detectarCita,
 } = require('./calendar');
@@ -77,44 +79,74 @@ app.post('/webhook', (req, res) => {
 
   const valor = req.body?.entry?.[0]?.changes?.[0]?.value;
   const msg = valor?.messages?.[0];
-  if (!msg || msg.type !== 'text') return;
+  if (!msg) return;
 
-  procesarWhatsApp({
-    phoneNumberId: valor.metadata?.phone_number_id,
-    telefono: msg.from,
-    texto: msg.text.body,
-    wamid: msg.id,
-    nombrePerfil: valor?.contacts?.[0]?.profile?.name,
-  }).catch((e) => console.error('Error procesando mensaje:', e));
+  // Aceptar texto Y notas de voz/audio
+  if (msg.type === 'text') {
+    procesarWhatsApp({
+      phoneNumberId: valor.metadata?.phone_number_id,
+      telefono: msg.from,
+      texto: msg.text.body,
+      wamid: msg.id,
+      nombrePerfil: valor?.contacts?.[0]?.profile?.name,
+      esAudio: false,
+    }).catch((e) => console.error('Error procesando mensaje:', e));
+  } else if (msg.type === 'audio' || msg.type === 'voice') {
+    procesarWhatsApp({
+      phoneNumberId: valor.metadata?.phone_number_id,
+      telefono: msg.from,
+      wamid: msg.id,
+      nombrePerfil: valor?.contacts?.[0]?.profile?.name,
+      esAudio: true,
+      mediaId: (msg.audio || msg.voice)?.id,
+    }).catch((e) => console.error('Error procesando audio:', e));
+  }
 });
 
-async function procesarWhatsApp({ phoneNumberId, telefono, texto, wamid, nombrePerfil }) {
+async function procesarWhatsApp({ phoneNumberId, telefono, texto, wamid, nombrePerfil, esAudio, mediaId }) {
   // a) Ruteo multi-tenant: ¿de qué cliente es este número?
   const canal = await obtenerCanal(phoneNumberId);
   if (!canal) return console.warn('Webhook de canal no registrado:', phoneNumberId);
+
+  // a-bis) Si es audio, transcribirlo antes de seguir
+  let duracionAudioSeg = 0;
+  if (esAudio && mediaId) {
+    try {
+      const r = await procesarAudio(mediaId, canal.token_acceso);
+      texto = r.texto;
+      duracionAudioSeg = r.duracionSeg;
+      if (!texto) {
+        // No se pudo transcribir: pedir que reformulen por texto
+        await enviarTexto(canal, telefono, 'Perdón, no pude escuchar bien tu audio. ¿Me lo escribís así te ayudo?');
+        return;
+      }
+    } catch (e) {
+      console.error('Error transcribiendo audio:', e.message);
+      await enviarTexto(canal, telefono, 'Perdón, tuve un problema con el audio. ¿Me lo escribís por texto?');
+      return;
+    }
+  }
 
   // b) Lead + conversación de este tenant
   let lead = await obtenerOCrearLead(telefono, nombrePerfil, canal.organizacion_id);
   const conversacion = await obtenerOCrearConversacion(lead, canal);
   const historial = await obtenerHistorial(conversacion.id);
-  await guardarMensaje({ conversacion, autor: 'cliente', contenido: texto, wamid });
+  await guardarMensaje({ conversacion, autor: 'cliente', contenido: (esAudio ? '🎤 ' : '') + texto, wamid });
 
   // c) HANDOFF: si un operador humano tomó la conversación, el bot calla.
   if (conversacion.modo !== 'bot' || !canal.agente_id) return;
 
-  // d) Humanización: pausa de lectura + "Escribiendo…" oficial
-  await pausaLectura();
-  await mostrarEscribiendo(canal, wamid);
-
-  // e) Respuesta con RAG del tenant + extracción pasiva, en paralelo
+  // d) Respuesta con RAG del tenant + extracción pasiva, en paralelo
   const [respuesta, datos] = await Promise.all([
     responder(supabase, { canal, historial, mensaje: texto }),
     extraerDatos(texto, canal.agente?.rubro),
   ]);
 
-  // f) Tipeo proporcional y envío
-  await dormir(duracionTipeo(respuesta));
-  await enviarTexto(canal, telefono, respuesta);
+  // e) Envío con MOTOR DE CADENCIA (lectura, escucha de audio, composing, segmentación)
+  await responderConCadencia(
+    { marcarLeido: mostrarEscribiendo, mostrarComposing: mostrarEscribiendo, enviarTexto },
+    { canal, telefono, wamid, esAudio, duracionAudioSeg, respuesta }
+  );
   await guardarMensaje({ conversacion, autor: 'bot', contenido: respuesta });
 
   // g) Actualizar datos, recalcular puntaje/tier y disparar eventos
@@ -214,6 +246,24 @@ app.patch('/api/leads/:id', async (req, res) => {
     .from('leads').update({ estado }).eq('id', req.params.id).select().single();
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
+});
+
+// ------------------------------------------------------------
+// Handover: el operador toma o suelta una conversación desde el CRM.
+// modo 'humano' = el bot se calla; modo 'bot' = el bot vuelve a responder.
+// ------------------------------------------------------------
+app.patch('/api/conversaciones/:id/modo', async (req, res) => {
+  try {
+    const { modo } = req.body; // 'humano' | 'bot'
+    if (!['humano', 'bot'].includes(modo)) return res.status(400).json({ error: 'modo inválido' });
+    const { data, error } = await supabase.from('conversaciones')
+      .update({ modo }).eq('id', req.params.id).select().single();
+    if (error) throw error;
+    res.json(data);
+  } catch (e) {
+    console.error('Error handover:', e);
+    res.status(500).json({ error: 'Error al cambiar el modo' });
+  }
 });
 
 // ------------------------------------------------------------
