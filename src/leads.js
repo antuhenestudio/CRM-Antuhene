@@ -104,7 +104,24 @@ async function obtenerHistorial(conversacionId, limite = 12) {
  * convenio petroleros/camioneros => filtrado_tier_a.
  */
 async function actualizarLead(lead, datosNuevos) {
-  const cambios = { ...datosNuevos };
+  // Solo completar campos que estén vacíos en el lead (no pisar lo ya cargado a mano).
+  const camposSeguros = ['nombre','apellido','telefono','email','dni','domicilio',
+                         'zona','interes','convenio','birth_date'];
+  const cambios = {};
+  for (const campo of camposSeguros) {
+    const nuevo = datosNuevos[campo];
+    // Guardar solo si hay valor nuevo Y el lead no lo tenía (o estaba vacío)
+    if (nuevo && (!lead[campo] || lead[campo] === '')) {
+      cambios[campo] = nuevo;
+    }
+  }
+  // Excepción: el 'telefono' de un lead web ('web:...') sí se puede completar
+  // con el número real cuando el prospecto lo da.
+  if (datosNuevos.telefono && (lead.telefono || '').startsWith('web:')) {
+    cambios.telefono = datosNuevos.telefono;
+  }
+
+  // Calificación automática por convenio
   if (
     lead.estado === 'nuevo_lead' &&
     ['petroleros', 'camioneros'].includes(datosNuevos.convenio)
