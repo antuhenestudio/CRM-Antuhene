@@ -2146,29 +2146,67 @@ function parseCSV(texto){
 
 /* ---------- Canales ---------- */
 async function cargarCanales(demo){
-  let canales = DEMO.canales;
+  let canales = DEMO.canales.map(c=>({...c}));
   if(!demo && sb){
-    try { const { data } = await sb.from('canales').select('tipo, identificador, metadatos, activo');
-      canales = (data||[]).map(c=>({tipo:c.tipo, nombre:c.metadatos?.numero||c.metadatos?.username||c.metadatos?.nombre||c.identificador, activo:c.activo})); }
+    try { const org = await miOrg();
+      const { data } = await sb.from('canales').select('id,tipo,identificador,metadatos,activo')
+        .eq('organizacion_id', org);
+      canales = (data||[]).map(c=>({id:c.id, tipo:c.tipo,
+        nombre:c.metadatos?.numero||c.metadatos?.username||c.metadatos?.nombre||c.identificador,
+        identificador:c.identificador, activo:c.activo})); }
     catch(e){ console.warn(e); }
   }
   const list = $('channel-list'); list.innerHTML='';
-  const disponibles = ['whatsapp','instagram','facebook'];
-  disponibles.forEach(tipo => {
-    const st = CH_STYLE[tipo];
-    const conectado = canales.find(c => c.tipo===tipo);
+  const disponibles = [
+    {tipo:'whatsapp', nombre:'WhatsApp', desc:'WhatsApp Business (Cloud API oficial)'},
+    {tipo:'instagram', nombre:'Instagram', desc:'Mensajes directos de Instagram'},
+    {tipo:'facebook', nombre:'Facebook', desc:'Messenger de tu página'},
+    {tipo:'web', nombre:'Chat web', desc:'El bot en tu sitio web'},
+  ];
+  disponibles.forEach(red => {
+    const st = CH_STYLE[red.tipo] || CH_STYLE.web;
+    const conectado = canales.find(c => c.tipo===red.tipo);
     const el = document.createElement('div'); el.className='channel-row';
-    const nombreRed = {whatsapp:'WhatsApp', instagram:'Instagram', facebook:'Facebook'}[tipo];
+    // Estado real
+    let estadoHTML;
+    if(conectado){
+      const activo = conectado.activo !== false;
+      estadoHTML = `<span class="pill" style="color:${activo?'var(--emerald)':'var(--muted)'}">${activo?'Conectado y activo':'Conectado (pausado)'}</span>`;
+    }
     el.innerHTML = `<div class="l">
         <div class="dot" style="background:${st.bg};color:${st.c};font-weight:700;font-size:13px">${st.l}</div>
         <div>
-          <div style="font-weight:600;font-size:14px">${nombreRed}</div>
-          <div style="font-size:12.5px;color:var(--muted)">${conectado?conectado.nombre:'Sin conectar'}</div>
+          <div style="font-weight:600;font-size:14px">${red.nombre}</div>
+          <div style="font-size:12.5px;color:var(--muted)">${conectado ? (conectado.nombre||red.desc) : red.desc}</div>
         </div>
       </div>
-      ${conectado
-        ? `<span class="pill" style="color:var(--emerald)">Conectado</span>`
-        : `<button class="btn-sm" onclick="conectar('${tipo}')">Conectar</button>`}`;
+      <div style="display:flex;gap:8px;align-items:center">
+        ${conectado ? estadoHTML : ''}
+        ${conectado
+          ? `<button class="btn-ghost" style="font-size:12px;padding:6px 10px" data-toggle="${conectado.id}" data-activo="${conectado.activo!==false}">${conectado.activo!==false?'Pausar':'Activar'}</button>
+             <button class="btn-ghost" style="font-size:12px;padding:6px 10px;color:var(--coral);border-color:rgba(251,113,133,.3)" data-desc="${conectado.id}" data-nom="${red.nombre}">Desconectar</button>`
+          : (red.tipo==='web'
+             ? `<span class="pill" style="color:var(--violet)">Siempre activo</span>`
+             : `<button class="btn-sm" onclick="conectar('${red.tipo}')">Conectar</button>`)}
+      </div>`;
+    // Pausar/activar
+    const tog = el.querySelector('[data-toggle]');
+    if(tog) tog.onclick = async ()=>{
+      const nuevoActivo = tog.dataset.activo !== 'true';
+      if(demoMode||!sb){ await ahAlert('En la demo no se guarda.','Modo demo','info'); return; }
+      try { await sb.from('canales').update({activo:nuevoActivo}).eq('id', tog.dataset.toggle);
+        cargarCanales(false); } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
+    };
+    // Desconectar
+    const desc = el.querySelector('[data-desc]');
+    if(desc) desc.onclick = async ()=>{
+      const ok = await ahConfirmDoble('Vas a desconectar '+desc.dataset.nom+'. El bot dejará de responder por ese canal hasta que lo vuelvas a conectar.','¿Desconectar canal?');
+      if(!ok) return;
+      if(demoMode||!sb){ await ahAlert('En la demo no se desconecta.','Modo demo','info'); return; }
+      try { await sb.from('canales').delete().eq('id', desc.dataset.desc);
+        await ahAlert('Canal desconectado.','Listo','ok'); cargarCanales(false); }
+      catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
+    };
     list.appendChild(el);
   });
 }
