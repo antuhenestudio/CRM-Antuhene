@@ -88,7 +88,7 @@ async function guardarMensaje({ conversacion, autor, contenido, wamid = null, us
     .eq('id', conversacion.id);
 }
 
-async function obtenerHistorial(conversacionId, limite = 12) {
+async function obtenerHistorial(conversacionId, limite = 20) {
   const { data } = await supabase
     .from('mensajes')
     .select('autor, contenido')
