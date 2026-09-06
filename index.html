@@ -428,6 +428,11 @@ input,textarea,select{font-family:inherit}
           </span>
         </div>
         <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;height:42px;overflow:hidden">
+          <button id="zoom-menos" style="width:32px;height:42px;color:var(--ink);font-size:18px" title="Alejar">−</button>
+          <span id="zoom-nivel" style="min-width:44px;text-align:center;font-size:12.5px;color:var(--muted);font-weight:600">80%</span>
+          <button id="zoom-mas" style="width:32px;height:42px;color:var(--ink);font-size:16px" title="Acercar">+</button>
+        </div>
         <button id="btn-tour" style="height:42px;padding:0 14px;border-radius:12px;background:var(--panel);border:1px solid var(--line);color:var(--ink);font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px" aria-label="Cómo funciona">
           <i data-lucide="help-circle" style="width:18px;height:18px"></i><span class="tour-txt">¿Cómo funciona?</span>
         </button>
@@ -1551,6 +1556,28 @@ document.getElementById('theme-toggle').onclick = function(){
   var actual = document.documentElement.getAttribute('data-theme');
   aplicarTema(actual==='light' ? 'dark' : 'light');
 };
+
+/* ---------- Control de zoom del CRM ---------- */
+let zoomNivel = 80;
+function aplicarZoom(){
+  zoomNivel = Math.max(50, Math.min(120, zoomNivel));
+  // Aplicar el zoom al contenido del app (no al login)
+  const app = document.getElementById('app');
+  if(app){ app.style.zoom = (zoomNivel/100); }
+  const nivelEl = document.getElementById('zoom-nivel');
+  if(nivelEl) nivelEl.textContent = zoomNivel + '%';
+  try { localStorage.setItem('ah-zoom', zoomNivel); } catch(e){}
+}
+(function initZoom(){
+  try { zoomNivel = Number(localStorage.getItem('ah-zoom')) || 80; } catch(e){ zoomNivel = 80; }
+})();
+if(document.getElementById('zoom-menos')){
+  document.getElementById('zoom-menos').onclick = ()=>{ zoomNivel -= 5; aplicarZoom(); };
+}
+if(document.getElementById('zoom-mas')){
+  document.getElementById('zoom-mas').onclick = ()=>{ zoomNivel += 5; aplicarZoom(); };
+}
+
 let signupMode = false;
 
 $('btn-toggle').onclick = () => {
@@ -1692,6 +1719,7 @@ async function entrar(){
   renderIconos();
   activarTiempoReal();
   restaurarSeccion();   // volver a la última sección abierta
+  aplicarZoom();        // aplicar el zoom (80% por defecto)
 
   // Estado de suscripción: controla el acceso a las vinculaciones
   let estadoSusc = DEMO.suscripcion;
