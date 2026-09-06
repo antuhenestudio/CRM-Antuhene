@@ -129,8 +129,8 @@ input,textarea,select{font-family:inherit}
 
 /* ---------- Inbox ---------- */
 .inbox{display:grid;grid-template-columns:290px 1fr;gap:0;background:var(--panel);
-  border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;height:calc(100vh - 150px)}
-.conv-list{border-right:1px solid var(--line);overflow-y:auto}
+  border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;height:calc(100vh - 150px);min-height:0}
+.conv-list{border-right:1px solid var(--line);overflow-y:auto;min-height:0}
 .conv{padding:14px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s}
 .conv:hover{background:var(--panel2)}
 .conv.active{background:var(--panel2)}
@@ -138,13 +138,14 @@ input,textarea,select{font-family:inherit}
 .conv .who{font-weight:600;font-size:13.5px}
 .conv .ch{font-size:10px;color:var(--muted)}
 .conv .prev{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.chat{display:flex;flex-direction:column}
+.chat{display:flex;flex-direction:column;min-height:0;overflow:hidden}
 .chat-head{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;
-  justify-content:space-between;align-items:center}
+  justify-content:space-between;align-items:center;flex-shrink:0}
 .chat-head .who{font-weight:600}
 .chat-head .mode{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;
   background:rgba(139,92,246,.14);color:var(--violet)}
-.chat-body{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px}
+.chat-body{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.chat-input{flex-shrink:0}
 /* Barra de scroll estilizada y visible */
 .chat-body::-webkit-scrollbar, .conv-list::-webkit-scrollbar, .main::-webkit-scrollbar, .col-body::-webkit-scrollbar{width:10px;height:10px}
 .chat-body::-webkit-scrollbar-track, .conv-list::-webkit-scrollbar-track, .col-body::-webkit-scrollbar-track{background:var(--panel2);border-radius:10px}
@@ -211,9 +212,9 @@ input,textarea,select{font-family:inherit}
 
   /* Grids y columnas a una sola en celular */
   .grid.g3{grid-template-columns:1fr 1fr}
-  .inbox{grid-template-columns:1fr;height:auto}
-  .conv-list{max-height:220px;border-right:none;border-bottom:1px solid var(--line)}
-  .chat{min-height:360px}
+  .inbox{grid-template-columns:1fr;height:calc(100vh - 180px);min-height:500px}
+  .conv-list{max-height:180px;border-right:none;border-bottom:1px solid var(--line)}
+  .chat{min-height:0;flex:1}
   [style*="grid-template-columns:1fr 300px"],
   [style*="grid-template-columns:1fr 280px"],
   [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr !important}
