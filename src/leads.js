@@ -121,11 +121,21 @@ async function actualizarLead(lead, datosNuevos) {
     cambios.telefono = datosNuevos.telefono;
   }
 
-  // Calificación automática por convenio
-  if (
-    lead.estado === 'nuevo_lead' &&
-    ['petroleros', 'camioneros'].includes(datosNuevos.convenio)
-  ) {
+  // CALIFICACIÓN AUTOMÁTICA a "Cliente Interesado"
+  // Un lead pasa a interesado cuando muestra interés real. Sirve para
+  // cualquier rubro (no solo previsional). Señales que lo califican:
+  //   - Tiene nombre Y motivo/interés (dijo quién es y qué necesita), o
+  //   - Dio un teléfono real de contacto, o
+  //   - Convenio previsional relevante (petroleros/camioneros).
+  const leadActualizado = { ...lead, ...cambios };
+  const tieneNombre  = leadActualizado.nombre && leadActualizado.nombre.trim();
+  const tieneInteres = leadActualizado.interes && leadActualizado.interes.trim();
+  const tieneTelReal = leadActualizado.telefono && !String(leadActualizado.telefono).startsWith('web:');
+  const convenioRelevante = ['petroleros', 'camioneros'].includes(datosNuevos.convenio);
+
+  const muestraInteres = (tieneNombre && tieneInteres) || tieneTelReal || convenioRelevante;
+
+  if (lead.estado === 'nuevo_lead' && muestraInteres) {
     cambios.tier = 'A';
     cambios.estado = 'filtrado_tier_a';
   }
@@ -133,7 +143,31 @@ async function actualizarLead(lead, datosNuevos) {
 
   const { data } = await supabase
     .from('leads').update(cambios).eq('id', lead.id).select().single();
-  return data || lead;
+  const actualizado = data || lead;
+
+  // Detección de duplicados: si se completó teléfono o email, buscar si ya
+  // existe OTRO lead de la misma organización con ese dato.
+  try {
+    if ((cambios.telefono || cambios.email) && !actualizado.posible_duplicado_de) {
+      const filtros = [];
+      if (cambios.telefono) filtros.push(`telefono.eq.${cambios.telefono}`);
+      if (cambios.email) filtros.push(`email.eq.${cambios.email}`);
+      const { data: otros } = await supabase
+        .from('leads').select('id, created_at')
+        .eq('organizacion_id', actualizado.organizacion_id)
+        .neq('id', actualizado.id)
+        .or(filtros.join(','));
+      if (otros && otros.length) {
+        // Apuntar al más antiguo como "original"
+        const original = otros.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))[0];
+        await supabase.from('leads')
+          .update({ posible_duplicado_de: original.id })
+          .eq('id', actualizado.id);
+      }
+    }
+  } catch (e) { console.warn('Detección de duplicados falló:', e.message); }
+
+  return actualizado;
 }
 
 module.exports = {
