@@ -136,6 +136,17 @@ input,textarea,select{font-family:inherit}
 .nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
   width:3px;height:60%;background:var(--gold);border-radius:0 3px 3px 0}
 .nav-item.active .ic{color:var(--gold)}
+/* Grupos del menú (píldoras colapsables) */
+.nav-group{margin:2px 0}
+.nav-group-head{display:flex;align-items:center;gap:10px;width:100%;padding:9px 12px;border-radius:10px;
+  color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;transition:all .2s}
+.nav-group-head:hover{background:rgba(212,175,110,.06);color:var(--ink)}
+.nav-group-head .nav-chevron{margin-left:auto;width:15px;height:15px;transition:transform .25s ease}
+.nav-group.collapsed .nav-chevron{transform:rotate(-90deg)}
+.nav-group-body{overflow:hidden;max-height:500px;transition:max-height .3s ease;padding-left:6px}
+.nav-group.collapsed .nav-group-body{max-height:0}
+.nav-group-body .nav-item{padding:8px 12px;font-size:13.5px}
+.soporte-chip:hover{background:rgba(37,211,102,.16) !important;transform:translateX(2px)}
 .ic{width:18px;height:18px;flex-shrink:0}
 .sidebar-foot{margin-top:auto;padding-top:16px;border-top:1px solid var(--line)}
 .user-chip{display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;font-size:13px}
@@ -430,19 +441,47 @@ input,textarea,select{font-family:inherit}
         <div class="brand-name" style="font-size:16px">AntüHene</div>
       </div>
       <button class="nav-item active" data-view="resumen"><i data-lucide="layout-dashboard" class="ic"></i>Resumen</button>
-      <button class="nav-item" data-view="inbox"><i data-lucide="message-circle" class="ic"></i>Conversaciones</button>
-      <button class="nav-item" data-view="leads"><i data-lucide="users" class="ic"></i>Clientes</button>
-      <button class="nav-item" data-view="metricas"><i data-lucide="trending-up" class="ic"></i>Decisiones</button>
-      <button class="nav-item" data-view="agenda"><i data-lucide="calendar-days" class="ic"></i>Agenda</button>
-      <button class="nav-item" data-view="publicaciones"><i data-lucide="calendar" class="ic"></i>Publicaciones</button>
-      <button class="nav-item" data-view="bots"><i data-lucide="bot" class="ic"></i>Mis bots</button>
-      <button class="nav-item" data-view="canales"><i data-lucide="share-2" class="ic"></i>Conectar redes</button>
-      <button class="nav-item" data-view="negocio"><i data-lucide="store" class="ic"></i>Mi negocio</button>
-      <button class="nav-item" data-view="academia"><i data-lucide="graduation-cap" class="ic"></i>Academia</button>
-      <button class="nav-item" data-view="equipo"><i data-lucide="users-round" class="ic"></i>Equipo</button>
-      <button class="nav-item" data-view="planes"><i data-lucide="credit-card" class="ic"></i>Planes</button>
-      <button class="nav-item" data-view="config"><i data-lucide="settings" class="ic"></i>Configurar bot</button>
+
+      <div class="nav-group">
+        <button class="nav-group-head" data-group="prospectos"><i data-lucide="target" class="ic"></i><span>Prospectos</span><i data-lucide="chevron-down" class="nav-chevron"></i></button>
+        <div class="nav-group-body" data-group-body="prospectos">
+          <button class="nav-item" data-view="inbox"><i data-lucide="message-circle" class="ic"></i>Conversaciones</button>
+          <button class="nav-item" data-view="leads"><i data-lucide="users" class="ic"></i>Clientes</button>
+          <button class="nav-item" data-view="metricas"><i data-lucide="trending-up" class="ic"></i>Decisiones</button>
+          <button class="nav-item" data-view="agenda"><i data-lucide="calendar-days" class="ic"></i>Agenda</button>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <button class="nav-group-head" data-group="redes"><i data-lucide="share-2" class="ic"></i><span>Redes</span><i data-lucide="chevron-down" class="nav-chevron"></i></button>
+        <div class="nav-group-body" data-group-body="redes">
+          <button class="nav-item" data-view="publicaciones"><i data-lucide="calendar" class="ic"></i>Publicaciones</button>
+          <button class="nav-item" data-view="bots"><i data-lucide="bot" class="ic"></i>Mis bots</button>
+          <button class="nav-item" data-view="canales"><i data-lucide="link" class="ic"></i>Conectar redes</button>
+        </div>
+      </div>
+
+      <div class="nav-group">
+        <button class="nav-group-head" data-group="config"><i data-lucide="settings-2" class="ic"></i><span>Configuración</span><i data-lucide="chevron-down" class="nav-chevron"></i></button>
+        <div class="nav-group-body" data-group-body="config">
+          <button class="nav-item" data-view="negocio"><i data-lucide="store" class="ic"></i>Mi negocio</button>
+          <button class="nav-item" data-view="config"><i data-lucide="settings" class="ic"></i>Configurar bot</button>
+          <button class="nav-item" data-view="equipo"><i data-lucide="users-round" class="ic"></i>Equipo</button>
+          <button class="nav-item" data-view="academia"><i data-lucide="graduation-cap" class="ic"></i>Academia</button>
+          <button class="nav-item" data-view="planes"><i data-lucide="credit-card" class="ic"></i>Planes</button>
+        </div>
+      </div>
+
       <div class="sidebar-foot">
+        <a href="https://wa.me/5492996732977?text=Hola%20Pablo,%20necesito%20ayuda%20con%20AntüHene" target="_blank" class="soporte-chip" style="display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:10px;background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.25);margin-bottom:10px;text-decoration:none;transition:all .2s">
+          <div style="width:28px;height:28px;border-radius:50%;background:rgba(37,211,102,.15);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#25D366"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.25-.1-.45-.15-.65.15-.2.3-.75.95-.9 1.1-.15.2-.35.2-.65.05-.3-.15-1.25-.45-2.4-1.5-.9-.8-1.5-1.75-1.65-2.05-.15-.3 0-.45.15-.6.15-.15.3-.35.45-.5.15-.15.2-.3.3-.5.1-.2.05-.35 0-.5-.05-.15-.65-1.6-.9-2.15-.25-.55-.5-.5-.65-.5h-.55c-.2 0-.5.05-.75.35-.25.3-1 1-1 2.4s1.05 2.8 1.2 3c.15.2 2.05 3.15 5 4.4.7.3 1.25.5 1.65.65.7.2 1.35.2 1.85.1.55-.1 1.7-.7 1.95-1.35.25-.65.25-1.2.15-1.35-.05-.1-.25-.15-.55-.3zM12 2a10 10 0 0 0-8.6 15.05L2 22l5.05-1.35A10 10 0 1 0 12 2z"/></svg>
+          </div>
+          <div style="overflow:hidden">
+            <div style="font-size:12.5px;font-weight:600;color:var(--ink);white-space:nowrap">Soporte</div>
+            <div style="font-size:11px;color:var(--muted);white-space:nowrap">Pablo Ivañez · Fundador</div>
+          </div>
+        </a>
         <div class="user-chip">
           <div class="avatar" id="u-avatar">A</div>
           <div class="meta">
@@ -473,7 +512,7 @@ input,textarea,select{font-family:inherit}
         <div style="display:flex;align-items:center;gap:10px">
         <div style="display:flex;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;height:42px;overflow:hidden">
           <button id="zoom-menos" style="width:32px;height:42px;color:var(--ink);font-size:18px" title="Alejar">−</button>
-          <span id="zoom-nivel" style="min-width:44px;text-align:center;font-size:12.5px;color:var(--muted);font-weight:600">80%</span>
+          <span id="zoom-nivel" style="min-width:44px;text-align:center;font-size:12.5px;color:var(--muted);font-weight:600">75%</span>
           <button id="zoom-mas" style="width:32px;height:42px;color:var(--ink);font-size:16px" title="Acercar">+</button>
         </div>
         <button id="btn-tour" style="height:42px;padding:0 14px;border-radius:12px;background:var(--panel);border:1px solid var(--line);color:var(--ink);font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px" aria-label="Cómo funciona">
@@ -1603,7 +1642,7 @@ document.getElementById('theme-toggle').onclick = function(){
 };
 
 /* ---------- Control de zoom del CRM ---------- */
-let zoomNivel = 80;
+let zoomNivel = 75;
 function aplicarZoom(){
   zoomNivel = Math.max(50, Math.min(120, zoomNivel));
   // Zoom SOLO al área de contenido (no al sidebar ni a la topbar),
@@ -1615,7 +1654,7 @@ function aplicarZoom(){
   try { localStorage.setItem('ah-zoom', zoomNivel); } catch(e){}
 }
 (function initZoom(){
-  try { zoomNivel = Number(localStorage.getItem('ah-zoom')) || 80; } catch(e){ zoomNivel = 80; }
+  try { zoomNivel = Number(localStorage.getItem('ah-zoom')) || 75; } catch(e){ zoomNivel = 75; }
 })();
 if(document.getElementById('zoom-menos')){
   document.getElementById('zoom-menos').onclick = ()=>{ zoomNivel -= 5; aplicarZoom(); };
@@ -1829,6 +1868,21 @@ function restaurarSeccion(){
       if(btn) btn.click();
     }
   } catch(e){}
+}
+
+/* ---------- Grupos colapsables del menú ---------- */
+document.querySelectorAll('.nav-group-head').forEach(head=>{
+  head.onclick = ()=>{
+    head.closest('.nav-group').classList.toggle('collapsed');
+  };
+});
+// Al abrir una sección, asegurar que su grupo esté desplegado
+function abrirGrupoDe(v){
+  const item = document.querySelector('.nav-item[data-view="'+v+'"]');
+  if(item){
+    const grupo = item.closest('.nav-group');
+    if(grupo) grupo.classList.remove('collapsed');
+  }
 }
 
 /* ---------- Menú móvil (hamburguesa) ---------- */
