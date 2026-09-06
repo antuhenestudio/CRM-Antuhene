@@ -1655,6 +1655,7 @@ async function entrar(){
   generarCodigoWidget();
   renderIconos();
   activarTiempoReal();
+  restaurarSeccion();   // volver a la última sección abierta
 
   // Estado de suscripción: controla el acceso a las vinculaciones
   let estadoSusc = DEMO.suscripcion;
@@ -1703,8 +1704,21 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     $('view-title').textContent = TITLES[v][0];
     $('view-sub').textContent = TITLES[v][1];
     cerrarMenu();   // en móvil, cerrar el panel tras elegir
+    // Recordar la sección para volver acá si se recarga
+    try { localStorage.setItem('ah-seccion', v); } catch(e){}
   };
 });
+
+// Restaurar la última sección abierta (al recargar, no volver siempre al inicio)
+function restaurarSeccion(){
+  try {
+    const v = localStorage.getItem('ah-seccion');
+    if(v){
+      const btn = document.querySelector('.nav-item[data-view="'+v+'"]');
+      if(btn) btn.click();
+    }
+  } catch(e){}
+}
 
 /* ---------- Menú móvil (hamburguesa) ---------- */
 function abrirMenu(){ document.querySelector('.sidebar').classList.add('open'); $('menu-overlay').classList.add('open'); }
