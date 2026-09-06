@@ -26,6 +26,18 @@
   var RADIO = FORMA === 'cuadrado' ? '10px' : '50%';
   var RADIO_VENT = FORMA === 'cuadrado' ? '6px' : '16px';
   var LADO = POS === 'izquierda' ? 'left:20px' : 'right:20px';
+  // Ícono de la burbuja: imagen del cliente, vector predefinido, o el default
+  var VECTORES = {
+    chat: '<svg viewBox="0 0 24 24" fill="#fff"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>',
+    bot: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M12 8V5M9 3h6"/><circle cx="9" cy="14" r="1" fill="#fff"/><circle cx="15" cy="14" r="1" fill="#fff"/></svg>',
+    user: '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>',
+    spark: '<svg viewBox="0 0 24 24" fill="#fff"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5z"/></svg>'
+  };
+  function iconoBurbuja(){
+    if(IMAGEN.indexOf('vector:')===0){ return VECTORES[IMAGEN.slice(7)] || VECTORES.chat; }
+    if(IMAGEN){ return '<img src="'+IMAGEN+'" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">'; }
+    return '<svg viewBox="0 0 24 24" fill="#fff"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>';
+  }
   if (!CANAL || !BACKEND) { console.error('Widget AntüHene: faltan data-canal o data-backend'); return; }
 
   // Sesión persistente por visitante (para dar contexto a la conversación)
@@ -65,7 +77,7 @@
   var btn = document.createElement('button');
   btn.className = 'ahw-btn';
   btn.setAttribute('aria-label', 'Abrir chat');
-  btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/></svg>';
+  btn.innerHTML = iconoBurbuja();
 
   var panel = document.createElement('div');
   panel.className = 'ahw-panel';
