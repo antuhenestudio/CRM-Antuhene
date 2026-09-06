@@ -118,10 +118,22 @@
   panel.querySelector('.ahw-close').onclick = function () { abierto = false; panel.classList.remove('open'); };
 
   function esc(t) { var d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+  function formatear(txt) {
+    // 1. Escapar HTML para seguridad (evita inyección)
+    var esc = txt.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // 2. Negrita **texto** o *texto* (WhatsApp/Markdown) → <strong>
+    esc = esc.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    esc = esc.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
+    // 3. Guiones bajos _cursiva_ → <em>
+    esc = esc.replace(/(^|\s)_([^_\n]+)_(?=\s|$)/g, '$1<em>$2</em>');
+    // 4. Saltos de línea → <br>
+    esc = esc.replace(/\n/g, '<br>');
+    return esc;
+  }
   function addMsg(txt, tipo) {
     var el = document.createElement('div');
     el.className = 'ahw-msg ahw-' + tipo;
-    el.textContent = txt;
+    el.innerHTML = formatear(txt);
     body.appendChild(el);
     body.scrollTop = body.scrollHeight;
     return el;
