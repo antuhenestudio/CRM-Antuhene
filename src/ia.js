@@ -86,7 +86,7 @@ async function claudeGenerar({ system, mensajes, temperature = 0.7, maxTokens = 
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-5',
+      model: process.env.CLAUDE_MODEL || 'claude-haiku-4-5',
       max_tokens: maxTokens,
       temperature,
       system,
@@ -244,7 +244,8 @@ Respondé SOLO un JSON válido, sin markdown, con estas claves:
   "zona": "ciudad/barrio/zona, o null",
   "interes": "qué necesita / motivo de la consulta, o null",
   "convenio": "anses|issn|petroleros|camioneros|otro, o null",
-  "birth_date": "fecha de nacimiento YYYY-MM-DD, o null"
+  "birth_date": "fecha de nacimiento YYYY-MM-DD, o null",
+  "pide_baja": true si la persona pide NO recibir más mensajes (baja/opt-out), o false
 }
 REGLAS: usá null en todo campo que el mensaje NO mencione explícitamente.
 No inventes ni infieras. Extraé solo lo que la persona dijo textualmente.`;
