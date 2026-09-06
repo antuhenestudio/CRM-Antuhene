@@ -84,7 +84,16 @@ input,textarea,select{font-family:inherit}
 .tour-highlight{position:relative;z-index:121 !important;box-shadow:0 0 0 3px var(--violet),0 0 0 9999px rgba(0,0,0,.4);border-radius:8px}
 
 /* ---------- App shell ---------- */
-#app{display:none;min-height:100vh}
+#app{display:none;min-height:100vh;position:relative}
+#crm-canvas{position:fixed;inset:0;z-index:0;opacity:.35;pointer-events:none}
+.shell{position:relative;z-index:1}
+.sidebar{background:rgba(22,25,34,.82);backdrop-filter:blur(16px)}
+.main{background:transparent}
+.topbar{background:rgba(14,16,22,.6) !important;backdrop-filter:blur(14px)}
+.tile,.col,.inbox,.card{backdrop-filter:blur(6px)}
+[data-theme="light"] #crm-canvas{opacity:.22}
+[data-theme="light"] .sidebar{background:rgba(255,255,255,.82)}
+[data-theme="light"] .topbar{background:rgba(245,246,250,.6) !important}
 .shell{display:grid;grid-template-columns:230px 1fr;min-height:100vh}
 .sidebar{background:var(--panel);border-right:1px solid var(--line);padding:20px 14px;
   display:flex;flex-direction:column;gap:4px}
@@ -275,6 +284,7 @@ input,textarea,select{font-family:inherit}
 <!-- ===================== APP ===================== -->
 <div id="menu-overlay"></div>
 <div id="app">
+  <canvas id="crm-canvas"></canvas>
   <div class="shell">
     <aside class="sidebar">
       <div class="brand">
@@ -1092,6 +1102,21 @@ const CH_STYLE = {
 /* ---------- Login ---------- */
 const $ = (id) => document.getElementById(id);
 
+// Si viene ?invite=email en la URL, pre-cargar y modo "crear cuenta"
+(function detectarInvitacion(){
+  try {
+    const params = new URLSearchParams(location.search);
+    const inv = params.get('invite');
+    if(inv){
+      setTimeout(()=>{
+        const em = $('email'); if(em) em.value = inv;
+        // Activar modo crear cuenta
+        const tog = $('btn-toggle'); if(tog && typeof signupMode!=='undefined' && !signupMode) tog.click();
+      }, 300);
+    }
+  } catch(e){}
+})();
+
 /* ============================================================
    SISTEMA DE MODALES PROPIOS DEL CRM
    Reemplazan alert/prompt/confirm del navegador con modales
@@ -1221,102 +1246,92 @@ function renderIconos(){ try { lucide.createIcons(); } catch(e){} }
 renderIconos();
 
 /* ---------- Fondo animado del login (canales + IA flotando) ---------- */
-(function fondoCanales(){
-  var canvas = document.getElementById('login-canvas');
-  if(!canvas) return;
+/* ---------- Fondo animado reutilizable (login + CRM) ---------- */
+function crearFondoAnimado(canvasId){
+  var canvas = document.getElementById(canvasId);
+  if(!canvas) return null;
   var ctx = canvas.getContext('2d');
   var items = [], raf = null, activo = true;
   var COLORES = { instagram:'236,64,122', whatsapp:'37,211,102', facebook:'24,119,242',
                   web:'139,92,246', ia:'34,211,238', cliente:'251,191,36' };
-
-  // Dibuja un ícono vectorial simple según el tipo (path a mano, sin dependencias)
-  function dibujarIcono(tipo, x, y, size, alpha){
-    ctx.save();
-    ctx.translate(x,y);
-    ctx.globalAlpha = alpha;
-    var col = COLORES[tipo] || COLORES.web;
-    ctx.strokeStyle = 'rgba('+col+',1)';
-    ctx.fillStyle = 'rgba('+col+',0.22)';
-    ctx.lineWidth = size*0.08;
-    ctx.shadowColor = 'rgba('+col+',0.6)';
-    ctx.shadowBlur = size*0.4;
-    ctx.lineJoin='round'; ctx.lineCap='round';
-    var s = size;
-    if(tipo==='instagram'){
-      roundRect(-s/2,-s/2,s,s,s*0.28); ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.arc(0,0,s*0.22,0,Math.PI*2); ctx.stroke();
-      ctx.beginPath(); ctx.arc(s*0.26,-s*0.26,s*0.05,0,Math.PI*2); ctx.fillStyle='rgba('+col+',0.9)'; ctx.fill();
-    } else if(tipo==='whatsapp'){
-      ctx.beginPath(); ctx.arc(0,0,s*0.42,0,Math.PI*2); ctx.fill(); ctx.stroke();
-      // auricular simple
-      ctx.beginPath(); ctx.arc(-s*0.08,-s*0.05,s*0.18,0.2,Math.PI*1.3); ctx.stroke();
-    } else if(tipo==='facebook'){
-      ctx.beginPath(); ctx.arc(0,0,s*0.42,0,Math.PI*2); ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(s*0.08,-s*0.22); ctx.lineTo(-s*0.02,-s*0.22);
-      ctx.lineTo(-s*0.02,s*0.28); ctx.moveTo(-s*0.14,0); ctx.lineTo(s*0.1,0); ctx.stroke();
-    } else if(tipo==='web'){
-      ctx.beginPath(); ctx.arc(0,0,s*0.42,0,Math.PI*2); ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.ellipse(0,0,s*0.2,s*0.42,0,0,Math.PI*2); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(-s*0.42,0); ctx.lineTo(s*0.42,0); ctx.stroke();
-    } else if(tipo==='ia'){
-      // chip/cerebro
-      roundRect(-s*0.32,-s*0.32,s*0.64,s*0.64,s*0.14); ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.arc(0,0,s*0.12,0,Math.PI*2); ctx.stroke();
-      [[-0.32,-0.15],[-0.32,0.15],[0.32,-0.15],[0.32,0.15],[-0.15,-0.32],[0.15,-0.32],[-0.15,0.32],[0.15,0.32]].forEach(function(p){
-        ctx.beginPath(); ctx.moveTo(p[0]*s,p[1]*s);
-        ctx.lineTo(p[0]*s*1.5,p[1]*s*1.5); ctx.stroke();
-      });
-    } else { // cliente (persona)
-      ctx.beginPath(); ctx.arc(0,-s*0.14,s*0.15,0,Math.PI*2); ctx.stroke();
-      ctx.beginPath(); ctx.arc(0,s*0.3,s*0.28,Math.PI*1.15,Math.PI*1.85); ctx.stroke();
-    }
-    ctx.restore();
-  }
   function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y);
     ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
     ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
-
-  var TIPOS = ['instagram','whatsapp','facebook','web','ia','cliente'];
+  function dibujarIcono(tipo, x, y, size, alpha){
+    ctx.save(); ctx.translate(x,y); ctx.globalAlpha = alpha;
+    var col = COLORES[tipo] || COLORES.web;
+    ctx.strokeStyle='rgba('+col+',1)'; ctx.fillStyle='rgba('+col+',0.22)';
+    ctx.lineWidth=size*0.08; ctx.shadowColor='rgba('+col+',0.6)'; ctx.shadowBlur=size*0.4;
+    ctx.lineJoin='round'; ctx.lineCap='round'; var s=size;
+    if(tipo==='instagram'){ roundRect(-s/2,-s/2,s,s,s*0.28); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0,0,s*0.22,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(s*0.26,-s*0.26,s*0.05,0,Math.PI*2); ctx.fillStyle='rgba('+col+',0.9)'; ctx.fill(); }
+    else if(tipo==='whatsapp'){ ctx.beginPath(); ctx.arc(0,0,s*0.42,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(-s*0.08,-s*0.05,s*0.18,0.2,Math.PI*1.3); ctx.stroke(); }
+    else if(tipo==='facebook'){ ctx.beginPath(); ctx.arc(0,0,s*0.42,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(s*0.08,-s*0.22); ctx.lineTo(-s*0.02,-s*0.22);
+      ctx.lineTo(-s*0.02,s*0.28); ctx.moveTo(-s*0.14,0); ctx.lineTo(s*0.1,0); ctx.stroke(); }
+    else if(tipo==='web'){ ctx.beginPath(); ctx.arc(0,0,s*0.42,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0,0,s*0.2,s*0.42,0,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-s*0.42,0); ctx.lineTo(s*0.42,0); ctx.stroke(); }
+    else if(tipo==='ia'){ roundRect(-s*0.32,-s*0.32,s*0.64,s*0.64,s*0.14); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0,0,s*0.12,0,Math.PI*2); ctx.stroke();
+      [[-0.32,-0.15],[-0.32,0.15],[0.32,-0.15],[0.32,0.15],[-0.15,-0.32],[0.15,-0.32],[-0.15,0.32],[0.15,0.32]].forEach(function(p){
+        ctx.beginPath(); ctx.moveTo(p[0]*s,p[1]*s); ctx.lineTo(p[0]*s*1.5,p[1]*s*1.5); ctx.stroke(); }); }
+    else { ctx.beginPath(); ctx.arc(0,-s*0.14,s*0.15,0,Math.PI*2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(0,s*0.3,s*0.28,Math.PI*1.15,Math.PI*1.85); ctx.stroke(); }
+    ctx.restore();
+  }
+  var TIPOS=['instagram','whatsapp','facebook','web','ia','cliente'];
   function dim(){
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    var cant = Math.min(18, Math.floor(canvas.width*canvas.height/60000));
+    var w = canvas.offsetWidth || window.innerWidth;
+    var hh = canvas.offsetHeight || window.innerHeight;
+    canvas.width = w; canvas.height = hh;
+    var cant = Math.max(8, Math.min(20, Math.floor(w*hh/55000)));
     items = [];
     for(var i=0;i<cant;i++){
-      items.push({
-        x: Math.random()*canvas.width, y: Math.random()*canvas.height,
+      items.push({ x:Math.random()*w, y:Math.random()*hh,
         vx:(Math.random()-.5)*0.35, vy:(Math.random()-.5)*0.35,
-        size: Math.random()*22+22, tipo: TIPOS[i % TIPOS.length],
-        pulso: Math.random()*Math.PI*2
-      });
+        size:Math.random()*22+22, tipo:TIPOS[i%TIPOS.length], pulso:Math.random()*Math.PI*2 });
     }
   }
   function frame(){
     if(!activo) return;
     ctx.clearRect(0,0,canvas.width,canvas.height);
-    // Líneas de conexión entre íconos cercanos
     for(var i=0;i<items.length;i++){
       var a=items[i]; a.x+=a.vx; a.y+=a.vy; a.pulso+=0.02;
       if(a.x<0||a.x>canvas.width) a.vx*=-1;
       if(a.y<0||a.y>canvas.height) a.vy*=-1;
       for(var j=i+1;j<items.length;j++){
         var b=items[j], dx=a.x-b.x, dy=a.y-b.y, d=Math.sqrt(dx*dx+dy*dy);
-        if(d<200){ ctx.strokeStyle='rgba(160,170,200,'+((1-d/200)*0.18)+')';
+        if(d<200){ ctx.strokeStyle='rgba(150,160,190,'+((1-d/200)*0.16)+')';
           ctx.lineWidth=0.6; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
       }
     }
-    // Íconos con leve pulso
     for(var k=0;k<items.length;k++){
-      var it=items[k]; var alpha=0.85+Math.sin(it.pulso)*0.15;
-      dibujarIcono(it.tipo, it.x, it.y, it.size, alpha);
+      var it=items[k]; dibujarIcono(it.tipo, it.x, it.y, it.size, 0.8+Math.sin(it.pulso)*0.2);
     }
     raf=requestAnimationFrame(frame);
   }
-  dim(); frame();
+  // Esperar a que el canvas tenga tamaño real antes de arrancar
+  function iniciar(){
+    if((canvas.offsetWidth||0) < 5){ setTimeout(iniciar, 100); return; }
+    dim(); if(!raf) frame();
+  }
+  iniciar();
   window.addEventListener('resize', dim);
-  window._pausarFondo=function(){ activo=false; if(raf) cancelAnimationFrame(raf); };
-  window._reanudarFondo=function(){ if(!activo){ activo=true; frame(); } };
-})();
+  return {
+    pausar: function(){ activo=false; if(raf){ cancelAnimationFrame(raf); raf=null; } },
+    reanudar: function(){ if(!activo){ activo=true; frame(); } else if(!raf){ frame(); } dim(); }
+  };
+}
+
+// Fondo del login
+var _fondoLogin = crearFondoAnimado('login-canvas');
+window._pausarFondo = function(){ if(_fondoLogin) _fondoLogin.pausar(); };
+window._reanudarFondo = function(){ if(_fondoLogin) _fondoLogin.reanudar(); };
+// Fondo del CRM (se activa al entrar)
+var _fondoCRM = null;
 
 /* ---------- Tema claro / oscuro ---------- */
 function aplicarTema(t){
@@ -1439,10 +1454,16 @@ async function entrar(){
   $('login').style.display = 'none';
   $('app').style.display = 'block';
   if(window._pausarFondo) window._pausarFondo();
+  // Activar el fondo animado del CRM (con blur)
+  setTimeout(function(){
+    if(!_fondoCRM) _fondoCRM = crearFondoAnimado('crm-canvas');
+    else _fondoCRM.reanudar();
+  }, 300);
 
   let perfil = DEMO.perfil;
   if(sb && !demoMode){
     const { data:{ user } } = await sb.auth.getUser();
+    miUserId = user.id;
     const { data } = await sb.from('perfiles').select('nombre, rol').eq('user_id', user.id).maybeSingle();
     if(data) perfil = data;
     else perfil = { nombre: user.email.split('@')[0], rol:'dueno' };
@@ -1559,6 +1580,8 @@ async function miOrg(){
 let leadsActuales = [];
 let temasActuales = [];
 let temaFiltro = null;
+let soloMisLeads = false;
+let miUserId = null;
 async function cargarKanban(demo){
   let leads = DEMO.leads;
   if(!demo && sb){
@@ -1589,15 +1612,21 @@ function pintarFiltroTemas(){
   cont.innerHTML = '';
   // Botón "Todos"
   const todos = document.createElement('button');
-  todos.className='btn-ghost'; todos.style.cssText='font-size:12px;padding:6px 14px'+(temaFiltro===null?';border-color:var(--violet);color:var(--violet)':'');
+  todos.className='btn-ghost'; todos.style.cssText='font-size:12px;padding:6px 14px'+(temaFiltro===null&&!soloMisLeads?';border-color:var(--violet);color:var(--violet)':'');
   todos.textContent='Todos';
-  todos.onclick=()=>{ temaFiltro=null; pintarFiltroTemas(); pintarKanban(); };
+  todos.onclick=()=>{ temaFiltro=null; soloMisLeads=false; pintarFiltroTemas(); pintarKanban(); };
   cont.appendChild(todos);
+  // Botón "Mis leads"
+  const mios = document.createElement('button');
+  mios.className='btn-ghost'; mios.style.cssText='font-size:12px;padding:6px 14px'+(soloMisLeads?';border-color:var(--cyan);color:var(--cyan)':'');
+  mios.innerHTML='<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--cyan);margin-right:6px"></span>Mis leads';
+  mios.onclick=()=>{ soloMisLeads=!soloMisLeads; temaFiltro=null; pintarFiltroTemas(); pintarKanban(); };
+  cont.appendChild(mios);
   temasActuales.forEach(t=>{
     const b=document.createElement('button');
     b.className='btn-ghost'; b.style.cssText='font-size:12px;padding:6px 14px'+(temaFiltro===t.id?';border-color:'+t.color+';color:'+t.color:'');
     b.innerHTML=`<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${t.color};margin-right:6px"></span>${t.nombre}`;
-    b.onclick=()=>{ temaFiltro = temaFiltro===t.id ? null : t.id; pintarFiltroTemas(); pintarKanban(); };
+    b.onclick=()=>{ temaFiltro = temaFiltro===t.id ? null : t.id; soloMisLeads=false; pintarFiltroTemas(); pintarKanban(); };
     cont.appendChild(b);
   });
   // Botón gestionar (solo dueño/admin)
@@ -1608,7 +1637,10 @@ function pintarFiltroTemas(){
   cont.appendChild(gest);
 }
 function pintarKanban(){
-  const leads = temaFiltro ? leadsActuales.filter(l=>l.tema_id===temaFiltro) : leadsActuales;
+  let leads = temaFiltro ? leadsActuales.filter(l=>l.tema_id===temaFiltro) : leadsActuales;
+  if(soloMisLeads && miUserId){
+    leads = leads.filter(l => l.asignado_a === miUserId || l.secretario_id === miUserId);
+  }
   const k = $('kanban'); k.innerHTML='';
   COLUMNS.forEach(col => {
     const items = leads.filter(l => l.estado === col.k);
@@ -3110,22 +3142,39 @@ $('btn-add-area').onclick=async()=>{
   } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
 };
 $('btn-invitar').onclick=async()=>{
+  // Traer áreas para el desplegable
+  let opcionesArea = [{value:'',label:'Sin área específica'}];
+  if(!demoMode && sb){
+    try { const org=await miOrg();
+      const {data}=await sb.from('areas').select('id,nombre').eq('organizacion_id',org);
+      (data||[]).forEach(a=>opcionesArea.push({value:a.id,label:a.nombre}));
+    } catch(e){}
+  }
   const datos = await ahForm({
-    titulo:'Invitar usuario al equipo', tipo:'ask', okTexto:'Enviar invitación',
+    titulo:'Invitar usuario al equipo', tipo:'ask', okTexto:'Generar invitación',
     campos:[
       {key:'email', label:'Email del usuario', tipo:'email', placeholder:'persona@estudio.com'},
       {key:'rol', label:'Rol', tipo:'select', valor:'miembro', opciones:[
         {value:'miembro', label:'Miembro (opera, no borra ni configura)'},
         {value:'admin', label:'Administrador (gestiona, no borra)'},
       ]},
+      {key:'area_id', label:'Área asignada', tipo:'select', valor:'', opciones:opcionesArea},
       {key:'puesto', label:'Puesto', placeholder:'Ej: Secretaria, Abogado'},
     ]
   });
   if(!datos || !datos.email) return;
-  if(demoMode||!sb){ await ahAlert('Se invitaría a '+datos.email+' como '+datos.rol+'. Cuando se registre con ese email, queda vinculado a tu estudio con ese rol.','Modo demo','info'); return; }
+  if(demoMode||!sb){ await ahAlert('Se generaría la invitación para '+datos.email+'. En la demo no se guarda.','Modo demo','info'); return; }
   try { const org=await miOrg();
-    await sb.from('invitaciones').insert({organizacion_id:org, email:datos.email, rol:datos.rol, puesto:datos.puesto});
-    await ahAlert('Invitación creada para '+datos.email+'. Pedile que se registre con ese email.','Invitación enviada','ok');
+    await sb.from('invitaciones').upsert({organizacion_id:org, email:datos.email, rol:datos.rol,
+      puesto:datos.puesto, area_id:datos.area_id||null}, {onConflict:'organizacion_id,email'});
+    // Link directo de registro
+    const link = 'https://antuhenestudio.github.io/CRM-Antuhene/?invite='+encodeURIComponent(datos.email);
+    const mensaje = 'Te invito a sumarte a mi equipo en AntüHene. Entrá a este link y creá tu cuenta con tu email ('+datos.email+') y la contraseña que elijas:\n\n'+link;
+    // Modal con el link para copiar
+    await ahForm({
+      titulo:'✅ Invitación lista', mensaje:'Copiá este mensaje y envialo a la persona por WhatsApp. Cuando se registre con ese email, queda en tu equipo con el rol y área que le asignaste.',
+      okTexto:'Listo', campos:[{key:'link', label:'Mensaje para enviar', tipo:'textarea', valor:mensaje}]
+    });
     cargarEquipo(false);
   } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
 };
