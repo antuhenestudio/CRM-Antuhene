@@ -233,6 +233,49 @@ input,textarea,select{font-family:inherit}
   border:1px solid rgba(212,175,110,.14);border-radius:var(--radius);padding:18px;
   box-shadow:0 8px 30px rgba(0,0,0,.2), inset 0 1px 0 rgba(212,175,110,.06)}
 [data-theme="light"] .tile{background:rgba(255,255,255,.7);border-color:rgba(0,0,0,.06)}
+
+/* ============================================================
+   MICRO-INTERACCIONES (efectos al pasar el cursor)
+   Sutiles y elegantes, para dar sensación premium y "viva".
+   ============================================================ */
+/* Tarjetas: se elevan suavemente y el borde se ilumina */
+.tile{transition:transform .25s ease, box-shadow .25s ease, border-color .25s ease}
+.tile:hover{transform:translateY(-3px);
+  box-shadow:0 14px 40px rgba(212,175,110,.15), inset 0 1px 0 rgba(212,175,110,.1);
+  border-color:rgba(212,175,110,.3)}
+/* Items de menú: se deslizan un poquito a la derecha */
+.nav-item{transition:all .2s ease}
+.nav-item:hover{transform:translateX(3px)}
+/* Botones: se elevan y brillan */
+.btn-sm, .btn-ghost{transition:transform .2s ease, box-shadow .2s ease, background .2s ease}
+.btn-sm:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(212,175,110,.3)}
+.btn-ghost:hover{transform:translateY(-1px);border-color:var(--gold)}
+/* Íconos que reaccionan */
+.ic{transition:transform .2s ease}
+.nav-item:hover .ic{transform:scale(1.15)}
+/* Campanita, tema, tour: escala suave al hover */
+#bell, #theme-toggle, #btn-tour, #zoom-menos, #zoom-mas{transition:all .2s ease}
+#bell:hover, #theme-toggle:hover, #btn-tour:hover{transform:scale(1.05);border-color:var(--gold)}
+#zoom-menos:hover, #zoom-mas:hover{color:var(--gold);transform:scale(1.2)}
+/* Burbuja de Antü: latido al pasar */
+#antu-fab{transition:transform .25s ease, box-shadow .25s ease}
+#antu-fab:hover{transform:scale(1.08) rotate(-3deg);box-shadow:0 12px 32px rgba(139,92,246,.5)}
+/* Pills y tags: leve realce */
+.pill, .tag{transition:all .2s ease}
+.card:hover .tag{transform:scale(1.03)}
+/* Filas de canal y items de lista */
+.channel-row, .pub-item{transition:all .2s ease}
+.channel-row:hover, .pub-item:hover{transform:translateX(2px);border-color:rgba(212,175,110,.3)}
+/* Filas de la tabla de leads (vista lista) */
+#tabla-leads tr{transition:background .15s ease}
+/* Avatar del usuario: gira apenas */
+.avatar{transition:transform .3s ease}
+.user-chip:hover .avatar{transform:rotate(8deg) scale(1.05)}
+/* Respeta a quienes prefieren menos movimiento (accesibilidad) */
+@media (prefers-reduced-motion: reduce){
+  *{transition:none !important; animation:none !important}
+}
+
 /* ---- Adaptaciones del look premium para MODO CLARO ---- */
 [data-theme="light"] .col{background:rgba(255,255,255,.65);border-color:rgba(0,0,0,.06)}
 [data-theme="light"] .card{background:rgba(255,255,255,.75);border-color:rgba(0,0,0,.06)}
@@ -453,6 +496,7 @@ input,textarea,select{font-family:inherit}
         </div>
       </div>
 
+      <div id="zoom-area">
       <div id="demo-banner" class="view-banner" style="display:none;padding:24px 28px 0">
         <div class="demo-banner">Estás viendo datos de ejemplo. Cuando conectes tus redes y entren consultas reales, aparecen acá.</div>
       </div>
@@ -1008,6 +1052,7 @@ input,textarea,select{font-family:inherit}
           <div id="reglas-list"></div>
         </div>
       </section>
+    </div><!-- fin zoom-area -->
     </div>
   </div>
 </div>
@@ -1561,9 +1606,10 @@ document.getElementById('theme-toggle').onclick = function(){
 let zoomNivel = 80;
 function aplicarZoom(){
   zoomNivel = Math.max(50, Math.min(120, zoomNivel));
-  // Aplicar el zoom al contenido del app (no al login)
-  const app = document.getElementById('app');
-  if(app){ app.style.zoom = (zoomNivel/100); }
+  // Zoom SOLO al área de contenido (no al sidebar ni a la topbar),
+  // así el menú y los controles mantienen su tamaño y no queda hueco.
+  const area = document.getElementById('zoom-area');
+  if(area){ area.style.zoom = (zoomNivel/100); }
   const nivelEl = document.getElementById('zoom-nivel');
   if(nivelEl) nivelEl.textContent = zoomNivel + '%';
   try { localStorage.setItem('ah-zoom', zoomNivel); } catch(e){}
