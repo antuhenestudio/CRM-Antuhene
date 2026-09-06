@@ -142,12 +142,13 @@ async function generarEmbedding(texto) {
 }
 
 const BASE_RUBRO = {
-  juridico: `Contexto profesional: estudio jurídico. Tono formal pero cercano,
-escucha activa, confidencialidad. NO des asesoramiento legal de fondo, NO cites
-leyes, artículos ni fallos: calificá la consulta y derivá al profesional.`,
-  inmobiliario: `Contexto profesional: desarrolladora/inmobiliaria. Tono
-consultivo, enfocado en inversión, servicios y financiación.`,
-  general: `Contexto profesional: atención comercial de un negocio.`,
+  juridico: `Contexto: estudio jurídico. Tono formal pero cálido, confidencialidad.
+NO des asesoramiento legal de fondo ni cites leyes/fallos. Captá el contacto
+del consultante para que un profesional lo llame.`,
+  inmobiliario: `Contexto: desarrolladora/inmobiliaria. Tono consultivo.
+Captá el contacto del interesado para que un asesor lo llame.`,
+  general: `Contexto: atención comercial. Captá el contacto del interesado
+para que el equipo lo llame.`,
 };
 
 function construirPromptSistema(agente, rubro, contexto) {
