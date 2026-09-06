@@ -791,7 +791,7 @@ input,textarea,select{font-family:inherit}
             <div class="field" style="margin:0"><label>Cuando…</label>
               <select id="rn-evento" style="background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink)">
                 <option value="lead_nuevo">Entra un lead nuevo</option>
-                <option value="tier_a">Se califica un Tier A</option>
+                <option value="tier_a">Se califica un Cliente Interesado</option>
                 <option value="cita_agendada">Se agenda una cita</option>
                 <option value="ganado">Se gana un cliente</option>
               </select></div>
@@ -933,9 +933,9 @@ const DEMO = {
   suscripcion: 'trial',   // 'inactiva' | 'trial' | 'activa'
   insights:[
     {tipo:'alerta', zona:'leads', prioridad:3, titulo:'Tenés 3 leads calificados sin contactar',
-     mensaje:'Soy Antü. Vi que hay 3 leads Tier A esperando. Son los más propensos a convertir: contactalos hoy mientras el interés está caliente.', accion_texto:'Ver leads', accion_zona:'leads'},
+     mensaje:'Soy Antü. Vi que hay 3 clientes interesados esperando. Son los más propensos a convertir: contactalos hoy mientras el interés está caliente.', accion_texto:'Ver leads', accion_zona:'leads'},
     {tipo:'felicitacion', zona:'resumen', prioridad:2, titulo:'¡Gran semana! 2 clientes ganados',
-     mensaje:'Cerraste 2 clientes esta semana, ¡vas muy bien! Si querés sostener la racha, revisá que no queden leads Tier A sin seguimiento.'},
+     mensaje:'Cerraste 2 clientes esta semana, ¡vas muy bien! Si querés sostener la racha, revisá que no queden clientes interesados sin seguimiento.'},
     {tipo:'sugerencia', zona:'publicaciones', prioridad:1, titulo:'Poco contenido programado',
      mensaje:'Te sugiero programar 2 o 3 posts esta semana para mantener tu negocio presente en las redes.', accion_texto:'Programar contenido', accion_zona:'publicaciones'},
   ],
@@ -1035,7 +1035,7 @@ const DEMO = {
     {etiqueta:'Años de aportes', tipo:'numero'},
   ],
   reglas:[
-    {evento:'tier_a', contactos:['549299xxxxxxx'], texto:'Nuevo Tier A: {nombre} ({registro_interno})'},
+    {evento:'tier_a', contactos:['549299xxxxxxx'], texto:'Nuevo cliente interesado: {nombre} ({registro_interno})'},
     {evento:'ganado', contactos:['549299yyyyyyy'], texto:'¡Cliente ganado! {nombre}'},
   ],
   calendarConectado:true,
@@ -1510,6 +1510,7 @@ function pintarKanban(){
     k.appendChild(el);
   });
   habilitarDragDrop(demoMode||!sb);
+  renderIconos();
 }
 async function gestionarTemas(){
   const datos = await ahForm({
@@ -1585,38 +1586,53 @@ function cardEl(l){
   const el = document.createElement('div');
   el.className='card'; el.draggable=true; el.dataset.id=l.id||'';
   const sec = l.secretario || (l.secretario_id ? '' : '');
+  // Ícono del canal de origen (detectado del teléfono o del campo origen)
+  const tel = l.telefono||'';
+  let canalIco = '';
+  if(tel.startsWith('web:')) canalIco = '<i data-lucide="globe" style="width:13px;height:13px;color:#8B5CF6"></i>';
+  else if(l.origen==='instagram') canalIco = '<i data-lucide="instagram" style="width:13px;height:13px;color:#E4405F"></i>';
+  else if(l.origen==='facebook') canalIco = '<i data-lucide="facebook" style="width:13px;height:13px;color:#1877F2"></i>';
+  else if(tel) canalIco = '<i data-lucide="message-circle" style="width:13px;height:13px;color:#25D366"></i>';
   el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:baseline">
-      <div class="cn">${l.nombre||'Sin nombre'}</div>
+      <div class="cn" style="display:flex;align-items:center;gap:5px">${canalIco}${l.nombre||'Sin nombre'}</div>
       ${l.registro_interno?`<span style="font-size:10px;color:var(--muted);font-family:'Fraunces',serif">${l.registro_interno}</span>`:''}
     </div>
     <div class="cd">${l.interes||'—'}</div>
     <div class="tags">${l.tema?`<span class="tag" style="background:${l.tema.color}22;color:${l.tema.color}">${l.tema.nombre}</span>`:''}
     ${l.tier==='A'?'<span class="tag a">Interesado</span>':''}
     ${l.zona?`<span class="tag z">${l.zona}</span>`:''}
-    ${sec?`<span class="tag" style="background:var(--panel);color:var(--muted)">👤 ${sec}</span>`:''}</div>
-    ${l.created_at?`<div style="font-size:10px;color:var(--muted);margin-top:6px">🕐 ${fmtFechaHora(l.created_at)}</div>`:''}`;
+    ${sec?`<span class="tag" style="background:var(--panel);color:var(--muted)">${sec}</span>`:''}</div>
+    ${l.created_at?`<div style="font-size:10px;color:var(--muted);margin-top:6px">${fmtFechaHora(l.created_at)}</div>`:''}`;
   el.querySelector('button')?.addEventListener('click', e=>e.stopPropagation());
   el.addEventListener('click', ()=> abrirFicha(l));
   return el;
 }
 function habilitarDragDrop(demo){
-  let dragged=null;
+  let dragged=null, draggedLead=null;
   document.querySelectorAll('.card').forEach(c => {
-    c.addEventListener('dragstart',()=>{dragged=c;c.classList.add('drag')});
-    c.addEventListener('dragend',()=>{c.classList.remove('drag')});
+    c.addEventListener('dragstart',(e)=>{
+      dragged=c; c.classList.add('drag');
+      draggedLead = leadsActuales.find(l => String(l.id)===String(c.dataset.id));
+    });
+    c.addEventListener('dragend',()=>{ c.classList.remove('drag'); });
   });
   document.querySelectorAll('.col-body').forEach(b => {
     b.addEventListener('dragover',e=>e.preventDefault());
     b.addEventListener('drop',async e=>{
       e.preventDefault();
       if(!dragged) return;
-      b.appendChild(dragged);
       const nuevoEstado = b.dataset.col;
       const id = dragged.dataset.id;
+      // Actualizar el dato local para que el cambio se vea al instante
+      if(draggedLead) draggedLead.estado = nuevoEstado;
+      // Guardar en la base
       if(!demo && sb && id){
         try { await sb.from('leads').update({estado:nuevoEstado}).eq('id',id); }
-        catch(err){ console.warn(err); }
+        catch(err){ console.warn('Error al mover:', err); await ahAlert('No se pudo mover: '+err.message,'Error','warn'); }
       }
+      dragged=null; draggedLead=null;
+      // Repintar para actualizar contadores y posición
+      pintarKanban();
     });
   });
 }
@@ -1913,7 +1929,7 @@ async function conectar(tipo){
 }
 
 /* ---------- Configurar bot: conocimiento, campos, reglas ---------- */
-const EVENTO_LABEL = {lead_nuevo:'Entra un lead nuevo', tier_a:'Se califica un Tier A',
+const EVENTO_LABEL = {lead_nuevo:'Entra un lead nuevo', tier_a:'Se califica un Cliente Interesado',
   cita_agendada:'Se agenda una cita', ganado:'Se gana un cliente'};
 const EST_FUENTE = {listo:['Listo','var(--emerald)'], procesando:['Procesando…','var(--amber)'],
   pendiente:['En cola','var(--muted)'], error:['Error','var(--coral)']};
@@ -1951,29 +1967,67 @@ async function cargarConfig(demo){
   // Reglas de notificación
   let reglas = DEMO.reglas;
   if(!demo && sb){ try { const {data}=await sb.from('reglas_notificacion')
-    .select('evento,contactos,plantilla'); reglas=(data||[]).map(r=>({...r,texto:r.plantilla})); }
+    .select('id,evento,contactos,plantilla'); reglas=(data||[]).map(r=>({...r,texto:r.plantilla})); }
     catch(e){ console.warn(e); } }
   const rl=$('reglas-list'); rl.innerHTML = reglas.length ? '' :
     '<div class="empty">Sin avisos configurados.</div>';
   reglas.forEach(r=>{
     const el=document.createElement('div'); el.className='pub-item';
     el.innerHTML=`<div><div style="font-weight:600;font-size:13.5px;margin-bottom:3px">${EVENTO_LABEL[r.evento]||r.evento}</div>
-      <div class="when">Avisa a ${(r.contactos||[]).length} contacto(s)</div></div>
-      <span class="pill" style="color:var(--emerald)">Activo</span>`;
+      <div class="when">Avisa a ${(r.contactos||[]).join(', ')||'—'}</div></div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span class="pill" style="color:var(--emerald)">Activo</span>
+        ${r.id?`<button data-del-regla="${r.id}" style="color:var(--coral);font-size:12px">Eliminar</button>`:''}
+      </div>`;
+    const del = el.querySelector('[data-del-regla]');
+    if(del) del.onclick = async ()=>{
+      const ok = await ahConfirm('¿Eliminar este aviso automático?','Confirmar','danger');
+      if(!ok) return;
+      try { await sb.from('reglas_notificacion').delete().eq('id', r.id);
+        await ahAlert('Aviso eliminado.','Listo','ok'); cargarConfig(false);
+      } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
+    };
     rl.appendChild(el);
   });
 }
 $('btn-subir-doc').onclick = ()=> $('file-doc').click();
-$('file-doc').onchange = (e)=>{
+$('file-doc').onchange = async (e)=>{
   const f=e.target.files[0]; if(!f) return;
-  if(demoMode||!sb){ ahAlert(`Se subiría "${f.name}" y el bot lo procesaría (extrae texto y aprende). Con tu cuenta queda cargado en su memoria.`); return; }
-  ahAlert('Subida real: se envía a /api/conocimiento/archivo en tu backend, que lo procesa.');
+  if(demoMode||!sb){ await ahAlert('En la demo no se sube. Con tu cuenta, el bot procesa el archivo y aprende de él.','Modo demo','info'); return; }
+  // Detectar tipo
+  const ext = f.name.split('.').pop().toLowerCase();
+  const tipo = ext==='pdf' ? 'pdf' : (ext==='doc'||ext==='docx') ? 'word' : (ext==='xls'||ext==='xlsx') ? 'excel' : 'pdf';
+  try {
+    const org = await miOrg();
+    const fd = new FormData();
+    fd.append('archivo', f);
+    fd.append('organizacion_id', org);
+    fd.append('tipo', tipo);
+    await ahAlert('Subiendo "'+f.name+'"… el bot lo está procesando. Puede tardar un momento.','Procesando','info');
+    const r = await fetch(`${BACKEND_URL}/api/conocimiento/archivo`, { method:'POST', body:fd });
+    const d = await r.json();
+    if(d.error) throw new Error(d.error);
+    await ahAlert('Documento cargado. El bot ya está aprendiendo de él.','Listo','ok');
+    cargarConfig(false);
+  } catch(err){ await ahAlert('Error al subir: '+err.message,'Error','warn'); }
+  e.target.value=''; // limpiar para poder resubir
 };
 $('btn-agregar-url').onclick = async ()=>{
   const datos = await ahForm({titulo:'Agregar URL al conocimiento', okTexto:'Agregar',
     campos:[{key:'url', label:'URL que el bot debe leer', placeholder:'https://tunegocio.com/preguntas'}]});
   if(!datos || !datos.url) return;
   if(demoMode||!sb){ await ahAlert('Con tu cuenta, esta URL se procesa y su contenido nutre al bot.','Modo demo','info'); return; }
+  try {
+    const org = await miOrg();
+    const r = await fetch(`${BACKEND_URL}/api/conocimiento/url`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ organizacion_id:org, url:datos.url })
+    });
+    const d = await r.json();
+    if(d.error) throw new Error(d.error);
+    await ahAlert('URL agregada. El bot está leyendo su contenido.','Listo','ok');
+    cargarConfig(false);
+  } catch(err){ await ahAlert('Error: '+err.message,'Error','warn'); }
 };
 $('btn-add-campo').onclick = async ()=>{
   const etiqueta=$('cp-etiqueta').value.trim(); if(!etiqueta) return;
