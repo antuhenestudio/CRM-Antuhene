@@ -1044,6 +1044,22 @@ input,textarea,select{font-family:inherit}
 </div>
 
 <!-- ===== MODAL GENÉRICO DEL CRM (reemplaza alert/prompt/confirm) ===== -->
+<!-- MODAL DE PROGRESO DE SUBIDA -->
+<div id="upload-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:130;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--panel);border:1px solid var(--gold);border-radius:18px;max-width:400px;width:100%;padding:28px;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.5)">
+    <div style="width:64px;height:64px;margin:0 auto 16px;border-radius:16px;background:var(--gold-soft);border:1px solid rgba(212,175,110,.3);display:flex;align-items:center;justify-content:center">
+      <svg id="upload-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="m9 15 3-3 3 3"/></svg>
+    </div>
+    <h3 id="upload-title" style="font-size:16px;margin-bottom:4px">Subiendo documento…</h3>
+    <p id="upload-file" style="font-size:12.5px;color:var(--muted);margin-bottom:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></p>
+    <div style="background:var(--panel2);border-radius:20px;height:10px;overflow:hidden;margin-bottom:10px">
+      <div id="upload-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--gold-2),var(--gold));border-radius:20px;transition:width .3s ease"></div>
+    </div>
+    <p id="upload-pct" style="font-size:13px;font-weight:600;color:var(--gold)">0%</p>
+  </div>
+</div>
+
+<!-- MODAL GENÉRICO DEL CRM (reemplaza alert/prompt/confirm) -->
 <div id="ah-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:110;align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:440px;width:100%;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4)">
     <div style="padding:20px 22px 0">
@@ -2342,24 +2358,41 @@ async function cargarConfig(demo){
 $('btn-subir-doc').onclick = ()=> $('file-doc').click();
 $('file-doc').onchange = async (e)=>{
   const f=e.target.files[0]; if(!f) return;
-  if(demoMode||!sb){ await ahAlert('En la demo no se sube. Con tu cuenta, el bot procesa el archivo y aprende de él.','Modo demo','info'); return; }
-  // Detectar tipo
+  if(demoMode||!sb){ await ahAlert('En la demo no se sube. Con tu cuenta, el bot procesa el archivo y aprende de él.','Modo demo','info'); e.target.value=''; return; }
   const ext = f.name.split('.').pop().toLowerCase();
   const tipo = ext==='pdf' ? 'pdf' : (ext==='doc'||ext==='docx') ? 'word' : (ext==='xls'||ext==='xlsx') ? 'excel' : 'pdf';
-  try {
-    const org = await miOrg();
-    const fd = new FormData();
-    fd.append('archivo', f);
-    fd.append('organizacion_id', org);
-    fd.append('tipo', tipo);
-    await ahAlert('Subiendo "'+f.name+'"… el bot lo está procesando. Puede tardar un momento.','Procesando','info');
-    const r = await fetch(`${BACKEND_URL}/api/conocimiento/archivo`, { method:'POST', body:fd });
-    const d = await r.json();
-    if(d.error) throw new Error(d.error);
-    await ahAlert('Documento cargado. El bot ya está aprendiendo de él.','Listo','ok');
-    cargarConfig(false);
-  } catch(err){ await ahAlert('Error al subir: '+err.message,'Error','warn'); }
-  e.target.value=''; // limpiar para poder resubir
+  const org = await miOrg();
+  const fd = new FormData();
+  fd.append('archivo', f); fd.append('organizacion_id', org); fd.append('tipo', tipo);
+
+  // Mostrar popup de progreso
+  const modal=$('upload-modal'), bar=$('upload-bar'), pct=$('upload-pct');
+  $('upload-title').textContent='Subiendo documento…';
+  $('upload-file').textContent=f.name+' · '+(f.size/1024/1024).toFixed(2)+' MB';
+  bar.style.width='0%'; pct.textContent='0%'; modal.style.display='flex';
+
+  // XMLHttpRequest para tener el progreso REAL de subida
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', `${BACKEND_URL}/api/conocimiento/archivo`);
+  xhr.upload.onprogress = (ev)=>{
+    if(ev.lengthComputable){
+      const p = Math.round((ev.loaded/ev.total)*100);
+      bar.style.width=p+'%'; pct.textContent=p+'%';
+      if(p>=100){ $('upload-title').textContent='Procesando en el bot…'; pct.textContent='Procesando…'; }
+    }
+  };
+  xhr.onload = async ()=>{
+    setTimeout(()=>{ modal.style.display='none'; }, 600);
+    try {
+      const d = JSON.parse(xhr.responseText);
+      if(d.error) throw new Error(d.error);
+      await ahAlert('Documento cargado. El bot ya está aprendiendo de él.','Listo','ok');
+      cargarConfig(false);
+    } catch(err){ await ahAlert('El archivo se subió, pero hubo un problema al procesarlo: '+err.message,'Atención','warn'); }
+  };
+  xhr.onerror = ()=>{ modal.style.display='none'; ahAlert('No se pudo subir el archivo. Revisá tu conexión.','Error','warn'); };
+  xhr.send(fd);
+  e.target.value='';
 };
 $('btn-agregar-url').onclick = async ()=>{
   const datos = await ahForm({titulo:'Agregar URL al conocimiento', okTexto:'Agregar',
