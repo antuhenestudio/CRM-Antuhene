@@ -892,7 +892,7 @@ input,textarea,select{font-family:inherit}
           <div class="demo-banner" style="color:var(--muted);background:var(--panel);border-color:var(--line);margin:0;flex:1;min-width:250px">
             Capacitaciones de marketing, ventas y negocios. Al terminar, recibís un certificado firmado que podés compartir en LinkedIn.
           </div>
-          <button class="btn-sm" id="btn-crear-curso" data-owner style="white-space:nowrap">+ Crear curso</button>
+          <button class="btn-sm" id="btn-crear-curso" style="white-space:nowrap;display:none">+ Crear curso</button>
         </div>
         <div id="cursos-list" class="grid g3"></div>
         <!-- Reproductor de curso (oculto hasta abrir uno) -->
@@ -1775,10 +1775,14 @@ async function entrar(){
   if(sb && !demoMode){
     const { data:{ user } } = await sb.auth.getUser();
     miUserId = user.id;
-    const { data } = await sb.from('perfiles').select('nombre, rol').eq('user_id', user.id).maybeSingle();
+    const { data } = await sb.from('perfiles').select('nombre, rol, staff_antuhene').eq('user_id', user.id).maybeSingle();
     if(data) perfil = data;
     else perfil = { nombre: user.email.split('@')[0], rol:'dueno' };
   }
+  // Staff de AntüHene (fundador / admin general): puede crear cursos globales
+  window.esStaffAntuhene = ['fundador','admin_general'].includes(perfil.staff_antuhene);
+  const btnCurso = document.getElementById('btn-crear-curso');
+  if(btnCurso){ btnCurso.style.display = (esStaffAntuhene || demoMode) ? 'inline-block' : 'none'; }
   $('u-name').textContent = perfil.nombre || 'Usuario';
   $('u-role').textContent = perfil.rol || 'miembro';
   $('u-avatar').textContent = (perfil.nombre || 'U')[0].toUpperCase();
@@ -3357,6 +3361,11 @@ if($('btn-crear-curso')){
   $('btn-crear-curso').onclick = crearCursoFlujo;
 }
 async function crearCursoFlujo(){
+  // Seguridad: solo staff de AntüHene (fundador/admin general) crea cursos
+  if(!demoMode && !window.esStaffAntuhene){
+    await ahAlert('Solo el equipo de AntüHene puede crear cursos.','Acceso restringido','warn');
+    return;
+  }
   // Paso 1: datos del curso
   const datos = await ahForm({
     titulo:'Nuevo curso · Paso 1: datos', okTexto:'Siguiente: lecciones',
