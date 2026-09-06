@@ -3102,11 +3102,11 @@ async function crearCursoFlujo(){
   // Guardar todo en la base
   if(demoMode||!sb){ await ahAlert('En la demo no se guarda. Con tu cuenta, el curso "'+datos.titulo+'" quedaría creado con '+lecciones.length+' lección(es) y '+preguntas.length+' pregunta(s).','Modo demo','info'); return; }
   try {
-    const org = await miOrg();
-    // 1. Crear el curso
+    // 1. Crear el curso (los cursos son globales, sin organizacion_id)
     const { data:curso, error:e1 } = await sb.from('cursos').insert({
-      organizacion_id: org, titulo:datos.titulo, descripcion:datos.descripcion,
-      categoria:datos.categoria, nivel:datos.nivel, precio_ars:Number(datos.precio_ars)||0, activo:true,
+      titulo:datos.titulo, descripcion:datos.descripcion,
+      categoria:datos.categoria, nivel:datos.nivel,
+      precio_ars:Number(datos.precio_ars)||0, publicado:true, orden:0,
     }).select().single();
     if(e1) throw e1;
     // 2. Crear las lecciones
