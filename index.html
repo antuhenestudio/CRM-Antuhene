@@ -604,11 +604,11 @@ input,textarea,select{font-family:inherit}
           <div style="display:grid;gap:12px">
             <div style="display:flex;gap:12px;align-items:flex-start">
               <div style="width:26px;height:26px;border-radius:50%;background:var(--violet);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">1</div>
-              <div style="font-size:13.5px;color:var(--muted)"><strong style="color:var(--ink)">Tocá "Conectar" o "Vincular por Código QR"</strong> en la red o método que quieras usar.</div>
+              <div style="font-size:13.5px;color:var(--muted)"><strong style="color:var(--ink)">Tocá "Conectar"</strong> en la red que quieras vincular a tu negocio.</div>
             </div>
             <div style="display:flex;gap:12px;align-items:flex-start">
               <div style="width:26px;height:26px;border-radius:50%;background:var(--violet);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">2</div>
-              <div style="font-size:13.5px;color:var(--muted)"><strong style="color:var(--ink)">Se abre el portal oficial</strong> de Meta/Google o la ventana flotante para escanear el código QR con tu celular.</div>
+              <div style="font-size:13.5px;color:var(--muted)"><strong style="color:var(--ink)">Se abre el portal oficial</strong> de Meta o Google. Iniciás sesión con la cuenta de tu negocio y autorizás la conexión.</div>
             </div>
             <div style="display:flex;gap:12px;align-items:flex-start">
               <div style="width:26px;height:26px;border-radius:50%;background:var(--violet);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">3</div>
@@ -641,37 +641,6 @@ input,textarea,select{font-family:inherit}
                 <span style="font-size:12px;color:var(--emerald)">✓ Entrantes gratis</span>
               </div>
               <button class="btn-sm" onclick="conectar('whatsapp')" style="padding:10px 20px">Conectar mi WhatsApp Oficial</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tarjeta NUEVA: WhatsApp Web con IA (Método QR / No Oficial) -->
-        <div class="tile" style="margin-bottom:16px;border:1px solid #f59e0b;background:rgba(251,191,36,.03);position:relative;overflow:hidden">
-          <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#f59e0b,transparent)"></div>
-          <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
-            <div style="width:52px;height:52px;border-radius:14px;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#d97706">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
-            </div>
-            <div style="flex:1;min-width:200px">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
-                <h3 style="font-size:16px">WhatsApp Web con IA</h3>
-                <span class="pill" style="color:#b45309;background:rgba(251,191,36,.2)">Método QR (No Oficial) · Riesgo Medio</span>
-              </div>
-              <p style="font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:12px">Conecta un número escaneando el código QR (Baileys/Evolution API). Ideal para pruebas rápidas o números secundarios.</p>
-              
-              <!-- Caja de Advertencia de Riesgos -->
-              <div style="background:rgba(251,191,36,.12);border:1px solid rgba(245,158,11,.3);border-radius:10px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#92400e">
-                <div style="font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:6px">
-                  ⚠️ Riesgos de esta conexión:
-                </div>
-                <ul style="margin:0;padding-left:16px;line-height:1.5">
-                  <li>Riesgo de bloqueo o suspensión del número por Meta si detecta spam o reportes.</li>
-                  <li>Dependencia de sesión activa (requiere reconectar si se desconecta el celular).</li>
-                  <li>No cuenta con la estabilidad ni el respaldo oficial de la Cloud API de Meta.</li>
-                </ul>
-              </div>
-
-              <button class="btn-sm" onclick="conectar('whatsapp_web')" style="padding:10px 20px;background:#d97706;border-color:#b45309">Vincular por Código QR</button>
             </div>
           </div>
         </div>
