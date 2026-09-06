@@ -621,6 +621,31 @@ input,textarea,select{font-family:inherit}
           </div>
         </div>
         <p style="color:var(--muted);font-size:13.5px;margin-bottom:16px">Conectá las cuentas de tu negocio:</p>
+
+        <!-- Tarjeta PREMIUM: WhatsApp Cloud API (oficial) -->
+        <div class="tile" style="margin-bottom:16px;border:1px solid var(--gold);position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)"></div>
+          <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
+            <div style="width:52px;height:52px;border-radius:14px;background:rgba(37,211,102,.12);border:1px solid rgba(37,211,102,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="#25D366"><path d="M17.5 14.4c-.3-.15-1.7-.85-2-.95-.25-.1-.45-.15-.65.15-.2.3-.75.95-.9 1.1-.15.2-.35.2-.65.05-.3-.15-1.25-.45-2.4-1.5-.9-.8-1.5-1.75-1.65-2.05-.15-.3 0-.45.15-.6.15-.15.3-.35.45-.5.15-.15.2-.3.3-.5.1-.2.05-.35 0-.5-.05-.15-.65-1.6-.9-2.15-.25-.55-.5-.5-.65-.5h-.55c-.2 0-.5.05-.75.35-.25.3-1 1-1 2.4s1.05 2.8 1.2 3c.15.2 2.05 3.15 5 4.4.7.3 1.25.5 1.65.65.7.2 1.35.2 1.85.1.55-.1 1.7-.7 1.95-1.35.25-.65.25-1.2.15-1.35-.05-.1-.25-.15-.55-.3zM12 2a10 10 0 0 0-8.6 15.05L2 22l5.05-1.35A10 10 0 1 0 12 2z"/></svg>
+            </div>
+            <div style="flex:1;min-width:200px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+                <h3 style="font-size:16px">WhatsApp Cloud API</h3>
+                <span class="pill" style="color:var(--gold-2);background:var(--gold-soft)">Oficial de Meta · Recomendado</span>
+              </div>
+              <p style="font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:12px">Conexión oficial vía Embedded Signup de Meta. <strong style="color:var(--ink)">Máxima estabilidad, sin riesgo de baneo</strong> y soporte para múltiples números. Es la vía profesional para tu negocio.</p>
+              <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px">
+                <span style="font-size:12px;color:var(--emerald)">✓ Sin riesgo de bloqueo</span>
+                <span style="font-size:12px;color:var(--emerald)">✓ Varios números</span>
+                <span style="font-size:12px;color:var(--emerald)">✓ Entrantes gratis</span>
+              </div>
+              <button class="btn-sm" onclick="conectar('whatsapp')" style="padding:10px 20px">Conectar mi WhatsApp</button>
+            </div>
+          </div>
+        </div>
+
+        <p style="color:var(--muted);font-size:12.5px;margin-bottom:12px">Otros canales:</p>
         <div id="channel-list"></div>
 
         <!-- Widget para sitio web — PERSONALIZADOR -->
@@ -2158,7 +2183,6 @@ async function cargarCanales(demo){
   }
   const list = $('channel-list'); list.innerHTML='';
   const disponibles = [
-    {tipo:'whatsapp', nombre:'WhatsApp', desc:'WhatsApp Business (Cloud API oficial)'},
     {tipo:'instagram', nombre:'Instagram', desc:'Mensajes directos de Instagram'},
     {tipo:'facebook', nombre:'Facebook', desc:'Messenger de tu página'},
     {tipo:'web', nombre:'Chat web', desc:'El bot en tu sitio web'},
