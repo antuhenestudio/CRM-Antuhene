@@ -2554,7 +2554,7 @@ async function cargarConfig(demo){
   // Fuentes de conocimiento
   let fuentes = DEMO.fuentes;
   if(!demo && sb){ try { const {data}=await sb.from('fuentes_conocimiento')
-    .select('nombre,tipo,estado,fragmentos').order('created_at',{ascending:false});
+    .select('id,nombre,tipo,estado,fragmentos,origen_url').order('created_at',{ascending:false});
     fuentes=data||[]; } catch(e){ console.warn(e); } }
   const fl=$('fuentes-list'); fl.innerHTML = fuentes.length ? '' :
     '<div class="empty">Todavía no cargaste conocimiento. Subí un PDF o agregá una URL para que el bot aprenda.</div>';
@@ -2562,8 +2562,24 @@ async function cargarConfig(demo){
     const [txt,col]=EST_FUENTE[f.estado]||EST_FUENTE.pendiente;
     const el=document.createElement('div'); el.className='pub-item';
     el.innerHTML=`<div><div style="font-weight:600;font-size:13.5px;margin-bottom:3px">${f.nombre}</div>
-      <div class="when">${f.tipo.toUpperCase()}${f.fragmentos?' · '+f.fragmentos+' fragmentos':''}</div></div>
-      <span class="pill" style="color:${col}">${txt}</span>`;
+      <div class="when">${(f.tipo||'').toUpperCase()}${f.fragmentos?' · '+f.fragmentos+' fragmentos':''}</div></div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <span class="pill" style="color:${col}">${txt}</span>
+        ${f.origen_url?`<a href="${f.origen_url}" target="_blank" style="color:var(--cyan);font-size:12px">Ver</a>`:''}
+        ${f.id?`<button data-del-fuente="${f.id}" data-nom-fuente="${f.nombre}" style="color:var(--coral);font-size:12px">Eliminar</button>`:''}
+      </div>`;
+    const del = el.querySelector('[data-del-fuente]');
+    if(del) del.onclick = async ()=>{
+      const ok = await ahConfirmDoble('Vas a eliminar "'+f.nombre+'" de la memoria del bot. El bot dejará de usar esa información.','¿Eliminar documento?');
+      if(!ok) return;
+      try {
+        // Borrar los fragmentos (embeddings) y la fuente
+        await sb.from('documentos').delete().eq('fuente_id', f.id);
+        await sb.from('fuentes_conocimiento').delete().eq('id', f.id);
+        await ahAlert('Documento eliminado de la memoria del bot.','Listo','ok');
+        cargarConfig(false);
+      } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
+    };
     fl.appendChild(el);
   });
 
