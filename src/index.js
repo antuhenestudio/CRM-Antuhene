@@ -315,22 +315,36 @@ app.get('/api/conversaciones', async (req, res) => {
 // Trae los mensajes de una conversación + un resumen con IA.
 app.get('/api/conversaciones/:id', async (req, res) => {
   try {
+    // Devuelve SOLO los mensajes, al instante (sin esperar el resumen)
     const { data: mensajes, error } = await supabase
       .from('mensajes')
       .select('autor, contenido, created_at')
       .eq('conversacion_id', req.params.id)
       .order('created_at', { ascending: true });
     if (error) throw error;
-
-    let analisis = null;
-    if (mensajes && mensajes.length >= 2) {
-      try { analisis = await resumirConversacion(mensajes); }
-      catch (e) { console.warn('Resumen falló:', e.message); }
-    }
-    res.json({ mensajes: mensajes || [], analisis });
+    res.json({ mensajes: mensajes || [] });
   } catch (e) {
     console.error('Error /api/conversaciones/:id:', e);
     res.status(500).json({ error: 'Error interno' });
+  }
+});
+
+// Endpoint separado para el resumen (se pide aparte, no bloquea los mensajes)
+app.get('/api/conversaciones/:id/resumen', async (req, res) => {
+  try {
+    const { data: mensajes } = await supabase
+      .from('mensajes')
+      .select('autor, contenido')
+      .eq('conversacion_id', req.params.id)
+      .order('created_at', { ascending: true });
+    if (!mensajes || mensajes.length < 2) return res.json({ analisis: null });
+    let analisis = null;
+    try { analisis = await resumirConversacion(mensajes); }
+    catch (e) { console.warn('Resumen falló:', e.message); }
+    res.json({ analisis });
+  } catch (e) {
+    console.error('Error resumen:', e);
+    res.status(500).json({ analisis: null });
   }
 });
 
