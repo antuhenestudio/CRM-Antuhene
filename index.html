@@ -689,7 +689,7 @@ input,textarea,select{font-family:inherit}
      <!-- CANALES -->
       <section class="view" data-view="canales">
         <div class="tile" style="margin-bottom:18px;background:linear-gradient(135deg,rgba(139,92,246,.08),rgba(34,211,238,.05))">
-          <h3 style="font-size:15px;margin-bottom:12px">📋 Cómo conectar tus redes, paso a paso</h3>
+          <h3 style="font-size:15px;margin-bottom:12px">Cómo conectar tus redes, paso a paso</h3>
           <div style="display:grid;gap:12px">
             <div style="display:flex;gap:12px;align-items:flex-start">
               <div style="width:26px;height:26px;border-radius:50%;background:var(--violet);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">1</div>
@@ -962,7 +962,7 @@ input,textarea,select{font-family:inherit}
         <p style="color:var(--muted);font-size:13.5px;margin-bottom:18px">Elegí el plan que mejor se adapta a tu negocio. Podés cambiar o cancelar cuando quieras.</p>
         <div id="mi-plan-estado" style="margin-bottom:18px"></div>
         <div class="tile" style="margin-bottom:18px">
-          <h3 style="font-size:15px;margin-bottom:6px">🎁 ¿Tenés un código de prueba?</h3>
+          <h3 style="font-size:15px;margin-bottom:6px">¿Tenés un código de prueba?</h3>
           <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Si te dieron un código promocional, ingresalo para activar tu prueba gratis.</p>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <input id="codigo-trial" placeholder="Ej: EMPRENDE30" style="flex:1;min-width:180px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;color:var(--ink);text-transform:uppercase">
@@ -1017,25 +1017,25 @@ input,textarea,select{font-family:inherit}
           <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Descargá el modelo, completalo con tus datos y volvé a subirlo. Traen un ejemplo adentro para que veas cómo llenarlos.</p>
           <div class="grid g3" id="plantillas-list">
             <div class="tile" style="background:var(--panel2)">
-              <div style="font-size:22px;margin-bottom:8px">📄</div>
+              <i data-lucide="file-text" style="width:24px;height:24px;color:var(--gold);margin-bottom:8px"></i>
               <h3 style="font-size:14px">Ficha del negocio</h3>
               <p style="font-size:12px;color:var(--muted);margin:4px 0 12px">Datos, contacto, horarios y qué ofrecés (Word)</p>
               <a class="btn-ghost" style="font-size:12.5px;display:inline-block" href="plantillas/1-Ficha-del-negocio.docx" download>Descargar</a>
             </div>
             <div class="tile" style="background:var(--panel2)">
-              <div style="font-size:22px;margin-bottom:8px">❓</div>
+              <i data-lucide="help-circle" style="width:24px;height:24px;color:var(--gold);margin-bottom:8px"></i>
               <h3 style="font-size:14px">Preguntas frecuentes</h3>
               <p style="font-size:12px;color:var(--muted);margin:4px 0 12px">Las consultas típicas y sus respuestas (Word)</p>
               <a class="btn-ghost" style="font-size:12.5px;display:inline-block" href="plantillas/2-Preguntas-frecuentes.docx" download>Descargar</a>
             </div>
             <div class="tile" style="background:var(--panel2)">
-              <div style="font-size:22px;margin-bottom:8px">📋</div>
+              <i data-lucide="clipboard-list" style="width:24px;height:24px;color:var(--gold);margin-bottom:8px"></i>
               <h3 style="font-size:14px">Catálogo de servicios</h3>
               <p style="font-size:12px;color:var(--muted);margin:4px 0 12px">Tus servicios/productos y precios (Excel)</p>
               <a class="btn-ghost" style="font-size:12.5px;display:inline-block" href="plantillas/3-Catalogo-de-servicios.xlsx" download>Descargar</a>
             </div>
             <div class="tile" style="background:var(--panel2)">
-              <div style="font-size:22px;margin-bottom:8px">👥</div>
+              <i data-lucide="users" style="width:24px;height:24px;color:var(--gold);margin-bottom:8px"></i>
               <h3 style="font-size:14px">Base de clientes</h3>
               <p style="font-size:12px;color:var(--muted);margin:4px 0 12px">Tu cartera actual para migrar (Excel)</p>
               <a class="btn-ghost" style="font-size:12.5px;display:inline-block" href="plantillas/4-Base-de-clientes.xlsx" download>Descargar</a>
@@ -1413,15 +1413,15 @@ const _ahModal = {
 };
 function _ahIcon(tipo){
   const m = {
-    info:['ℹ️','rgba(139,92,246,.15)'], ok:['✅','rgba(52,211,153,.15)'],
-    warn:['⚠️','rgba(251,191,36,.15)'], danger:['🗑️','rgba(251,113,133,.15)'],
-    ask:['❓','rgba(34,211,238,.15)']
+    info:['<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>','rgba(139,92,246,.15)'], ok:['<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34D399" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>','rgba(52,211,153,.15)'],
+    warn:['<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FBBF24" stroke-width="2"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>','rgba(251,191,36,.15)'], danger:['<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FB7185" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>','rgba(251,113,133,.15)'],
+    ask:['<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#22D3EE" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/></svg>','rgba(34,211,238,.15)']
   };
   return m[tipo] || m.info;
 }
 function _ahAbrir({titulo, mensaje, tipo='info', okTexto='Aceptar', cancelTexto='Cancelar', mostrarCancel=true, campos=null, onOk}){
   const [icono, bg] = _ahIcon(tipo);
-  $('ah-modal-icon').textContent = icono;
+  $('ah-modal-icon').innerHTML = icono;
   $('ah-modal-icon').style.background = bg;
   $('ah-modal-title').textContent = titulo || '';
   $('ah-modal-msg').textContent = mensaje || '';
@@ -1721,7 +1721,7 @@ $('btn-login').onclick = async () => {
       const { error } = await sb.auth.signUp({ email, password: pass });
       if(error) throw error;
       progresoLogin(false);
-      showLoginMsg('✅ ¡Cuenta creada! Si te pide confirmar, revisá tu correo. Luego iniciá sesión.','ok');
+      showLoginMsg('¡Cuenta creada! Si te pide confirmar, revisá tu correo. Luego iniciá sesión.','ok');
       // Volver a modo login para que entre
       setTimeout(()=>{
         signupMode = false;
@@ -1736,7 +1736,7 @@ $('btn-login').onclick = async () => {
       const { error } = await sb.auth.signInWithPassword({ email, password: pass });
       if(error) throw error;
       progresoLogin(false);
-      showLoginMsg('✅ ¡Bienvenido! Cargando tu panel…','ok');
+      showLoginMsg('¡Bienvenido! Cargando tu panel…','ok');
       setTimeout(()=>entrar(), 500);
       return;
     }
@@ -3083,7 +3083,7 @@ async function cargarPlanesFijos(demo){
   const est = $('mi-plan-estado');
   if(est){
     if(suscripcionActiva){
-      est.innerHTML='<div class="demo-banner" style="background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.25);color:var(--emerald)">✅ Tu cuenta está activa. Podés usar todas las funciones.</div>';
+      est.innerHTML='<div class="demo-banner" style="background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.25);color:var(--emerald)">Tu cuenta está activa. Podés usar todas las funciones.</div>';
     } else {
       est.innerHTML='<div class="demo-banner">Tu cuenta todavía no tiene un plan activo. Elegí uno para conectar tus redes y activar tus bots.</div>';
     }
@@ -3106,7 +3106,7 @@ async function suscribir(planId){
 
 /* ---------- Antü: la IA analista ---------- */
 let insights = [];
-const TIPO_ICONO = {alerta:'⚠️', felicitacion:'🎉', sugerencia:'💡', recomendacion:'✨'};
+const TIPO_ICONO = {alerta:'<i data-lucide="alert-triangle" style="width:16px;height:16px;color:var(--amber)"></i>', felicitacion:'<i data-lucide="party-popper" style="width:16px;height:16px;color:var(--emerald)"></i>', sugerencia:'<i data-lucide="lightbulb" style="width:16px;height:16px;color:var(--gold)"></i>', recomendacion:'<i data-lucide="sparkles" style="width:16px;height:16px;color:var(--cyan)"></i>'};
 
 async function cargarAntu(demo){
   insights = DEMO.insights;
@@ -3130,13 +3130,13 @@ function pintarAntu(){
 
   const list = $('antu-list');
   list.innerHTML = activos.length ? '' :
-    '<div style="padding:30px 20px;text-align:center;color:var(--muted);font-size:13px">Todo en orden por ahora. Segui así 👌</div>';
+    '<div style="padding:30px 20px;text-align:center;color:var(--muted);font-size:13px">Todo en orden por ahora. Seguí así.</div>';
   activos.sort((a,b)=>b.prioridad-a.prioridad).forEach((ins,idx)=>{
     const el=document.createElement('div');
     el.style.cssText='padding:14px 16px;border-bottom:1px solid var(--line)';
     el.innerHTML=`
       <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px">
-        <span style="font-size:16px">${TIPO_ICONO[ins.tipo]||'💬'}</span>
+        <span>${TIPO_ICONO[ins.tipo]||'<i data-lucide="message-circle" style="width:16px;height:16px"></i>'}</span>
         <span style="font-weight:600;font-size:13.5px;line-height:1.3">${ins.titulo}</span>
       </div>
       <p style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:10px">${ins.mensaje}</p>
@@ -3190,7 +3190,7 @@ async function cargarAcademia(demo){
     const comprado = progreso[c.id]?.comprado;
     const t=document.createElement('div'); t.className='tile';
     t.innerHTML=`
-      <div style="height:90px;border-radius:10px;background:linear-gradient(135deg,var(--violet),var(--cyan));margin-bottom:12px;display:flex;align-items:center;justify-content:center;font-size:30px">🎓</div>
+      <div style="height:90px;border-radius:10px;background:linear-gradient(135deg,var(--violet),var(--cyan));margin-bottom:12px;display:flex;align-items:center;justify-content:center"><i data-lucide="graduation-cap" style="width:34px;height:34px;color:#fff"></i></div>
       <span class="pill" style="color:var(--violet)">${c.categoria}</span>
       <h3 style="font-size:15px;margin:8px 0 4px">${c.titulo}</h3>
       <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">${c.descripcion}</p>
@@ -3233,7 +3233,7 @@ function renderLeccion(){
     const hecha = progreso[cursoActivo.id].lecciones[i]?.aprobado;
     const row=document.createElement('button');
     row.style.cssText=`display:block;width:100%;text-align:left;padding:10px;border-radius:8px;margin-bottom:6px;font-size:12.5px;background:${i===leccionIdx?'var(--panel2)':'transparent'};color:${i===leccionIdx?'var(--ink)':'var(--muted)'}`;
-    row.innerHTML=`${hecha?'✅':'▶️'} ${l.titulo}`;
+    row.innerHTML=`${hecha?'✓ ':'· '}${l.titulo}`;
     row.onclick=()=>{ leccionIdx=i; renderLeccion(); };
     ll.appendChild(row);
   });
@@ -3287,7 +3287,7 @@ $('vimeo-player').addEventListener('contextmenu', e=>e.preventDefault());
 function renderTest(lec){
   const tb = $('test-box'); tb.innerHTML='';
   if(lec.test?.length){
-    tb.innerHTML='<p style="font-size:13px;font-weight:600;margin:6px 0 10px">📝 Test de la lección</p>';
+    tb.innerHTML='<p style="font-size:13px;font-weight:600;margin:6px 0 10px">Test de la lección</p>';
     lec.test.forEach((q)=>{
       const box=document.createElement('div'); box.style.marginBottom='12px';
       box.innerHTML=`<p style="font-size:13px;margin-bottom:6px">${q.pregunta}</p>`;
@@ -3522,7 +3522,7 @@ async function revisarDuplicado(lead){
     const banner = document.createElement('div');
     banner.id='dup-banner';
     banner.style.cssText='background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);border-radius:12px;padding:14px;margin:0 26px 16px';
-    banner.innerHTML=`<div style="font-size:13.5px;font-weight:600;color:var(--amber);margin-bottom:6px">⚠️ Posible duplicado</div>
+    banner.innerHTML=`<div style="font-size:13.5px;font-weight:600;color:var(--amber);margin-bottom:6px">Posible duplicado</div>
       <div style="font-size:12.5px;color:var(--muted);margin-bottom:10px">Este contacto tiene el mismo teléfono/email que <strong style="color:var(--ink)">${orig.nombre||'otro cliente'}</strong> (${orig.registro_interno||''}). ¿Es la misma persona?</div>
       <div style="display:flex;gap:8px">
         <button class="btn-sm" id="dup-fusionar" style="font-size:12px;padding:6px 12px">Sí, es el mismo (fusionar)</button>
@@ -3578,7 +3578,7 @@ async function pintarGestiones(){
       <div style="font-size:12.5px;color:var(--muted);margin:4px 0 6px;line-height:1.5">${g.descripcion||''}</div>
       <div style="display:flex;gap:8px">
         <span class="pill" style="color:${col}">${txt}</span>
-        ${g.responsable?`<span class="pill">👤 ${g.responsable}</span>`:''}
+        ${g.responsable?`<span class="pill">${g.responsable}</span>`:''}
       </div>`;
     cont.appendChild(item);
   });
@@ -3900,7 +3900,7 @@ $('btn-invitar').onclick=async()=>{
     const mensaje = 'Te invito a sumarte a mi equipo en AntüHene. Entrá a este link y creá tu cuenta con tu email ('+datos.email+') y la contraseña que elijas:\n\n'+link;
     // Modal con el link para copiar
     await ahForm({
-      titulo:'✅ Invitación lista', mensaje:'Copiá este mensaje y envialo a la persona por WhatsApp. Cuando se registre con ese email, queda en tu equipo con el rol y área que le asignaste.',
+      titulo:'Invitación lista', mensaje:'Copiá este mensaje y envialo a la persona por WhatsApp. Cuando se registre con ese email, queda en tu equipo con el rol y área que le asignaste.',
       okTexto:'Listo', campos:[{key:'link', label:'Mensaje para enviar', tipo:'textarea', valor:mensaje}]
     });
     cargarEquipo(false);
@@ -3909,7 +3909,7 @@ $('btn-invitar').onclick=async()=>{
 
 /* ---------- Tour guiado ---------- */
 const TOUR_PASOS = [
-  {sel:null, titulo:'¡Bienvenido a AntüHene! 👋', texto:'Te muestro en 1 minuto cómo sacarle provecho a tu CRM. Podés saltar cuando quieras.'},
+  {sel:null, titulo:'¡Bienvenido a AntüHene!', texto:'Te muestro en 1 minuto cómo sacarle provecho a tu CRM. Podés saltar cuando quieras.'},
   {sel:'[data-view="resumen"]', titulo:'Resumen', texto:'Acá ves de un vistazo cómo viene tu negocio: conversaciones, leads nuevos y más.'},
   {sel:'[data-view="inbox"]', titulo:'Conversaciones', texto:'Todos tus chats de WhatsApp, Instagram y Facebook en una sola bandeja. El bot responde y vos podés tomar el control cuando quieras.'},
   {sel:'[data-view="leads"]', titulo:'Clientes', texto:'Tus leads organizados en tablero o lista. Tocá cualquiera para ver su ficha completa con historial.'},
