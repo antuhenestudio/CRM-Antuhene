@@ -23,6 +23,7 @@
   var FORMA = s.getAttribute('data-forma') || 'redondo';
   var POS = s.getAttribute('data-posicion') || 'derecha';
   var RAPIDOS = (s.getAttribute('data-rapidos') || '').split(',').map(function(r){return r.trim();}).filter(Boolean);
+  var IMAGEN = s.getAttribute('data-imagen') || '';
   var RADIO = FORMA === 'cuadrado' ? '10px' : '50%';
   var RADIO_VENT = FORMA === 'cuadrado' ? '6px' : '16px';
   var LADO = POS === 'izquierda' ? 'left:20px' : 'right:20px';
