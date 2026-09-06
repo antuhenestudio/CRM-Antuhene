@@ -69,20 +69,24 @@ async function obtenerOCrearConversacion(lead, canal) {
 }
 
 async function guardarMensaje({ conversacion, autor, contenido, wamid = null, userId = null }) {
-  await supabase.from('mensajes').upsert(
-    {
-      lead_id: conversacion.lead_id,
-      conversacion_id: conversacion.id,
-      canal_id: conversacion.canal_id,
-      organizacion_id: conversacion.organizacion_id,
-      direccion: autor === 'cliente' ? 'entrante' : 'saliente',
-      autor,
-      contenido,
-      wamid,
-      user_id: userId,
-    },
-    { onConflict: 'wamid', ignoreDuplicates: true }
-  );
+  const fila = {
+    lead_id: conversacion.lead_id,
+    conversacion_id: conversacion.id,
+    canal_id: conversacion.canal_id,
+    organizacion_id: conversacion.organizacion_id,
+    direccion: autor === 'cliente' ? 'entrante' : 'saliente',
+    autor,
+    contenido,
+    wamid,
+    user_id: userId,
+  };
+  if (wamid) {
+    // WhatsApp: evitar duplicados por el ID del mensaje (Meta puede reenviar)
+    await supabase.from('mensajes').upsert(fila, { onConflict: 'wamid', ignoreDuplicates: true });
+  } else {
+    // Chat web u otros sin wamid: insertar siempre (cada mensaje es único)
+    await supabase.from('mensajes').insert(fila);
+  }
   await supabase.from('conversaciones')
     .update({ ultimo_mensaje: new Date().toISOString() })
     .eq('id', conversacion.id);
