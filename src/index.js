@@ -329,18 +329,34 @@ app.get('/api/conversaciones/:id', async (req, res) => {
   }
 });
 
-// Endpoint separado para el resumen (se pide aparte, no bloquea los mensajes)
+// Endpoint separado para el resumen (con caché para ahorrar tokens)
 app.get('/api/conversaciones/:id/resumen', async (req, res) => {
   try {
+    const convId = req.params.id;
     const { data: mensajes } = await supabase
       .from('mensajes')
       .select('autor, contenido')
-      .eq('conversacion_id', req.params.id)
+      .eq('conversacion_id', convId)
       .order('created_at', { ascending: true });
     if (!mensajes || mensajes.length < 2) return res.json({ analisis: null });
+
+    // ¿Hay un resumen guardado y sigue vigente (sin mensajes nuevos)?
+    const { data: conv } = await supabase.from('conversaciones')
+      .select('resumen_cache, resumen_hasta').eq('id', convId).maybeSingle();
+    if (conv && conv.resumen_cache && conv.resumen_hasta === mensajes.length) {
+      // Usar el guardado: cero tokens, respuesta instantánea
+      return res.json({ analisis: conv.resumen_cache, cache: true });
+    }
+
+    // No hay guardado o entraron mensajes nuevos: generar y guardar
     let analisis = null;
     try { analisis = await resumirConversacion(mensajes); }
     catch (e) { console.warn('Resumen falló:', e.message); }
+    if (analisis) {
+      await supabase.from('conversaciones')
+        .update({ resumen_cache: analisis, resumen_hasta: mensajes.length })
+        .eq('id', convId);
+    }
     res.json({ analisis });
   } catch (e) {
     console.error('Error resumen:', e);
