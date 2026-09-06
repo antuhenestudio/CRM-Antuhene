@@ -2031,39 +2031,18 @@ async function abrirConvReal(convId, nombre, modo, tipo='web'){
   const modeEl = $('chat-mode'); modeEl.style.display='inline-block';
   modeEl.textContent = modo==='bot' ? 'IA activa' : 'Atención humana';
   const body = $('chat-body');
-  body.innerHTML = '<div class="empty" style="padding:20px">Cargando conversación…</div>';
+  body.innerHTML = '<div class="empty" style="padding:20px">Cargando…</div>';
   $('chat-input').style.display='flex';
+  const flot = $('resumen-flotante');
+  // Mostrar "analizando" en el resumen mientras llega
+  flot.style.display='block';
+  flot.innerHTML='<div style="padding:11px 16px;background:var(--gold-soft);border-bottom:1px solid rgba(212,175,110,.18);font-size:12px;color:var(--gold-2)"><span class="ia-dot" style="display:inline-block;margin-right:8px"></span>Antü está analizando la conversación…</div>';
+
   try {
+    // 1. Traer y mostrar los MENSAJES al instante (rápido)
     const r = await fetch(`${BACKEND_URL}/api/conversaciones/${convId}`);
-    const { mensajes, analisis } = await r.json();
+    const { mensajes } = await r.json();
     body.innerHTML='';
-    // Panel de resumen IA — FLOTANTE arriba (no se va con el scroll), colapsable
-    const flot = $('resumen-flotante');
-    if(analisis){
-      const temp = {frio:['#22D3EE','Frío'], tibio:['#FBBF24','Tibio'], caliente:['#FB7185','Caliente']}[analisis.temperatura]||['#8B92A6','—'];
-      flot.style.display='block';
-      flot.innerHTML=`
-        <div id="resumen-header" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:12px 16px;background:var(--gold-soft);border-bottom:1px solid rgba(212,175,110,.18)">
-          <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(145deg,#1a1815,#0d0c0a);border:1px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:13px;color:var(--gold)">A</div>
-          <span style="font-size:12.5px;font-weight:600;color:var(--gold-2)">Resumen de Antü</span>
-          <span class="pill" style="color:${temp[0]}">${temp[1]}</span>
-          <span id="resumen-flecha" style="margin-left:auto;color:var(--muted);font-size:12px;transition:transform .2s">▼</span>
-        </div>
-        <div id="resumen-cuerpo" style="padding:14px 16px;background:var(--panel);border-bottom:1px solid var(--line)">
-          <div style="font-size:12.5px;color:var(--muted);line-height:1.55;margin-bottom:8px">${analisis.resumen||''}</div>
-          <div style="font-size:12.5px;color:var(--ink);line-height:1.55;padding-top:8px;border-top:1px solid rgba(212,175,110,.15)"><strong style="color:var(--gold-2)">Determinación:</strong> ${analisis.determinacion||''}</div>
-        </div>`;
-      // Colapsar/expandir al tocar el header
-      let abierto = true;
-      $('resumen-header').onclick = ()=>{
-        abierto = !abierto;
-        $('resumen-cuerpo').style.display = abierto ? 'block' : 'none';
-        $('resumen-flecha').style.transform = abierto ? 'none' : 'rotate(-90deg)';
-      };
-    } else {
-      flot.style.display='none'; flot.innerHTML='';
-    }
-    // Los mensajes (solo la conversación, el resumen queda flotante arriba)
     mensajes.forEach(m => {
       const el=document.createElement('div');
       el.className='msg '+(m.autor==='cliente'?'in':'out');
@@ -2072,8 +2051,38 @@ async function abrirConvReal(convId, nombre, modo, tipo='web'){
       body.appendChild(el);
     });
     body.scrollTop = body.scrollHeight;
+
+    // 2. Pedir el RESUMEN aparte (no bloquea, aparece cuando esté listo)
+    fetch(`${BACKEND_URL}/api/conversaciones/${convId}/resumen`)
+      .then(res=>res.json())
+      .then(({analisis})=>{
+        if(analisis){
+          const temp = {frio:['#22D3EE','Frío'], tibio:['#FBBF24','Tibio'], caliente:['#FB7185','Caliente']}[analisis.temperatura]||['#8B92A6','—'];
+          flot.innerHTML=`
+            <div id="resumen-header" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:12px 16px;background:var(--gold-soft);border-bottom:1px solid rgba(212,175,110,.18)">
+              <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(145deg,#1a1815,#0d0c0a);border:1px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:13px;color:var(--gold)">A</div>
+              <span style="font-size:12.5px;font-weight:600;color:var(--gold-2)">Resumen de Antü</span>
+              <span class="pill" style="color:${temp[0]}">${temp[1]}</span>
+              <span id="resumen-flecha" style="margin-left:auto;color:var(--muted);font-size:12px;transition:transform .2s">▼</span>
+            </div>
+            <div id="resumen-cuerpo" style="padding:14px 16px;background:var(--panel);border-bottom:1px solid var(--line)">
+              <div style="font-size:12.5px;color:var(--muted);line-height:1.55;margin-bottom:8px">${analisis.resumen||''}</div>
+              <div style="font-size:12.5px;color:var(--ink);line-height:1.55;padding-top:8px;border-top:1px solid rgba(212,175,110,.15)"><strong style="color:var(--gold-2)">Determinación:</strong> ${analisis.determinacion||''}</div>
+            </div>`;
+          let abierto = true;
+          $('resumen-header').onclick = ()=>{
+            abierto = !abierto;
+            $('resumen-cuerpo').style.display = abierto ? 'block' : 'none';
+            $('resumen-flecha').style.transform = abierto ? 'none' : 'rotate(-90deg)';
+          };
+        } else {
+          flot.style.display='none'; flot.innerHTML='';
+        }
+      })
+      .catch(()=>{ flot.style.display='none'; flot.innerHTML=''; });
   } catch(e){
     body.innerHTML='<div class="empty" style="padding:20px">No se pudo cargar la conversación.</div>';
+    flot.style.display='none';
     console.warn(e);
   }
 }
