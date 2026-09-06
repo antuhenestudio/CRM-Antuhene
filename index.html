@@ -470,6 +470,7 @@ input,textarea,select{font-family:inherit}
               <div class="who" id="chat-who">Elegí una conversación</div>
               <div class="mode" id="chat-mode" style="display:none">IA activa</div>
             </div>
+            <div id="resumen-flotante" style="display:none"></div>
             <div class="chat-body" id="chat-body">
               <div class="empty">Elegí una conversación de la lista para verla.</div>
             </div>
@@ -1935,6 +1936,7 @@ async function cargarInbox(demo){
 }
 // Abrir conversación DEMO
 function abrirConvDemo(convs, i){
+  const rf=$('resumen-flotante'); if(rf){ rf.style.display='none'; rf.innerHTML=''; }
   const c = convs[i];
   $('chat-who').textContent = c.who;
   const modeEl = $('chat-mode'); modeEl.style.display='inline-block';
@@ -1968,25 +1970,33 @@ async function abrirConvReal(convId, nombre, modo, tipo='web'){
     const r = await fetch(`${BACKEND_URL}/api/conversaciones/${convId}`);
     const { mensajes, analisis } = await r.json();
     body.innerHTML='';
-    // Panel de resumen IA arriba, claramente separado
+    // Panel de resumen IA — FLOTANTE arriba (no se va con el scroll), colapsable
+    const flot = $('resumen-flotante');
     if(analisis){
       const temp = {frio:['#22D3EE','Frío'], tibio:['#FBBF24','Tibio'], caliente:['#FB7185','Caliente']}[analisis.temperatura]||['#8B92A6','—'];
-      const box=document.createElement('div');
-      box.style.cssText='background:linear-gradient(135deg,rgba(139,92,246,.1),rgba(34,211,238,.06));border:1px solid var(--violet);border-radius:14px;padding:16px;margin-bottom:6px';
-      box.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-          <div style="width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--violet),var(--cyan));display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:700;font-size:13px;color:#fff">A</div>
-          <span style="font-size:13px;font-weight:600">Resumen de Antü</span>
-          <span class="pill" style="color:${temp[0]};margin-left:auto">${temp[1]}</span></div>
-        <div style="font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:8px">${analisis.resumen||''}</div>
-        <div style="font-size:12.5px;color:var(--ink);line-height:1.5;padding-top:8px;border-top:1px solid var(--line)"><strong style="color:var(--violet)">Determinación:</strong> ${analisis.determinacion||''}</div>`;
-      body.appendChild(box);
-      // Divisor "conversación"
-      const div=document.createElement('div');
-      div.style.cssText='display:flex;align-items:center;gap:10px;margin:8px 0;color:var(--muted);font-size:11px';
-      div.innerHTML='<span style="flex:1;height:1px;background:var(--line)"></span>CONVERSACIÓN<span style="flex:1;height:1px;background:var(--line)"></span>';
-      body.appendChild(div);
+      flot.style.display='block';
+      flot.innerHTML=`
+        <div id="resumen-header" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:12px 16px;background:rgba(212,175,110,.08);border-bottom:1px solid rgba(212,175,110,.15)">
+          <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(145deg,#1a1815,#0d0c0a);border:1px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-weight:600;font-size:13px;color:var(--gold)">A</div>
+          <span style="font-size:12.5px;font-weight:600;color:var(--gold)">Resumen de Antü</span>
+          <span class="pill" style="color:${temp[0]}">${temp[1]}</span>
+          <span id="resumen-flecha" style="margin-left:auto;color:var(--muted);font-size:12px;transition:transform .2s">▼</span>
+        </div>
+        <div id="resumen-cuerpo" style="padding:14px 16px;background:rgba(20,18,22,.5);backdrop-filter:blur(10px)">
+          <div style="font-size:12.5px;color:var(--muted);line-height:1.55;margin-bottom:8px">${analisis.resumen||''}</div>
+          <div style="font-size:12.5px;color:var(--ink);line-height:1.55;padding-top:8px;border-top:1px solid rgba(212,175,110,.12)"><strong style="color:var(--gold)">Determinación:</strong> ${analisis.determinacion||''}</div>
+        </div>`;
+      // Colapsar/expandir al tocar el header
+      let abierto = true;
+      $('resumen-header').onclick = ()=>{
+        abierto = !abierto;
+        $('resumen-cuerpo').style.display = abierto ? 'block' : 'none';
+        $('resumen-flecha').style.transform = abierto ? 'none' : 'rotate(-90deg)';
+      };
+    } else {
+      flot.style.display='none'; flot.innerHTML='';
     }
-    // Los mensajes
+    // Los mensajes (solo la conversación, el resumen queda flotante arriba)
     mensajes.forEach(m => {
       const el=document.createElement('div');
       el.className='msg '+(m.autor==='cliente'?'in':'out');
