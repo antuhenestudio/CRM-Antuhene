@@ -2023,6 +2023,13 @@ function abrirConvDemo(convs, i){
   $('chat-input').style.display='flex';
 }
 // Abrir conversación REAL (con resumen IA)
+function formatearMsg(txt){
+  var esc = (txt||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  esc = esc.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  esc = esc.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
+  esc = esc.replace(/\n/g, '<br>');
+  return esc;
+}
 async function abrirConvReal(convId, nombre, modo, tipo='web'){
   const iconos = {
     whatsapp:'<i data-lucide="message-circle" style="width:16px;height:16px;color:#25D366"></i>',
@@ -2071,7 +2078,7 @@ async function abrirConvReal(convId, nombre, modo, tipo='web'){
     mensajes.forEach(m => {
       const el=document.createElement('div');
       el.className='msg '+(m.autor==='cliente'?'in':'out');
-      el.textContent = m.contenido;
+      el.innerHTML = formatearMsg(m.contenido);
       if(m.autor!=='cliente'){ const by=document.createElement('div'); by.className='by'; by.textContent = m.autor==='bot'?'IA':'Humano'; el.appendChild(by); }
       body.appendChild(el);
     });
