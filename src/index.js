@@ -231,6 +231,16 @@ app.post('/api/chat', async (req, res) => {
     const historial = await obtenerHistorial(conversacion.id);
     await guardarMensaje({ conversacion, autor: 'cliente', contenido: mensaje });
 
+    // LÍMITE DE IA: verificar el tope mensual del plan
+    const { data: dentroLimite } = await supabase.rpc('registrar_uso_ia', { org: canal.organizacion_id });
+    if (dentroLimite === false) {
+      // Superó el límite de respuestas de IA del mes: guarda el mensaje pero
+      // el bot no responde con IA (avisa que un humano seguirá).
+      const aviso = 'Gracias por tu mensaje. En breve un asesor se comunica con vos.';
+      await guardarMensaje({ conversacion, autor: 'bot', contenido: aviso });
+      return res.json({ respuesta: aviso, limite_alcanzado: true });
+    }
+
     const [respuesta, datos] = await Promise.all([
       responder(supabase, { canal, historial, mensaje }),
       extraerDatos(mensaje, canal.agente?.rubro),
