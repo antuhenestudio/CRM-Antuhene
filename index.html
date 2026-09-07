@@ -979,6 +979,13 @@ input,textarea,select{font-family:inherit}
             <p><strong style="color:var(--ink)">Pro — $180.000/mes</strong> — Alta escala para agencias y flujos masivos: omnicanalidad total, hasta 10 agentes, 10.000 conversaciones y 10.000 respuestas de IA. Alertas por temperatura del lead y reportes de conversión.</p>
           </div>
         </div>
+
+        <div class="tile" style="margin-top:18px">
+          <h3 style="font-size:14px;margin-bottom:4px">¿Necesitás dar de baja tu plan?</h3>
+          <p style="font-size:12.5px;color:var(--muted);margin-bottom:12px">Podés solicitar la baja cuando quieras. Nuestro equipo la procesa a la brevedad y te confirma. Tu servicio sigue activo hasta el fin del período pago.</p>
+          <div id="baja-estado"></div>
+          <button class="btn-ghost" id="btn-solicitar-baja" style="font-size:12.5px;color:var(--coral);border-color:rgba(251,113,133,.3)">Solicitar baja</button>
+        </div>
       </section>
 
       <!-- MI CUENTA -->
@@ -3109,7 +3116,45 @@ $('paywall-x').onclick = ()=> $('paywall').style.display='none';
 $('paywall').addEventListener('click', e=>{ if(e.target.id==='paywall') $('paywall').style.display='none'; });
 
 /* ---------- Sección fija de Planes ---------- */
+async function cargarEstadoBaja(){
+  const cont = $('baja-estado'), btn = $('btn-solicitar-baja');
+  if(!cont) return;
+  if(demoMode || !sb){ cont.innerHTML=''; return; }
+  try {
+    const org = await miOrg();
+    const { data } = await sb.from('solicitudes_baja').select('estado,created_at')
+      .eq('organizacion_id', org).eq('estado','pendiente').maybeSingle();
+    if(data){
+      cont.innerHTML = '<div class="demo-banner" style="background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.25);color:var(--amber);margin-bottom:10px">Tenés una solicitud de baja pendiente. Nuestro equipo la está procesando y te confirmará a la brevedad.</div>';
+      if(btn) btn.style.display='none';
+    } else {
+      cont.innerHTML=''; if(btn) btn.style.display='inline-block';
+    }
+  } catch(e){ console.warn(e); }
+}
+if($('btn-solicitar-baja')){
+  $('btn-solicitar-baja').onclick = async ()=>{
+    const ok = await ahConfirm('¿Estás seguro de que querés solicitar la baja de tu plan? Nuestro equipo la va a procesar y te confirmará.','Solicitar baja','danger');
+    if(!ok) return;
+    const datos = await ahForm({
+      titulo:'Contanos el motivo (opcional)', okTexto:'Enviar solicitud',
+      campos:[{key:'motivo', label:'¿Por qué querés dar de baja? (nos ayuda a mejorar)', tipo:'textarea'}]
+    });
+    if(datos===null) return;
+    if(demoMode||!sb){ await ahAlert('En la demo no se registra. Con tu cuenta, la solicitud le llega al equipo de AntüHene.','Modo demo','info'); return; }
+    try {
+      const org = await miOrg();
+      const { data:{ user } } = await sb.auth.getUser();
+      await sb.from('solicitudes_baja').insert({ organizacion_id:org, solicitada_por:user.id, motivo:datos.motivo||null });
+      await ahAlert('Recibimos tu solicitud de baja. Nuestro equipo la procesará a la brevedad y te confirmará. Gracias por haber confiado en AntüHene.','Solicitud enviada','ok');
+      cargarEstadoBaja();
+    } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
+  };
+}
+
 async function cargarPlanesFijos(demo){
+  // Estado de la solicitud de baja (si hay una pendiente)
+  cargarEstadoBaja();
   let planes = DEMO.planes;
   if(sb && !demoMode){ try { const {data}=await sb.from('planes').select('*').eq('activo',true);
     if(data?.length) planes=data; } catch(e){ console.warn(e); } }
