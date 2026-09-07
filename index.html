@@ -468,6 +468,7 @@ input,textarea,select{font-family:inherit}
           <button class="nav-item" data-view="config"><i data-lucide="settings" class="ic"></i>Configurar bot</button>
           <button class="nav-item" data-view="equipo"><i data-lucide="users-round" class="ic"></i>Equipo</button>
           <button class="nav-item" data-view="academia"><i data-lucide="graduation-cap" class="ic"></i>Academia</button>
+          <button class="nav-item" data-view="cuenta"><i data-lucide="user-circle" class="ic"></i>Mi cuenta</button>
           <button class="nav-item" data-view="planes"><i data-lucide="credit-card" class="ic"></i>Planes</button>
         </div>
       </div>
@@ -976,6 +977,41 @@ input,textarea,select{font-family:inherit}
             <p><strong style="color:var(--ink)">Emprendedor — $70.000/mes</strong> — Para arrancar: 1 bot con IA humanizada, Instagram y Facebook, CRM completo, agenda y campanita de leads.</p>
             <p><strong style="color:var(--ink)">Profesional — $120.000/mes</strong> — Para equipos: 3 bots, 5 canales (+WhatsApp), publicaciones programadas, métricas de decisión y derivación por áreas.</p>
             <p><strong style="color:var(--ink)">Negocio — $200.000/mes</strong> — Alto volumen: 10 bots, 20 canales, todo incluido, academia y soporte prioritario.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- MI CUENTA -->
+      <section class="view" data-view="cuenta">
+        <div class="tile" style="margin-bottom:18px">
+          <h3 style="font-size:15px;margin-bottom:14px">Datos de tu cuenta</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+            <div><div style="font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">Nombre</div><div id="mc-nombre" style="font-size:14px">—</div></div>
+            <div><div style="font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">Correo electrónico</div><div id="mc-email" style="font-size:14px">—</div></div>
+            <div><div style="font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">Rol</div><div id="mc-rol" style="font-size:14px">—</div></div>
+            <div><div style="font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">Negocio</div><div id="mc-negocio" style="font-size:14px">—</div></div>
+            <div><div style="font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">Estado del plan</div><div id="mc-plan" style="font-size:14px">—</div></div>
+            <div><div style="font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">WhatsApp / Teléfono</div><div id="mc-wa" style="font-size:14px">—</div></div>
+          </div>
+          <button class="btn-ghost" id="mc-editar" style="margin-top:18px;font-size:12.5px">Editar mis datos</button>
+        </div>
+
+        <div class="tile">
+          <h3 style="font-size:15px;margin-bottom:4px">Información técnica</h3>
+          <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px">Estos datos identifican tu cuenta en el sistema. Útiles para soporte.</p>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--panel2);border-radius:8px">
+              <span style="font-size:12.5px;color:var(--muted)">ID de organización</span>
+              <span id="mc-org-id" style="font-size:12px;font-family:monospace;color:var(--ink)">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--panel2);border-radius:8px">
+              <span style="font-size:12.5px;color:var(--muted)">Canal web (para el widget)</span>
+              <span id="mc-canal-web" style="font-size:12px;font-family:monospace;color:var(--ink)">—</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--panel2);border-radius:8px">
+              <span style="font-size:12.5px;color:var(--muted)">Canales conectados</span>
+              <span id="mc-canales" style="font-size:12.5px;color:var(--ink)">—</span>
+            </div>
           </div>
         </div>
       </section>
@@ -1809,6 +1845,7 @@ async function entrar(){
   activarTiempoReal();
   restaurarSeccion();   // volver a la última sección abierta
   aplicarZoom();        // aplicar el zoom (80% por defecto)
+  cargarMiCuenta();     // datos de la cuenta del usuario
 
   // Estado de suscripción: controla el acceso a las vinculaciones
   let estadoSusc = DEMO.suscripcion;
@@ -1846,6 +1883,7 @@ const TITLES = {
   academia:['Academia','Capacitate y obtené tu certificado'],
   equipo:['Equipo','Usuarios, roles y áreas de tu negocio'],
   planes:['Planes','Elegí el plan de tu negocio'],
+  cuenta:['Mi cuenta','Tus datos y la información de tu cuenta'],
   publicaciones:['Publicaciones','Contenido programado para tus redes'],
   canales:['Conectar redes','Vinculá las cuentas de tu negocio'],
   config:['Configurar bot','Memoria, campos propios y avisos automáticos'],
@@ -3996,6 +4034,65 @@ async function activarTiempoReal(){
       .subscribe();
     console.log('Tiempo real activado');
   } catch(e){ console.warn('Realtime no disponible:', e); }
+}
+
+/* ---------- Mi cuenta ---------- */
+async function cargarMiCuenta(){
+  if(demoMode || !sb){
+    $('mc-nombre').textContent='María González';
+    $('mc-email').textContent='maria@estudio.com';
+    $('mc-rol').textContent='Dueño';
+    $('mc-negocio').textContent='Estudio Jurídico Demo';
+    $('mc-plan').textContent='Activo';
+    $('mc-wa').textContent='299 555 0000';
+    $('mc-org-id').textContent='(demo)';
+    $('mc-canal-web').textContent='antuhene-web-demo';
+    $('mc-canales').textContent='WhatsApp, Instagram, Web';
+    return;
+  }
+  try {
+    const { data:{ user } } = await sb.auth.getUser();
+    const org = await miOrg();
+    const { data: perfil } = await sb.from('perfiles').select('nombre,rol,puesto').eq('user_id',user.id).maybeSingle();
+    const { data: orgData } = await sb.from('organizaciones').select('nombre,estado_suscripcion').eq('id',org).maybeSingle();
+    const { data: negocio } = await sb.from('perfil_negocio').select('telefono,whatsapp').eq('organizacion_id',org).maybeSingle();
+    const { data: canales } = await sb.from('canales').select('tipo,identificador,activo').eq('organizacion_id',org);
+
+    $('mc-nombre').textContent = perfil?.nombre || user.email.split('@')[0];
+    $('mc-email').textContent = user.email;
+    $('mc-rol').textContent = ({dueno:'Dueño',admin:'Administrador',miembro:'Miembro'})[perfil?.rol] || perfil?.rol || '—';
+    $('mc-negocio').textContent = orgData?.nombre || '—';
+    $('mc-plan').textContent = ({activa:'Activo',trial:'Prueba gratis',inactiva:'Sin plan'})[orgData?.estado_suscripcion] || orgData?.estado_suscripcion || '—';
+    $('mc-wa').textContent = negocio?.whatsapp || negocio?.telefono || 'No cargado';
+    $('mc-org-id').textContent = org;
+    const canalWeb = (canales||[]).find(c=>c.tipo==='web');
+    $('mc-canal-web').textContent = canalWeb?.identificador || 'No creado';
+    const conectados = (canales||[]).filter(c=>c.activo!==false).map(c=>({whatsapp:'WhatsApp',instagram:'Instagram',facebook:'Facebook',web:'Web',google_calendar:'Google Calendar'})[c.tipo]||c.tipo);
+    $('mc-canales').textContent = conectados.length ? conectados.join(', ') : 'Ninguno todavía';
+  } catch(e){ console.warn('Mi cuenta:', e); }
+}
+if($('mc-editar')){
+  $('mc-editar').onclick = async ()=>{
+    if(demoMode||!sb){ await ahAlert('En la demo no se editan los datos.','Modo demo','info'); return; }
+    const org = await miOrg();
+    const { data:{ user } } = await sb.auth.getUser();
+    const { data: perfil } = await sb.from('perfiles').select('nombre').eq('user_id',user.id).maybeSingle();
+    const { data: negocio } = await sb.from('perfil_negocio').select('telefono,whatsapp').eq('organizacion_id',org).maybeSingle();
+    const datos = await ahForm({
+      titulo:'Editar mis datos', okTexto:'Guardar',
+      campos:[
+        {key:'nombre', label:'Tu nombre', valor:perfil?.nombre||''},
+        {key:'whatsapp', label:'WhatsApp / Teléfono', valor:negocio?.whatsapp||negocio?.telefono||''},
+      ]
+    });
+    if(!datos) return;
+    try {
+      await sb.from('perfiles').update({nombre:datos.nombre}).eq('user_id',user.id);
+      await sb.from('perfil_negocio').update({whatsapp:datos.whatsapp}).eq('organizacion_id',org);
+      await ahAlert('Datos actualizados.','Listo','ok');
+      cargarMiCuenta();
+    } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
+  };
 }
 
 /* ---------- Sesión persistente ---------- */
