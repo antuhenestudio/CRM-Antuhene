@@ -974,9 +974,9 @@ input,textarea,select{font-family:inherit}
         <div class="tile" style="margin-top:22px">
           <h3 style="font-size:15px;margin-bottom:12px">¿Qué incluye cada plan?</h3>
           <div style="font-size:13.5px;color:var(--muted);line-height:1.8">
-            <p><strong style="color:var(--ink)">Emprendedor — $70.000/mes</strong> — Para arrancar: 1 bot con IA humanizada, Instagram y Facebook, CRM completo, agenda y campanita de leads.</p>
-            <p><strong style="color:var(--ink)">Profesional — $120.000/mes</strong> — Para equipos: 3 bots, 5 canales (+WhatsApp), publicaciones programadas, métricas de decisión y derivación por áreas.</p>
-            <p><strong style="color:var(--ink)">Negocio — $200.000/mes</strong> — Alto volumen: 10 bots, 20 canales, todo incluido, academia y soporte prioritario.</p>
+            <p><strong style="color:var(--ink)">Inicial — $45.000/mes</strong> — Para emprendedores que atienden solos: WhatsApp, Instagram, Facebook y Web centralizados. Hasta 2 agentes, 1.000 conversaciones y 500 respuestas de IA al mes. Alertas en el panel.</p>
+            <p><strong style="color:var(--ink)">Crecimiento — $95.000/mes</strong> — El recomendado para negocios con pauta activa: todos los canales, hasta 5 agentes, 2.500 conversaciones y 2.500 respuestas de IA. Alertas push inmediatas y asignación automática de leads.</p>
+            <p><strong style="color:var(--ink)">Pro — $180.000/mes</strong> — Alta escala para agencias y flujos masivos: omnicanalidad total, hasta 10 agentes, 10.000 conversaciones y 10.000 respuestas de IA. Alertas por temperatura del lead y reportes de conversión.</p>
           </div>
         </div>
       </section>
@@ -1320,9 +1320,9 @@ const DEMO = {
     {nombre:'Bot ART', objetivo:'Consulta inicial de accidentes laborales', rubro:'juridico', canal:null},
   ],
   planes:[
-    {id:'emprendedor', nombre:'Emprendedor', precio_ars:70000, max_bots:1, max_canales:2, descripcion:'Instagram y Facebook'},
-    {id:'profesional', nombre:'Profesional', precio_ars:120000, max_bots:3, max_canales:5, descripcion:'Multicanal + WhatsApp'},
-    {id:'negocio', nombre:'Negocio', precio_ars:200000, max_bots:10, max_canales:20, descripcion:'Todo incluido'},
+    {id:'emprendedor', nombre:'Inicial', precio_ars:45000, max_bots:1, max_canales:4, descripcion:'2 agentes · 1.000 chats · 500 IA', agentes:2, chats:1000, ia:500},
+    {id:'profesional', nombre:'Crecimiento', precio_ars:95000, max_bots:3, max_canales:4, descripcion:'5 agentes · 2.500 chats · 2.500 IA', agentes:5, chats:2500, ia:2500},
+    {id:'negocio', nombre:'Pro', precio_ars:180000, max_bots:10, max_canales:4, descripcion:'10 agentes · 10.000 chats · 10.000 IA', agentes:10, chats:10000, ia:10000},
   ],
   leads:[
     {id:'l1', registro_interno:'AH-2026-0001', nombre:'Carlos Ruiz', dni:'27.345.678', telefono:'5492991112233', email:'carlos@mail.com', interes:'Jubilación petrolera', zona:'Neuquén', estado:'filtrado_tier_a', tier:'A', convenio:'petroleros', secretario:'Laura', fecha_ingreso:'2026-08-12', birth_date:'1975-03-14',
@@ -3062,7 +3062,12 @@ async function cargarPlanes(){
     const t=document.createElement('div'); t.className='tile'; t.style.textAlign='center';
     t.innerHTML=`<h3 style="font-size:16px;margin-bottom:6px">${p.nombre}</h3>
       <div class="big" style="font-size:26px">${precio}</div>
-      <p style="font-size:12.5px;color:var(--muted);margin:8px 0 16px">${p.max_bots} bot(s) · ${p.max_canales} canal(es)</p>
+      <div style="font-size:12px;color:var(--muted);margin:10px 0 16px;line-height:1.8;text-align:left">
+        <div>✓ ${p.agentes||p.max_bots} agentes humanos</div>
+        <div>✓ ${(p.chats||0).toLocaleString('es-AR')} conversaciones/mes</div>
+        <div>✓ ${(p.ia||0).toLocaleString('es-AR')} respuestas de IA/mes</div>
+        <div>✓ WhatsApp, Instagram, Facebook y Web</div>
+      </div>
       <button class="btn-sm" style="width:100%" onclick="suscribir('${p.id}')">Elegir ${p.nombre}</button>`;
     el.appendChild(t);
   });
@@ -3113,7 +3118,12 @@ async function cargarPlanesFijos(demo){
     t.innerHTML=`${destacado?'<div class="pill" style="color:var(--violet);margin-bottom:8px">Más elegido</div>':''}
       <h3 style="font-size:17px;margin-bottom:6px">${p.nombre}</h3>
       <div class="big" style="font-size:30px;margin:8px 0">${precio}<span style="font-size:14px;color:var(--muted)">/mes</span></div>
-      <p style="font-size:12.5px;color:var(--muted);margin:8px 0 16px">${p.max_bots} bot(s) · ${p.max_canales} canal(es)</p>
+      <div style="font-size:12px;color:var(--muted);margin:10px 0 16px;line-height:1.8;text-align:left">
+        <div>✓ ${p.agentes||p.max_bots} agentes humanos</div>
+        <div>✓ ${(p.chats||0).toLocaleString('es-AR')} conversaciones/mes</div>
+        <div>✓ ${(p.ia||0).toLocaleString('es-AR')} respuestas de IA/mes</div>
+        <div>✓ WhatsApp, Instagram, Facebook y Web</div>
+      </div>
       <button class="btn-sm" style="width:100%" onclick="suscribir('${p.id}')">Elegir ${p.nombre}</button>`;
     el.appendChild(t);
   });
