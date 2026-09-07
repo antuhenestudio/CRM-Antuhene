@@ -1012,6 +1012,10 @@ input,textarea,select{font-family:inherit}
               <span style="font-size:12.5px;color:var(--muted)">Canales conectados</span>
               <span id="mc-canales" style="font-size:12.5px;color:var(--ink)">—</span>
             </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--panel2);border-radius:8px">
+              <span style="font-size:12.5px;color:var(--muted)">Uso de tu plan este mes</span>
+              <span id="mc-uso" style="font-size:12.5px;color:var(--ink)">—</span>
+            </div>
           </div>
         </div>
       </section>
@@ -3918,6 +3922,21 @@ $('btn-add-area').onclick=async()=>{
   } catch(e){ await ahAlert('Error: '+e.message,'Error','warn'); }
 };
 $('btn-invitar').onclick=async()=>{
+  // Verificar el límite de agentes del plan antes de invitar
+  if(!demoMode && sb){
+    try {
+      const org = await miOrg();
+      const { data: cant } = await sb.rpc('contar_agentes', { org });
+      const { data: orgData } = await sb.from('organizaciones').select('plan_id, estado_suscripcion').eq('id',org).maybeSingle();
+      const { data: plan } = await sb.from('planes').select('max_agentes,nombre').eq('id', orgData?.plan_id || 'emprendedor').maybeSingle();
+      const limite = plan?.max_agentes || 2;
+      if(cant >= limite){
+        await ahAlert('Llegaste al límite de '+limite+' agentes de tu plan '+(plan?.nombre||'')+'. Para sumar más usuarios, pasate a un plan superior.','Límite alcanzado','warn');
+        document.querySelector('.nav-item[data-view="planes"]')?.click();
+        return;
+      }
+    } catch(e){ console.warn('Chequeo de límite:', e); }
+  }
   // Traer áreas para el desplegable
   let opcionesArea = [{value:'',label:'Sin área específica'}];
   if(!demoMode && sb){
@@ -4064,7 +4083,7 @@ async function cargarMiCuenta(){
     const { data:{ user } } = await sb.auth.getUser();
     const org = await miOrg();
     const { data: perfil } = await sb.from('perfiles').select('nombre,rol,puesto').eq('user_id',user.id).maybeSingle();
-    const { data: orgData } = await sb.from('organizaciones').select('nombre,estado_suscripcion').eq('id',org).maybeSingle();
+
     const { data: negocio } = await sb.from('perfil_negocio').select('telefono,whatsapp').eq('organizacion_id',org).maybeSingle();
     const { data: canales } = await sb.from('canales').select('tipo,identificador,activo').eq('organizacion_id',org);
 
@@ -4079,6 +4098,15 @@ async function cargarMiCuenta(){
     $('mc-canal-web').textContent = canalWeb?.identificador || 'No creado';
     const conectados = (canales||[]).filter(c=>c.activo!==false).map(c=>({whatsapp:'WhatsApp',instagram:'Instagram',facebook:'Facebook',web:'Web',google_calendar:'Google Calendar'})[c.tipo]||c.tipo);
     $('mc-canales').textContent = conectados.length ? conectados.join(', ') : 'Ninguno todavía';
+    // Uso del plan este mes
+    try {
+      const { data: agentes } = await sb.rpc('contar_agentes', { org });
+      const { data: convs } = await sb.rpc('contar_conversaciones_mes', { org });
+      const { data: plan } = await sb.from('planes').select('max_agentes,max_conversaciones,max_respuestas_ia').eq('id', orgData?.plan_id || 'emprendedor').maybeSingle();
+      const usoIA = orgData?.uso_ia_mes || 0;
+      if($('mc-uso')) $('mc-uso').textContent =
+        `${agentes||0}/${plan?.max_agentes||2} agentes · ${convs||0}/${plan?.max_conversaciones||1000} chats · ${usoIA}/${plan?.max_respuestas_ia||500} IA`;
+    } catch(e){ if($('mc-uso')) $('mc-uso').textContent='—'; }
   } catch(e){ console.warn('Mi cuenta:', e); }
 }
 if($('mc-editar')){
